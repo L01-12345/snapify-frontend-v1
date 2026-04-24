@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
 	View,
 	Text,
@@ -9,13 +9,57 @@ import {
 	ScrollView,
 	KeyboardAvoidingView,
 	Platform,
+	Alert,
+	Image,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { COLORS } from "../../src/constants/theme";
+import { noteApi } from "../../src/api/noteApi";
 
 export default function EditNoteScreen() {
 	const router = useRouter();
+	const { id } = useLocalSearchParams<{ id: string }>();
+	const [title, setTitle] = useState("");
+	const [content, setContent] = useState("");
+	const [isSaving, setIsSaving] = useState(false);
+	const [imageUrl, setImageUrl] = useState<string | null>(null);
+	const [isLoading, setIsLoading] = useState(true);
+	console.log("ID front [id]", id);
+
+	useEffect(() => {
+		const fetchNote = async () => {
+			try {
+				const response = await noteApi.getNoteById(id);
+				const data = response.data;
+				if (data) {
+					setTitle(data.title);
+					setContent(data.content);
+					// Lấy ảnh đầu tiên từ mảng images của API
+					if (data.images && data.images.length > 0) {
+						setImageUrl(data.images[0].imageUrl);
+					}
+				}
+			} catch (error) {
+				Alert.alert("Lỗi", "Không tải được nội dung.");
+			} finally {
+				setIsLoading(false);
+			}
+		};
+		fetchNote();
+	}, [id]);
+
+	const handleUpdate = async () => {
+		try {
+			setIsSaving(true);
+			await noteApi.updateNote(id, { title, content });
+			router.back(); // Quay lại trang Detail
+		} catch (error: any) {
+			Alert.alert("Lỗi", error.message);
+		} finally {
+			setIsSaving(false);
+		}
+	};
 
 	return (
 		<SafeAreaView style={styles.safeArea}>
@@ -25,7 +69,9 @@ export default function EditNoteScreen() {
 				</TouchableOpacity>
 				<Text style={styles.headerTitle}>Edit Note</Text>
 				<TouchableOpacity>
-					<Text style={styles.saveBtn}>Save</Text>
+					<Text style={styles.saveBtn} onPress={handleUpdate}>
+						Save
+					</Text>
 				</TouchableOpacity>
 			</View>
 
@@ -41,8 +87,27 @@ export default function EditNoteScreen() {
 						style={styles.titleInput}
 						defaultValue="Calculus Formula"
 						placeholder="Note Title..."
+						value={title}
+						onChangeText={setTitle}
 						placeholderTextColor={COLORS.slate300}
 					/>
+					{imageUrl && (
+						<>
+							<View style={styles.sectionHeader}>
+								<Text style={styles.sectionTitle}>Original Image</Text>
+								<TouchableOpacity>
+									<Text style={styles.linkText}>Retake</Text>
+								</TouchableOpacity>
+							</View>
+							<View style={[styles.imageBox, { marginBottom: 24 }]}>
+								<Image
+									source={{ uri: imageUrl }}
+									style={styles.actualImage}
+									resizeMode="cover"
+								/>
+							</View>
+						</>
+					)}
 
 					{/* AI Suggested Folder Card */}
 					<View style={styles.aiCard}>
@@ -60,17 +125,6 @@ export default function EditNoteScreen() {
 						</TouchableOpacity>
 					</View>
 
-					{/* Original Image */}
-					<View style={styles.sectionHeader}>
-						<Text style={styles.sectionTitle}>Original Image</Text>
-						<TouchableOpacity>
-							<Text style={styles.linkText}>View</Text>
-						</TouchableOpacity>
-					</View>
-					<View style={styles.imageBox}>
-						<Text style={styles.imageText}>📷 IMG_20251020.jpg</Text>
-					</View>
-
 					{/* Extracted Text */}
 					<Text style={[styles.sectionTitle, { marginBottom: 8 }]}>
 						Extracted Text
@@ -82,6 +136,8 @@ export default function EditNoteScreen() {
 						defaultValue={
 							"f'(x) = lim (h->0) [f(x+h) - f(x)] / h\n\nThe fundamental theorem of calculus links the concept of differentiating a function with the concept of integrating a function..."
 						}
+						value={content}
+						onChangeText={setContent}
 					/>
 				</ScrollView>
 			</KeyboardAvoidingView>
@@ -158,15 +214,6 @@ const styles = StyleSheet.create({
 	},
 	sectionTitle: { fontSize: 14, fontWeight: "700", color: COLORS.slate900 },
 	linkText: { fontSize: 12, fontWeight: "600", color: COLORS.primary },
-	imageBox: {
-		height: 96,
-		backgroundColor: COLORS.slate50,
-		borderWidth: 1,
-		borderColor: COLORS.slate200,
-		borderRadius: 16,
-		alignItems: "center",
-		justifyContent: "center",
-	},
 	imageText: { fontSize: 14, fontWeight: "500", color: COLORS.slate400 },
 	textArea: {
 		flex: 1,
@@ -179,5 +226,17 @@ const styles = StyleSheet.create({
 		fontSize: 14,
 		color: COLORS.slate700,
 		fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+	},
+	imageBox: {
+		height: 160, // Tăng chiều cao lên cho đẹp
+		backgroundColor: COLORS.slate50,
+		borderRadius: 16,
+		overflow: "hidden", // Bo tròn ảnh bên trong
+		borderWidth: 1,
+		borderColor: COLORS.slate200,
+	},
+	actualImage: {
+		width: "100%",
+		height: "100%",
 	},
 });

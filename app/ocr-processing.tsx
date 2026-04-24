@@ -1,5 +1,5 @@
 // app/ocr-processing.tsx
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
 	View,
 	Text,
@@ -8,20 +8,26 @@ import {
 	TouchableOpacity,
 	Animated,
 	ActivityIndicator,
+	Alert,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { COLORS } from "../src/constants/theme";
+import { noteApi } from "../src/api/noteApi";
+import { Note, NoteStatus } from "../src/types/api.types";
 
 export default function OcrProcessingScreen() {
 	const router = useRouter();
 	const scanAnim = useRef(new Animated.Value(0)).current;
 
+	const { imageUri } = useLocalSearchParams<{ imageUri: string }>();
+	const [noteId, setNoteId] = useState<String>("");
+
 	useEffect(() => {
-		// Tạo animation thanh quét chạy lên xuống
+		// Animation giữ nguyên
 		Animated.loop(
 			Animated.sequence([
 				Animated.timing(scanAnim, {
-					toValue: 200, // Chiều cao của khối document mockup
+					toValue: 200,
 					duration: 1500,
 					useNativeDriver: true,
 				}),
@@ -33,13 +39,56 @@ export default function OcrProcessingScreen() {
 			]),
 		).start();
 
-		// Giả lập OCR xong sau 3 giây, chuyển sang màn Edit Note
-		const timer = setTimeout(() => {
-			router.push("/note/edit");
-		}, 3000);
+		// THAY THẾ SETTIMEOUT BẰNG LOGIC GỌI API THỰC TẾ
+		const processImage = async () => {
+			if (!imageUri) return;
 
-		return () => clearTimeout(timer);
-	}, []);
+			try {
+				// Gọi API gửi ảnh lên Backend để OCR và Phân loại
+				const newNote = await noteApi.snapAndAutoCategorize(
+					imageUri,
+					"scanned_document.jpg",
+					"image/jpeg",
+				);
+
+				// OCR thành công, điều hướng sang trang Edit (hoặc xem chi tiết) kèm theo ID của Note mới tạo
+				console.log(newNote);
+				router.replace(`/note/${newNote.id}`);
+			} catch (error: any) {
+				console.log("OCR Error:", error);
+				Alert.alert("Lỗi xử lý", "Không thể trích xuất văn bản từ ảnh.");
+				// Hoặc router.replace("/ocr-error"); nếu bạn có màn hình lỗi riêng
+				router.back();
+			}
+		};
+
+		processImage();
+	}, [imageUri]); // Hook phụ thuộc vào imageUri
+
+	// useEffect(() => {
+	// 	// Tạo animation thanh quét chạy lên xuống
+	// 	Animated.loop(
+	// 		Animated.sequence([
+	// 			Animated.timing(scanAnim, {
+	// 				toValue: 200, // Chiều cao của khối document mockup
+	// 				duration: 1500,
+	// 				useNativeDriver: true,
+	// 			}),
+	// 			Animated.timing(scanAnim, {
+	// 				toValue: 0,
+	// 				duration: 1500,
+	// 				useNativeDriver: true,
+	// 			}),
+	// 		]),
+	// 	).start();
+
+	// 	// Giả lập OCR xong sau 3 giây, chuyển sang màn Edit Note
+	// 	const timer = setTimeout(() => {
+	// 		router.push("/note/edit");
+	// 	}, 3000);
+
+	// 	return () => clearTimeout(timer);
+	// }, []);
 
 	return (
 		<SafeAreaView style={styles.safeArea}>

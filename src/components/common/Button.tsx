@@ -1,13 +1,21 @@
 import React from "react";
-import { TouchableOpacity, Text, StyleSheet, ViewStyle } from "react-native";
+import {
+	TouchableOpacity,
+	Text,
+	StyleSheet,
+	ViewStyle,
+	View,
+} from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "../../constants/theme";
 
 interface ButtonProps {
-	title: string;
+	title?: string; // Đổi thành optional để khi loading có thể ẩn chữ
 	onPress: () => void;
 	type?: "primary" | "secondary" | "ghost";
 	style?: ViewStyle;
+	disabled?: boolean; // Bổ sung prop disabled
+	children?: React.ReactNode; // Bổ sung prop children
 }
 
 export const Button = ({
@@ -15,13 +23,20 @@ export const Button = ({
 	onPress,
 	type = "primary",
 	style,
+	disabled = false,
+	children,
 }: ButtonProps) => {
 	if (type === "primary") {
 		return (
 			<TouchableOpacity
 				onPress={onPress}
 				activeOpacity={0.8}
-				style={[styles.container, style]}
+				disabled={disabled} // Khóa nút khi đang loading
+				style={[
+					styles.container,
+					style,
+					disabled && styles.disabledContainer, // Áp dụng hiệu ứng mờ khi disabled
+				]}
 			>
 				<LinearGradient
 					colors={[COLORS.primary, COLORS.primaryEnd]}
@@ -29,7 +44,11 @@ export const Button = ({
 					end={{ x: 1, y: 1 }}
 					style={styles.primaryBg}
 				>
-					<Text style={styles.primaryText}>{title}</Text>
+					<View style={styles.contentRow}>
+						{children}
+
+						{title ? <Text style={styles.primaryText}>{title}</Text> : null}
+					</View>
 				</LinearGradient>
 			</TouchableOpacity>
 		);
@@ -46,13 +65,24 @@ const styles = StyleSheet.create({
 		shadowOffset: { width: 0, height: 4 },
 		shadowOpacity: 0.3,
 		shadowRadius: 8,
-		elevation: 5, // Dành cho Android
+		elevation: 5,
+	},
+	disabledContainer: {
+		opacity: 0.7, // Làm mờ nút một chút khi đang xử lý
+		shadowOpacity: 0, // Tắt bóng đổ khi disabled
+		elevation: 0,
 	},
 	primaryBg: {
 		paddingVertical: 16,
 		borderRadius: 16,
 		alignItems: "center",
 		justifyContent: "center",
+	},
+	contentRow: {
+		flexDirection: "row", // Dàn hàng ngang cho Spinner và Text
+		alignItems: "center",
+		justifyContent: "center",
+		gap: 8, // Khoảng cách giữa Spinner và Text
 	},
 	primaryText: {
 		color: COLORS.white,

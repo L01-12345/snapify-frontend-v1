@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useCallback } from "react";
 import {
 	View,
 	Text,
@@ -6,15 +6,77 @@ import {
 	SafeAreaView,
 	TouchableOpacity,
 	ScrollView,
+	Alert,
+	ActivityIndicator,
 } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "../../src/constants/theme";
 
+import { folderApi } from "../../src/api/folderApi";
+import { FolderDetail } from "../../src/types/api.types";
+
 export default function FolderDetailScreen() {
 	const router = useRouter();
-	const { id } = useLocalSearchParams(); // Lấy ID thư mục từ URL
+	const { id } = useLocalSearchParams<{ id: string }>();
+	const [folder, setFolder] = useState<FolderDetail | null>(null);
+	const [isLoading, setIsLoading] = useState(true);
+
+	useFocusEffect(
+		useCallback(() => {
+			if (id) fetchFolderDetail();
+		}, [id]),
+	);
+
+	const fetchFolderDetail = async () => {
+		try {
+			const response = await folderApi.getFolderById(id);
+			setFolder(response.data || null);
+		} catch (error) {
+			Alert.alert("Lỗi", "Không thể tải dữ liệu thư mục");
+			router.back();
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const handleDeleteFolder = () => {
+		Alert.alert(
+			"Xóa thư mục",
+			"Bạn có chắc chắn muốn xóa? Các ghi chú bên trong sẽ không bị xóa mà chỉ bị gỡ khỏi thư mục này.",
+			[
+				{ text: "Hủy", style: "cancel" },
+				{
+					text: "Xóa",
+					style: "destructive",
+					onPress: async () => {
+						try {
+							await folderApi.deleteFolder(id);
+							router.back();
+						} catch (error: any) {
+							Alert.alert("Lỗi", error.message);
+						}
+					},
+				},
+			],
+		);
+	};
+
+	if (isLoading || !folder) {
+		return (
+			<SafeAreaView
+				style={[
+					styles.safeArea,
+					{ justifyContent: "center", alignItems: "center" },
+				]}
+			>
+				<ActivityIndicator size="large" color={COLORS.primary} />
+			</SafeAreaView>
+		);
+	}
+
+	const isEmpty = !folder.notes || folder.notes.length === 0;
 
 	return (
 		<SafeAreaView style={styles.safeArea}>
@@ -24,46 +86,71 @@ export default function FolderDetailScreen() {
 				</TouchableOpacity>
 				<View style={styles.headerCenter}>
 					<Text style={styles.headerIcon}>📚</Text>
-					<Text style={styles.headerTitle}>Study</Text>
+					<Text style={styles.headerTitle}>{folder.name}</Text>
 				</View>
-				<TouchableOpacity style={styles.iconBtn}>
-					<Feather name="more-vertical" size={24} color={COLORS.slate600} />
+				<TouchableOpacity onPress={handleDeleteFolder} style={styles.iconBtn}>
+					<Feather name="trash-2" size={20} color={COLORS.slate400} />
 				</TouchableOpacity>
 			</View>
 
-			<ScrollView contentContainerStyle={styles.listContainer}>
-				<Text style={styles.listSubtitle}>12 Notes sorted by recent</Text>
-
-				{/* Note Item */}
-				<TouchableOpacity
-					style={styles.noteCard}
-					onPress={() => router.push("/note/edit")}
-				>
-					<View style={styles.noteHeader}>
-						<Text style={styles.noteTitle}>Calculus Lecture 04</Text>
-						<View style={styles.badge}>
-							<Text style={styles.badgeText}>PROCESSED</Text>
-						</View>
+			{isEmpty ? (
+				// GIAO DIỆN EMPTY (Mang từ empty.tsx qua)
+				<View style={styles.emptyContent}>
+					<View style={styles.circleBg}>
+						<Text style={styles.emoji}>🗂️</Text>
 					</View>
-					<Text style={styles.notePreview} numberOfLines={2}>
-						Formulas for derivatives and integration by parts. Review before
-						midterm...
+					<Text style={styles.emptyTitle}>This folder is empty</Text>
+					<Text style={styles.emptySubtitle}>
+						Organize your study materials by adding notes to this folder, or let
+						AI auto-categorize them for you.
 					</Text>
-					<View style={styles.noteFooter}>
-						<Text style={styles.noteDate}>Oct 20, 2025</Text>
-					</View>
-				</TouchableOpacity>
-			</ScrollView>
+					<TouchableOpacity
+						style={styles.addBtn}
+						onPress={() => router.push("/note/new")}
+					>
+						<Text style={styles.addBtnText}>+ Add Notes</Text>
+					</TouchableOpacity>
+				</View>
+			) : (
+				// GIAO DIỆN CÓ DATA
+				<ScrollView contentContainerStyle={styles.listContainer}>
+					<Text style={styles.listSubtitle}>
+						{folder.notes.length} Notes in this folder
+					</Text>
 
+					{folder.notes.map((note) => (
+						<TouchableOpacity
+							key={note.id}
+							style={styles.noteCard}
+							onPress={() => router.push(`/note/${note.id}`)}
+						>
+							<View style={styles.noteHeader}>
+								<Text style={styles.noteTitle}>{note.title}</Text>
+								<View style={styles.badge}>
+									<Text style={styles.badgeText}>{note.status}</Text>
+								</View>
+							</View>
+							<Text style={styles.notePreview} numberOfLines={2}>
+								{note.content}
+							</Text>
+						</TouchableOpacity>
+					))}
+				</ScrollView>
+			)}
 			{/* Floating Action Button */}
-			<TouchableOpacity style={styles.fab}>
-				<LinearGradient
-					colors={[COLORS.primary, COLORS.primaryEnd]}
-					style={styles.fabGradient}
+			{!isEmpty && (
+				<TouchableOpacity
+					style={styles.fab}
+					onPress={() => router.push("/note/new")}
 				>
-					<Feather name="plus" size={32} color={COLORS.white} />
-				</LinearGradient>
-			</TouchableOpacity>
+					<LinearGradient
+						colors={[COLORS.primary, COLORS.primaryEnd]}
+						style={styles.fabGradient}
+					>
+						<Feather name="plus" size={32} color={COLORS.white} />
+					</LinearGradient>
+				</TouchableOpacity>
+			)}
 		</SafeAreaView>
 	);
 }
@@ -158,4 +245,43 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 	},
+	emptyContent: {
+		flex: 1,
+		alignItems: "center",
+		justifyContent: "center",
+		paddingHorizontal: 32,
+	},
+	circleBg: {
+		width: 140,
+		height: 140,
+		borderRadius: 70,
+		backgroundColor: COLORS.slate50,
+		alignItems: "center",
+		justifyContent: "center",
+		marginBottom: 24,
+	},
+	emoji: { fontSize: 60 },
+	emptyTitle: {
+		fontSize: 22,
+		fontWeight: "800",
+		color: COLORS.slate900,
+		marginBottom: 12,
+	},
+	emptySubtitle: {
+		fontSize: 14,
+		fontWeight: "500",
+		color: COLORS.slate500,
+		textAlign: "center",
+		lineHeight: 22,
+		marginBottom: 32,
+	},
+	addBtn: {
+		width: "100%",
+		paddingVertical: 16,
+		borderRadius: 16,
+		borderWidth: 2,
+		borderColor: COLORS.slate200,
+		alignItems: "center",
+	},
+	addBtnText: { fontSize: 15, fontWeight: "700", color: COLORS.slate800 },
 });

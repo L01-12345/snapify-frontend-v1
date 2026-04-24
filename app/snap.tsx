@@ -1,5 +1,5 @@
 // app/snap.tsx
-import React from "react";
+import React, { useRef, useState } from "react";
 import {
 	View,
 	Text,
@@ -11,9 +11,67 @@ import {
 import { useRouter } from "expo-router";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { COLORS } from "../src/constants/theme";
+import { CameraView, useCameraPermissions } from "expo-camera";
+import { Button } from "../src/components/common/Button";
 
 export default function SnapToNoteScreen() {
 	const router = useRouter();
+	const [permission, requestPermission] = useCameraPermissions();
+	// Tạo ref để điều khiển camera
+	const cameraRef = useRef<CameraView>(null);
+	const [isTakingPhoto, setIsTakingPhoto] = useState(false);
+
+	if (!permission?.granted) {
+		return (
+			<View
+				style={{
+					flex: 1,
+					backgroundColor: "#0B0F19",
+					justifyContent: "center",
+					alignItems: "center",
+					padding: 24,
+				}}
+			>
+				<Text
+					style={{
+						color: "white",
+						fontSize: 18,
+						textAlign: "center",
+						marginBottom: 20,
+					}}
+				>
+					Snapify cần quyền truy cập Camera để có thể quét tài liệu.
+				</Text>
+				<Button title="Cấp quyền Camera" onPress={requestPermission} />
+			</View>
+		);
+	}
+
+	// ĐÂY LÀ HÀM BẠN CẦN THÊM VÀO
+	const takePicture = async () => {
+		if (cameraRef.current && !isTakingPhoto) {
+			setIsTakingPhoto(true);
+			try {
+				// Thực hiện chụp ảnh
+				const photo = await cameraRef.current.takePictureAsync({
+					quality: 0.7, // Nén ảnh để gửi API nhanh hơn
+					base64: false,
+				});
+
+				// Chụp xong, truyền URI của ảnh sang trang OCR Processing
+				if (photo) {
+					router.push({
+						pathname: "/ocr-processing",
+						params: { imageUri: photo.uri },
+					});
+				}
+			} catch (error) {
+				console.log("Lỗi chụp ảnh:", error);
+			} finally {
+				setIsTakingPhoto(false);
+			}
+		}
+	};
 
 	return (
 		<SafeAreaView style={styles.safeArea}>
@@ -30,15 +88,22 @@ export default function SnapToNoteScreen() {
 			</View>
 
 			{/* Viewfinder */}
-			<View style={styles.viewfinder}>
-				{/* Khung viền (Brackets) */}
-				<View style={[styles.corner, styles.topLeft]} />
-				<View style={[styles.corner, styles.topRight]} />
-				<View style={[styles.corner, styles.bottomLeft]} />
-				<View style={[styles.corner, styles.bottomRight]} />
+			<View style={{ flex: 1, overflow: "hidden" }}>
+				<CameraView
+					ref={cameraRef}
+					style={StyleSheet.absoluteFillObject}
+					facing="back"
+				/>
+				<View style={styles.viewfinder}>
+					{/* Khung viền (Brackets) */}
+					<View style={[styles.corner, styles.topLeft]} />
+					<View style={[styles.corner, styles.topRight]} />
+					<View style={[styles.corner, styles.bottomLeft]} />
+					<View style={[styles.corner, styles.bottomRight]} />
 
-				<Text style={styles.focusTitle}>Focus on Document</Text>
-				<Text style={styles.focusSubtitle}>(Align within brackets)</Text>
+					<Text style={styles.focusTitle}>Focus on Document</Text>
+					<Text style={styles.focusSubtitle}>(Align within brackets)</Text>
+				</View>
 			</View>
 
 			{/* Bottom Controls */}
@@ -54,7 +119,8 @@ export default function SnapToNoteScreen() {
 				{/* Shutter Button (Nút chụp) */}
 				<TouchableOpacity
 					style={styles.shutterBtn}
-					onPress={() => router.push("/snap-preview")}
+					onPress={takePicture}
+					disabled={isTakingPhoto}
 				>
 					<View style={styles.shutterInner} />
 				</TouchableOpacity>

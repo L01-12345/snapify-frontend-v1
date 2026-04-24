@@ -1,5 +1,5 @@
 // app/note/[id].tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
 	View,
 	Text,
@@ -7,6 +7,9 @@ import {
 	SafeAreaView,
 	ScrollView,
 	TouchableOpacity,
+	ActivityIndicator,
+	Alert,
+	Image,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Feather } from "@expo/vector-icons";
@@ -14,10 +17,54 @@ import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "../../src/constants/theme";
 import { SettingsModal } from "../../src/components/common/SettingsModal";
 
+import { noteApi } from "../../src/api/noteApi";
+import { Note } from "../../src/types/api.types";
+
 export default function NoteDetailScreen() {
 	const router = useRouter();
-	const { id } = useLocalSearchParams(); // Lấy ID note từ URL
+	const { id } = useLocalSearchParams<{ id: string }>();
+	const [note, setNote] = useState<Note | null>(null);
+	const [isLoading, setIsLoading] = useState(true);
 	const [modalVisible, setModalVisible] = useState(false);
+	console.log("ID nhận được từ Router:", id);
+
+	const firstImage =
+		note?.images && note.images.length > 0 ? note.images[0].imageUrl : null;
+	// if (isLoading) return <ActivityIndicator style={{ flex: 1 }} />;
+
+	useEffect(() => {
+		const fetchNote = async () => {
+			try {
+				const response = await noteApi.getNoteById(id);
+				setNote(response.data || null);
+			} catch (error) {
+				Alert.alert("Lỗi", "Không tìm thấy ghi chú.");
+				router.back();
+			} finally {
+				setIsLoading(false);
+			}
+		};
+		if (id) {
+			fetchNote();
+		} else {
+			console.warn("Không tìm thấy ID trong params");
+			setIsLoading(false); //
+		}
+	}, [id]);
+
+	const handleDelete = () => {
+		Alert.alert("Xóa ghi chú", "Bạn có chắc muốn xóa ghi chú này?", [
+			{ text: "Hủy", style: "cancel" },
+			{
+				text: "Xóa",
+				style: "destructive",
+				onPress: async () => {
+					await noteApi.deleteNote(id);
+					router.replace("/all-notes");
+				},
+			},
+		]);
+	};
 
 	return (
 		<SafeAreaView style={styles.safeArea}>
@@ -35,75 +82,74 @@ export default function NoteDetailScreen() {
 				</TouchableOpacity>
 			</View>
 
-			<ScrollView
-				contentContainerStyle={styles.scrollContent}
-				showsVerticalScrollIndicator={false}
-			>
-				{/* Original Image Box */}
-				<TouchableOpacity style={styles.imageBox}>
-					<Text style={styles.cameraIcon}>📷</Text>
-					<Text style={styles.viewImageText}>View Original Image</Text>
-				</TouchableOpacity>
-
-				{/* Badges */}
-				<View style={styles.badgeRow}>
-					<View style={styles.folderBadge}>
-						<Text style={styles.folderBadgeText}>📚 STUDY</Text>
-					</View>
-					<View style={styles.statusBadge}>
-						<Text style={styles.statusBadgeText}>PROCESSED</Text>
-					</View>
-				</View>
-
-				{/* Title */}
-				<Text style={styles.title}>Calculus Lecture 04: Derivatives</Text>
-
-				<View style={styles.divider} />
-
-				{/* Note Content (Rich Text Simulation) */}
-				<View style={styles.bodyContent}>
-					<Text style={styles.paragraph}>
-						The fundamental theorem of calculus links the concept of
-						differentiating a function with the concept of integrating a
-						function.
-					</Text>
-
-					<View style={styles.bulletList}>
-						<Text style={styles.bulletItem}>
-							<Text style={styles.boldText}>Part 1:</Text> Guarantees that the
-							definite integral of a continuous function is differentiable.
-						</Text>
-						<Text style={styles.bulletItem}>
-							<Text style={styles.boldText}>Part 2:</Text> Provides a method for
-							evaluating definite integrals.
-						</Text>
-					</View>
-
-					<View style={styles.codeBlock}>
-						<Text style={styles.codeText}>
-							f'(x) = lim (h→0) [f(x+h) - f(x)] / h
-						</Text>
-					</View>
-
-					<Text style={styles.paragraph}>
-						Review these formulas before the midterm exam next Tuesday. Also,
-						check the assignment uploaded on the portal.
+			{isLoading ? (
+				<View
+					style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+				>
+					<ActivityIndicator size="large" color={COLORS.primary} />
+					<Text style={{ marginTop: 12, color: COLORS.slate400 }}>
+						Đang tải ghi chú...
 					</Text>
 				</View>
-			</ScrollView>
+			) : (
+				<ScrollView
+					contentContainerStyle={styles.scrollContent}
+					showsVerticalScrollIndicator={false}
+				>
+					{/* Original Image Box */}
+					{firstImage && (
+						<View style={styles.imageBox}>
+							<Image
+								source={{ uri: firstImage }}
+								style={styles.actualImage}
+								resizeMode="cover"
+							/>
+							<TouchableOpacity style={styles.expandImgBtn}>
+								<Feather name="maximize-2" size={16} color={COLORS.slate700} />
+							</TouchableOpacity>
+						</View>
+					)}
+
+					{/* Badges */}
+					<View style={styles.badgeRow}>
+						<View style={styles.folderBadge}>
+							<Text style={styles.folderBadgeText}>📚 STUDY</Text>
+						</View>
+						<View style={styles.statusBadge}>
+							<Text style={styles.statusBadgeText}>PROCESSED</Text>
+						</View>
+					</View>
+
+					{/* Title */}
+					<Text style={styles.title}>{note?.title}</Text>
+
+					<View style={styles.divider} />
+
+					{/* Note Content (Rich Text Simulation) */}
+					<View style={styles.bodyContent}>
+						<Text style={styles.paragraph}>{note?.content}</Text>
+					</View>
+				</ScrollView>
+			)}
 
 			{/* Floating Edit Button */}
-			<View style={styles.fabContainer}>
-				<TouchableOpacity onPress={() => router.push("/note/edit")}>
-					<LinearGradient
-						colors={[COLORS.primary, COLORS.primaryEnd]}
-						style={styles.fabGradient}
+			{!isLoading && (
+				<View style={styles.fabContainer}>
+					<TouchableOpacity
+						onPress={() =>
+							router.push({ pathname: "/note/edit", params: { id: id } })
+						}
 					>
-						<Text style={styles.fabIcon}>✏️</Text>
-						<Text style={styles.fabText}>Edit Note</Text>
-					</LinearGradient>
-				</TouchableOpacity>
-			</View>
+						<LinearGradient
+							colors={[COLORS.primary, COLORS.primaryEnd]}
+							style={styles.fabGradient}
+						>
+							<Text style={styles.fabIcon}>✏️</Text>
+							<Text style={styles.fabText}>Edit Note</Text>
+						</LinearGradient>
+					</TouchableOpacity>
+				</View>
+			)}
 
 			{/* Tích hợp Modal */}
 			<SettingsModal
@@ -141,14 +187,11 @@ const styles = StyleSheet.create({
 	},
 	scrollContent: { padding: 24, paddingBottom: 100 }, // Padding bottom để không bị che bởi FAB
 	imageBox: {
-		height: 160,
+		height: 200,
 		backgroundColor: COLORS.slate100,
 		borderRadius: 24,
-		borderWidth: 1,
-		borderColor: COLORS.slate200,
-		alignItems: "center",
-		justifyContent: "center",
-		marginBottom: 24,
+		overflow: "hidden",
+		position: "relative",
 	},
 	cameraIcon: { fontSize: 32, marginBottom: 8 },
 	viewImageText: { fontSize: 12, fontWeight: "700", color: COLORS.slate400 },
@@ -235,4 +278,20 @@ const styles = StyleSheet.create({
 	},
 	fabIcon: { fontSize: 16 },
 	fabText: { color: COLORS.white, fontSize: 15, fontWeight: "700" },
+	actualImage: {
+		width: "100%",
+		height: "100%",
+		resizeMode: "cover",
+	},
+	expandImgBtn: {
+		position: "absolute",
+		top: 12,
+		right: 12,
+		width: 32,
+		height: 32,
+		backgroundColor: "rgba(255,255,255,0.8)",
+		borderRadius: 16,
+		alignItems: "center",
+		justifyContent: "center",
+	},
 });

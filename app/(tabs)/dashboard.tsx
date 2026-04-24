@@ -1,5 +1,5 @@
 // app/(tabs)/dashboard.tsx
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
 	View,
 	Text,
@@ -14,10 +14,47 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { COLORS } from "../../src/constants/theme";
 
+import { noteApi } from "../../src/api/noteApi";
+import { dashboardApi, DashboardMetrics } from "../../src/api/dashboardApi";
+import { Note } from "../../src/types/api.types";
+import { useFocusEffect } from "expo-router";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../../src/store";
+
 export default function DashboardScreen() {
 	const router = useRouter();
 	const { showToast } = useLocalSearchParams();
 	const slideAnim = useRef(new Animated.Value(150)).current;
+
+	const [notes, setNotes] = useState<Note[]>([]);
+	const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
+	const [loading, setLoading] = useState(true);
+	const { user } = useSelector((state: RootState) => state.auth);
+
+	const fetchData = async () => {
+		try {
+			setLoading(true);
+			// Gọi song song cả 2 API để tối ưu tốc độ
+			const [notesRes, metricsRes] = await Promise.all([
+				noteApi.getNotes({ limit: 5 }), // Lấy 5 note gần nhất
+				dashboardApi.getMetrics(),
+			]);
+
+			setNotes(notesRes.data?.notes || []);
+			setMetrics(metricsRes.data || null);
+		} catch (error) {
+			console.error("Lỗi tải Dashboard:", error);
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	// Tự động load lại dữ liệu mỗi khi người dùng quay lại tab Dashboard
+	useFocusEffect(
+		useCallback(() => {
+			fetchData();
+		}, []),
+	);
 
 	useEffect(() => {
 		if (showToast === "true") {
@@ -47,10 +84,15 @@ export default function DashboardScreen() {
 				<View style={styles.header}>
 					<View>
 						<Text style={styles.logoText}>Snapify</Text>
-						<Text style={styles.greeting}>Hello, John Doe</Text>
+						<Text style={styles.greeting}>Hello, {user?.displayName}</Text>
 					</View>
 					<View style={styles.avatar}>
-						<Text style={styles.avatarText}>JD</Text>
+						<Text
+							style={styles.avatarText}
+							onPress={() => router.push("/profile")}
+						>
+							{user?.displayName?.substring(0, 2).toUpperCase() || "JD"}
+						</Text>
 					</View>
 				</View>
 
@@ -104,35 +146,48 @@ export default function DashboardScreen() {
 				</View>
 
 				<View style={styles.notesList}>
-					{/* Note Item 1 (Có icon bên trái) */}
-					<TouchableOpacity style={styles.noteCard1}>
-						<View style={styles.noteIconBox1}>
-							<Text style={{ fontSize: 24 }}>📄</Text>
-						</View>
-						<View style={styles.noteContent1}>
-							<Text style={styles.noteTitle1}>Calculus_Lec04.pdf</Text>
-							<Text style={styles.noteSubtitle1}>
-								<Text style={{ color: COLORS.primary }}>📚 Study</Text> • Just
-								now
-							</Text>
-						</View>
-					</TouchableOpacity>
+					{notes?.map((note, index) => {
+						// Ghi chú đầu tiên (index === 0) sẽ dùng style Large
+						if (index === 0) {
+							return (
+								<TouchableOpacity
+									key={note.id}
+									style={styles.noteCardLarge}
+									onPress={() => router.push(`/note/${note.id}`)}
+								>
+									<View style={styles.noteHeaderLarge}>
+										<Text style={styles.noteTitleLarge}>{note.title}</Text>
+										<View style={styles.badge}>
+											<Text style={styles.badgeText}>{note.status}</Text>
+										</View>
+									</View>
+									{/* Giả sử content chứa nội dung trích xuất */}
+									<Text style={styles.noteSubtitle} numberOfLines={2}>
+										{note.content}
+									</Text>
+								</TouchableOpacity>
+							);
+						}
 
-					{/* Note Item 2 (Dạng thẻ to có Badge) */}
-					<TouchableOpacity style={styles.noteCard2}>
-						<View style={styles.noteHeader2}>
-							<Text style={styles.noteTitle2}>Q3 Marketing Strategy</Text>
-							<View style={styles.badge2}>
-								<Text style={styles.badgeText2}>PROCESSED</Text>
-							</View>
-						</View>
-						<View style={styles.noteFooter2}>
-							<Text style={styles.noteSubtitle2}>
-								Folder: Work • Oct 24, 2025
-							</Text>
-							<Feather name="more-vertical" size={20} color={COLORS.slate400} />
-						</View>
-					</TouchableOpacity>
+						// Các ghi chú còn lại dùng style bình thường
+						return (
+							<TouchableOpacity
+								key={note.id}
+								style={styles.noteCard}
+								onPress={() => router.push(`/note/${note.id}`)}
+							>
+								<View style={styles.noteIconBox}>
+									<Feather name="file-text" size={20} color={COLORS.primary} />
+								</View>
+								<View style={styles.noteContent}>
+									<Text style={styles.noteTitle}>{note.title}</Text>
+									<Text style={styles.noteSubtitle} numberOfLines={1}>
+										{note.content}
+									</Text>
+								</View>
+							</TouchableOpacity>
+						);
+					})}
 				</View>
 
 				{/* Khoảng trống dưới cùng */}
@@ -359,4 +414,86 @@ const styles = StyleSheet.create({
 		borderRadius: 12,
 	},
 	toastBtnText: { color: COLORS.white, fontSize: 14, fontWeight: "700" },
+	// Kiểu 1: Note đơn giản (có icon bên trái)
+	noteCard: {
+		flexDirection: "row",
+		alignItems: "center",
+		backgroundColor: COLORS.white,
+		borderRadius: 20,
+		padding: 16,
+		borderWidth: 1,
+		borderColor: COLORS.slate100,
+		shadowColor: COLORS.slate200,
+		shadowOffset: { width: 0, height: 4 },
+		shadowOpacity: 0.2,
+		shadowRadius: 8,
+		elevation: 2,
+	},
+	noteIconBox: {
+		width: 48,
+		height: 48,
+		backgroundColor: "#EEF2FF", // Màu nền Indigo nhạt
+		borderRadius: 12,
+		alignItems: "center",
+		justifyContent: "center",
+		marginRight: 16,
+	},
+	noteContent: {
+		flex: 1,
+	},
+	noteTitle: {
+		fontSize: 15,
+		fontWeight: "700",
+		color: COLORS.slate900,
+		marginBottom: 4,
+	},
+	noteSubtitle: {
+		fontSize: 12,
+		color: COLORS.slate500,
+		fontWeight: "500",
+	},
+
+	// Kiểu 2: Note chi tiết (Dạng Q3 Marketing Strategy)
+	noteCardLarge: {
+		backgroundColor: COLORS.white,
+		borderRadius: 24,
+		padding: 20,
+		borderWidth: 1,
+		borderColor: COLORS.slate100,
+		shadowColor: COLORS.slate200,
+		shadowOffset: { width: 0, height: 4 },
+		shadowOpacity: 0.2,
+		shadowRadius: 8,
+		elevation: 2,
+	},
+	noteHeaderLarge: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "flex-start",
+		marginBottom: 12,
+	},
+	noteTitleLarge: {
+		fontSize: 17,
+		fontWeight: "800",
+		color: COLORS.slate900,
+		flex: 1,
+		marginRight: 12,
+	},
+	badge: {
+		backgroundColor: "#D1FAE5", // Màu xanh lá nhạt cho PROCESSED
+		paddingHorizontal: 10,
+		paddingVertical: 4,
+		borderRadius: 6,
+	},
+	badgeText: {
+		fontSize: 10,
+		fontWeight: "800",
+		color: "#065F46",
+		textTransform: "uppercase",
+	},
+	noteFooterLarge: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
+	},
 });

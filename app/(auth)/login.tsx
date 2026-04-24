@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
 	View,
 	Text,
@@ -14,9 +14,55 @@ import { COLORS } from "../../src/constants/theme";
 import { Input } from "../../src/components/common/Input";
 import { Button } from "../../src/components/common/Button";
 
+import { Alert, ActivityIndicator } from "react-native";
+import * as SecureStore from "expo-secure-store";
+import { authApi } from "../../src/api/authApi";
+
+import { useDispatch } from "react-redux";
+import { setCredentials } from "../../src/store/slices/authSlice";
+
 export default function LoginScreen() {
 	const router = useRouter();
+	const [email, setEmail] = useState("");
+	const [password, setPassword] = useState("");
+	const [loading, setLoading] = useState(false);
+	const dispatch = useDispatch();
 
+	const handleLogin = async () => {
+		if (!email || !password) {
+			Alert.alert("Lỗi", "Vui lòng nhập đầy đủ thông tin.");
+			return;
+		}
+
+		try {
+			setLoading(true);
+			const response = await authApi.login({ email, password });
+
+			// API login trả về { status, message, data: { token, user } }
+			if (response.data?.token && response.data?.user) {
+				// 1. Lưu token vào bộ nhớ vật lý của máy
+				await SecureStore.setItemAsync("access_token", response.data.token);
+
+				// 2. LƯU THÔNG TIN VÀO REDUX STORE
+				dispatch(
+					setCredentials({
+						user: response.data.user,
+						token: response.data.token,
+					}),
+				);
+
+				// 3. Chuyển hướng
+				router.replace("/(tabs)/dashboard");
+			}
+		} catch (error: any) {
+			Alert.alert(
+				"Đăng nhập thất bại",
+				error.message || "Vui lòng kiểm tra lại tài khoản.",
+			);
+		} finally {
+			setLoading(false);
+		}
+	};
 	return (
 		<SafeAreaView style={styles.safeArea}>
 			<KeyboardAvoidingView
@@ -39,21 +85,28 @@ export default function LoginScreen() {
 					{/* Form */}
 					<Input
 						label="Email Address"
-						placeholder="hello@example.com"
-						keyboardType="email-address"
+						value={email}
+						onChangeText={setEmail}
 						autoCapitalize="none"
 					/>
-					<Input label="Password" placeholder="••••••••" isPassword />
+					<Input
+						label="Password"
+						value={password}
+						onChangeText={setPassword}
+						isPassword
+					/>
 
 					<TouchableOpacity style={styles.forgotPass}>
 						<Text style={styles.forgotPassText}>Forgot password?</Text>
 					</TouchableOpacity>
 
 					<Button
-						title="Log In"
-						onPress={() => console.log("Đăng nhập")}
-						style={{ marginTop: 8 }}
-					/>
+						title={loading ? "" : "Log In"}
+						onPress={handleLogin}
+						disabled={loading}
+					>
+						{loading && <ActivityIndicator color="white" />}
+					</Button>
 
 					{/* Divider */}
 					<View style={styles.dividerContainer}>

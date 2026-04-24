@@ -8,15 +8,43 @@ import {
 	TextInput,
 	KeyboardAvoidingView,
 	Platform,
+	Alert,
+	ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { COLORS } from "../../src/constants/theme";
 
+import { noteApi } from "../../src/api/noteApi";
+import { folderApi } from "../../src/api/folderApi";
+import { Folder } from "../../src/types/api.types";
+
 export default function NewNoteScreen() {
 	const router = useRouter();
-	const [title, setTitle] = useState("Untitled");
+	const [title, setTitle] = useState("");
 	const [content, setContent] = useState("");
+	const [isSaving, setIsSaving] = useState(false);
+
+	const handleSave = async () => {
+		if (!title.trim()) {
+			Alert.alert("Lỗi", "Vui lòng nhập tiêu đề ghi chú.");
+			return;
+		}
+		try {
+			setIsSaving(true);
+			await noteApi.createNote({
+				title,
+				content,
+				folderId: null, // Mặc định chưa gán thư mục (Unassigned)
+			});
+			// Tạo xong thì quay về trang trước đó
+			router.back();
+		} catch (error: any) {
+			Alert.alert("Lỗi lưu trữ", error.message || "Không thể tạo ghi chú");
+		} finally {
+			setIsSaving(false);
+		}
+	};
 
 	return (
 		<SafeAreaView style={styles.safeArea}>
@@ -30,10 +58,15 @@ export default function NewNoteScreen() {
 				</TouchableOpacity>
 				<Text style={styles.headerTitle}>New Note</Text>
 				<TouchableOpacity
-					onPress={() => router.back()}
+					onPress={handleSave}
 					style={styles.headerBtn}
+					disabled={isSaving}
 				>
-					<Text style={styles.saveText}>Save</Text>
+					{isSaving ? (
+						<ActivityIndicator size="small" color={COLORS.primary} />
+					) : (
+						<Text style={styles.saveText}>Save</Text>
+					)}
 				</TouchableOpacity>
 			</View>
 

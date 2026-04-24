@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
 	View,
 	Text,
@@ -14,8 +14,31 @@ import { COLORS } from "../../src/constants/theme";
 import { Input } from "../../src/components/common/Input";
 import { Button } from "../../src/components/common/Button";
 
+import { Alert, ActivityIndicator } from "react-native";
+import * as SecureStore from "expo-secure-store";
+import { authApi } from "../../src/api/authApi";
+
 export default function RegisterScreen() {
 	const router = useRouter();
+	const [email, setEmail] = useState("");
+	const [password, setPassword] = useState("");
+	const [loading, setLoading] = useState(false);
+	const [displayName, setDisplayName] = useState("");
+
+	const handleRegister = async () => {
+		try {
+			setLoading(true);
+			const response = await authApi.register({ email, password, displayName }); //
+
+			Alert.alert("Thành công", "Tài khoản của bạn đã được tạo.", [
+				{ text: "Đăng nhập ngay", onPress: () => router.back() },
+			]);
+		} catch (error: any) {
+			Alert.alert("Đăng ký lỗi", error.message || "Không thể tạo tài khoản.");
+		} finally {
+			setLoading(false);
+		}
+	};
 
 	return (
 		<SafeAreaView style={styles.safeArea}>
@@ -32,19 +55,35 @@ export default function RegisterScreen() {
 						<Text style={styles.subtitle}>Start your journey with Snapify</Text>
 					</View>
 
-					<Input label="Full Name" placeholder="John Doe" />
+					<Input
+						label="Full Name"
+						placeholder="John Doe"
+						value={displayName}
+						onChangeText={setDisplayName}
+					/>
 					<Input
 						label="Email Address"
 						placeholder="hello@example.com"
 						keyboardType="email-address"
+						value={email}
+						onChangeText={setEmail}
 					/>
-					<Input label="Password" placeholder="Min. 8 characters" isPassword />
+					<Input
+						label="Password"
+						placeholder="Min. 8 characters"
+						value={password}
+						onChangeText={setPassword}
+						isPassword
+					/>
 
 					<Button
 						title="Sign Up"
-						onPress={() => console.log("Đăng ký")}
+						onPress={handleRegister}
 						style={{ marginTop: 32 }}
-					/>
+						disabled={loading}
+					>
+						{loading && <ActivityIndicator color="white" />}
+					</Button>
 
 					<Text style={styles.termsText}>
 						By signing up, you agree to our{" "}

@@ -65,7 +65,7 @@ export default function TabLayout() {
 
 			{/* 3. Nút Camera Nổi (Floating Action Button) ở giữa */}
 			<Tabs.Screen
-				name="snap"
+				name="camera-button"
 				options={{
 					tabBarIcon: () => (
 						<View style={styles.cameraWrapper}>
@@ -82,7 +82,8 @@ export default function TabLayout() {
 				}}
 				listeners={() => ({
 					tabPress: (e) => {
-						e.preventDefault();
+						e.preventDefault(); // Chặn hành vi chuyển tab mặc định
+
 						router.push("/snap");
 					},
 				})}

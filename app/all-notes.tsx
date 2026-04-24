@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
 	View,
 	Text,
@@ -7,33 +7,82 @@ import {
 	TouchableOpacity,
 	TextInput,
 	ScrollView,
+	ActivityIndicator,
+	Alert,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { COLORS } from "../src/constants/theme";
+import { noteApi } from "../src/api/noteApi";
+import { Note, NoteStatus } from "../src/types/api.types";
 
 export default function AllNotesScreen() {
 	const router = useRouter();
 	const [activeStatus, setActiveStatus] = useState("All");
+	const [notes, setNotes] = useState<Note[]>([]);
+	const [isLoading, setIsLoading] = useState(true);
 
-	const mockNotes = [
-		{
-			id: "1",
-			title: "Calculus Lecture 04",
-			preview:
-				"Formulas for derivatives and integration by parts. Review before midterm...",
-			date: "Oct 20, 2025",
-			size: "2.4 MB",
-		},
-		{
-			id: "2",
-			title: "Physics Chapter 2",
-			preview:
-				"Newton’s laws of motion. Key equations for kinematics in two dimensions...",
-			date: "Oct 18, 2025",
-			size: "1.8 MB",
-		},
-	];
+	// Lấy dữ liệu mỗi khi màn hình này được focus
+	useFocusEffect(
+		useCallback(() => {
+			fetchNotes(activeStatus);
+		}, [activeStatus]),
+	);
+
+	const fetchNotes = async (statusFilter: string) => {
+		try {
+			setIsLoading(true);
+			// Map trạng thái UI sang trạng thái API (PENDING, ACTIONED)
+			let statusParam: NoteStatus | undefined = undefined;
+			if (statusFilter === "Processed") statusParam = "ACTIONED";
+			if (statusFilter === "Pending") statusParam = "PENDING";
+
+			const response = await noteApi.getNotes({ status: statusParam });
+
+			setNotes(response.data?.notes || []);
+		} catch (error) {
+			console.log("Lỗi fetch notes:", error);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	// const mockNotes = [
+	// 	{
+	// 		id: "1",
+	// 		title: "Calculus Lecture 04",
+	// 		preview:
+	// 			"Formulas for derivatives and integration by parts. Review before midterm...",
+	// 		date: "Oct 20, 2025",
+	// 		size: "2.4 MB",
+	// 	},
+	// 	{
+	// 		id: "2",
+	// 		title: "Physics Chapter 2",
+	// 		preview:
+	// 			"Newton’s laws of motion. Key equations for kinematics in two dimensions...",
+	// 		date: "Oct 18, 2025",
+	// 		size: "1.8 MB",
+	// 	},
+	// ];
+	const confirmDelete = (noteId: string, noteTitle: string) => {
+		Alert.alert("Xóa ghi chú", `Bạn có chắc chắn muốn xóa "${noteTitle}"?`, [
+			{ text: "Hủy", style: "cancel" },
+			{
+				text: "Xóa",
+				style: "destructive", // style này làm nút chuyển màu đỏ trên iOS
+				onPress: async () => {
+					try {
+						await noteApi.deleteNote(noteId);
+						// Xóa xong thì lọc bỏ note đó khỏi danh sách UI ngay lập tức
+						setNotes((prevNotes) => prevNotes.filter((n) => n.id !== noteId));
+					} catch (error) {
+						Alert.alert("Lỗi", "Không thể xóa ghi chú này.");
+					}
+				},
+			},
+		]);
+	};
 
 	return (
 		<SafeAreaView style={styles.safeArea}>
@@ -107,27 +156,40 @@ export default function AllNotesScreen() {
 
 				{/* Notes List */}
 				<View style={styles.listContainer}>
-					{mockNotes.map((note) => (
-						<TouchableOpacity
-							key={note.id}
-							style={styles.noteCard}
-							onPress={() => router.push(`/note/${note.id}`)}
+					{isLoading ? (
+						<ActivityIndicator size="large" color={COLORS.primary} />
+					) : notes.length === 0 ? (
+						<Text
+							style={{
+								textAlign: "center",
+								color: COLORS.slate500,
+								marginTop: 20,
+							}}
 						>
-							<View style={styles.noteHeader}>
-								<Text style={styles.noteTitle}>{note.title}</Text>
-								<View style={styles.badge}>
-									<Text style={styles.badgeText}>PROCESSED</Text>
+							Không có ghi chú nào.
+						</Text>
+					) : (
+						notes.map((note) => (
+							<TouchableOpacity
+								key={note.id}
+								style={styles.noteCard}
+								onPress={() => router.push(`/note/${note.id}`)}
+								onLongPress={() => confirmDelete(note.id, note.title)}
+							>
+								<View style={styles.noteHeader}>
+									<Text style={styles.noteTitle} numberOfLines={1}>
+										{note.title}
+									</Text>
+									<View style={styles.badge}>
+										<Text style={styles.badgeText}>{note.status}</Text>
+									</View>
 								</View>
-							</View>
-							<Text style={styles.notePreview} numberOfLines={2}>
-								{note.preview}
-							</Text>
-							<View style={styles.noteFooter}>
-								<Text style={styles.noteMeta}>{note.date}</Text>
-								<Text style={styles.noteMetaBold}>{note.size}</Text>
-							</View>
-						</TouchableOpacity>
-					))}
+								<Text style={styles.notePreview} numberOfLines={2}>
+									{note.content}
+								</Text>
+							</TouchableOpacity>
+						))
+					)}
 				</View>
 			</ScrollView>
 
