@@ -1,0 +1,212 @@
+import React from "react";
+import {
+	View,
+	Text,
+	StyleSheet,
+	SafeAreaView,
+	TouchableOpacity,
+	ScrollView,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { Feather } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { COLORS } from "../src/constants/theme";
+
+export default function BatchPreviewScreen() {
+	const router = useRouter();
+
+	return (
+		<SafeAreaView style={styles.safeArea}>
+			<View style={styles.header}>
+				<TouchableOpacity onPress={() => router.back()}>
+					<Feather name="arrow-left" size={24} color={COLORS.slate800} />
+				</TouchableOpacity>
+				<Text style={styles.headerTitle}>Batch Preview</Text>
+				<TouchableOpacity style={styles.editBtn}>
+					<Text style={styles.editBtnText}>Edit</Text>
+				</TouchableOpacity>
+			</View>
+
+			<ScrollView contentContainerStyle={styles.gridContainer}>
+				{/* Page 1 */}
+				<View style={styles.pageCard}>
+					<LinearGradient
+						colors={[COLORS.primary, COLORS.primaryEnd]}
+						style={styles.pageNumber}
+					>
+						<Text style={styles.pageNumberText}>1</Text>
+					</LinearGradient>
+					<Text style={styles.docTitle}>Derivatives</Text>
+					<Text style={styles.docPreview} numberOfLines={3}>
+						The fundamental theorem of calculus links differentiation with
+						integration.
+					</Text>
+				</View>
+
+				{/* Page 2 */}
+				<View style={styles.pageCard}>
+					<LinearGradient
+						colors={[COLORS.primary, COLORS.primaryEnd]}
+						style={styles.pageNumber}
+					>
+						<Text style={styles.pageNumberText}>2</Text>
+					</LinearGradient>
+					<Text style={styles.docTitle}>Rules</Text>
+					<Text style={styles.docPreview}>
+						• Power Rule{"\n"}• Product Rule{"\n"}• Chain Rule
+					</Text>
+				</View>
+
+				{/* Add Page Button */}
+				<TouchableOpacity style={styles.addPageCard}>
+					<Text style={styles.addPagePlus}>+</Text>
+					<Text style={styles.addPageText}>Add Page</Text>
+				</TouchableOpacity>
+			</ScrollView>
+
+			{/* Bottom Actions */}
+			<View style={styles.bottomBar}>
+				<View style={styles.rowActions}>
+					<TouchableOpacity style={styles.secondaryBtn}>
+						<Text style={styles.secondaryBtnText}>🔃 Reorder</Text>
+					</TouchableOpacity>
+					<TouchableOpacity style={styles.dangerBtn}>
+						<Text style={styles.dangerBtnText}>🗑️ Delete</Text>
+					</TouchableOpacity>
+				</View>
+				<TouchableOpacity
+					style={styles.primaryBtn}
+					onPress={() => router.push("/pdf-preview")}
+				>
+					<LinearGradient
+						colors={[COLORS.primary, COLORS.primaryEnd]}
+						style={styles.primaryBtnGradient}
+					>
+						<Text style={styles.primaryBtnText}>Generate PDF</Text>
+					</LinearGradient>
+				</TouchableOpacity>
+			</View>
+		</SafeAreaView>
+	);
+}
+
+const styles = StyleSheet.create({
+	safeArea: { flex: 1, backgroundColor: COLORS.slate50 },
+	header: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
+		height: 60,
+		paddingHorizontal: 24,
+		backgroundColor: COLORS.white,
+		borderBottomWidth: 1,
+		borderBottomColor: COLORS.slate200,
+	},
+	headerTitle: { fontSize: 18, fontWeight: "700", color: COLORS.slate900 },
+	editBtn: {
+		backgroundColor: "#EEF2FF",
+		paddingHorizontal: 12,
+		paddingVertical: 6,
+		borderRadius: 8,
+	},
+	editBtnText: { color: COLORS.primary, fontWeight: "600", fontSize: 14 },
+	gridContainer: {
+		flexDirection: "row",
+		flexWrap: "wrap",
+		gap: 16,
+		padding: 24,
+	},
+	pageCard: {
+		width: "47%",
+		aspectRatio: 0.75,
+		backgroundColor: COLORS.white,
+		borderRadius: 16,
+		padding: 12,
+		borderWidth: 1,
+		borderColor: COLORS.slate200,
+		shadowColor: COLORS.slate200,
+		shadowOffset: { width: 0, height: 2 },
+		shadowOpacity: 0.5,
+		shadowRadius: 4,
+		elevation: 2,
+	},
+	pageNumber: {
+		position: "absolute",
+		top: -8,
+		right: -8,
+		width: 28,
+		height: 28,
+		borderRadius: 14,
+		alignItems: "center",
+		justifyContent: "center",
+		borderWidth: 2,
+		borderColor: COLORS.white,
+		zIndex: 10,
+	},
+	pageNumberText: { color: COLORS.white, fontSize: 12, fontWeight: "bold" },
+	docTitle: {
+		fontSize: 14,
+		fontWeight: "700",
+		color: COLORS.slate900,
+		borderBottomWidth: 1,
+		borderBottomColor: COLORS.slate100,
+		paddingBottom: 4,
+		marginBottom: 8,
+	},
+	docPreview: { fontSize: 10, color: COLORS.slate600, lineHeight: 16 },
+	addPageCard: {
+		width: "47%",
+		aspectRatio: 0.75,
+		backgroundColor: "#EEF2FF",
+		borderRadius: 16,
+		borderWidth: 2,
+		borderStyle: "dashed",
+		borderColor: "#C7D2FE",
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	addPagePlus: {
+		fontSize: 36,
+		fontWeight: "300",
+		color: COLORS.primary,
+		marginBottom: 4,
+	},
+	addPageText: { fontSize: 12, fontWeight: "700", color: COLORS.primary },
+	bottomBar: {
+		backgroundColor: COLORS.white,
+		padding: 24,
+		borderTopWidth: 1,
+		borderTopColor: COLORS.slate200,
+		gap: 16,
+	},
+	rowActions: { flexDirection: "row", gap: 16 },
+	secondaryBtn: {
+		flex: 1,
+		paddingVertical: 12,
+		borderWidth: 2,
+		borderColor: COLORS.slate200,
+		borderRadius: 12,
+		alignItems: "center",
+	},
+	secondaryBtnText: { color: COLORS.slate700, fontWeight: "600", fontSize: 14 },
+	dangerBtn: {
+		flex: 1,
+		paddingVertical: 12,
+		backgroundColor: "#FEF2F2",
+		borderWidth: 1,
+		borderColor: "#FEE2E2",
+		borderRadius: 12,
+		alignItems: "center",
+	},
+	dangerBtnText: { color: "#DC2626", fontWeight: "600", fontSize: 14 },
+	primaryBtn: {
+		borderRadius: 16,
+		overflow: "hidden",
+		shadowColor: COLORS.primary,
+		shadowOffset: { width: 0, height: 4 },
+		shadowOpacity: 0.3,
+		shadowRadius: 10,
+	},
+	primaryBtnGradient: { paddingVertical: 16, alignItems: "center" },
+	primaryBtnText: { color: COLORS.white, fontSize: 16, fontWeight: "700" },
+});

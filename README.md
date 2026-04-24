@@ -1,0 +1,1 @@
+# snapify-frontend-v1
