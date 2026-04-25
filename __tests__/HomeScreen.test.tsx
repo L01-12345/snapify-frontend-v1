@@ -1,48 +1,111 @@
 import React from "react";
-import { render, fireEvent } from "@testing-library/react-native";
+import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import DashboardScreen from "../app/(tabs)/dashboard";
-import { useRouter, useLocalSearchParams } from "expo-router";
 
-// Mock các thư viện
+// --- 1. MOCK EXPO ROUTER ---
+const mockPush = jest.fn();
 jest.mock("expo-router", () => ({
-	useRouter: jest.fn(),
-	useLocalSearchParams: jest.fn(),
-	useFocusEffect: jest.fn(),
+	useRouter: jest.fn(() => ({ push: mockPush })),
+	useLocalSearchParams: jest.fn(() => ({ showToast: "false" })),
+	// THAY ĐỔI Ở ĐÂY: Dùng require('react') trực tiếp để lách luật Jest
+	useFocusEffect: jest.fn((cb) => require("react").useEffect(cb, [])),
 }));
 
+// --- 2. MOCK VECTOR ICONS ---
 jest.mock("@expo/vector-icons", () => ({
 	Feather: "Feather",
 	Ionicons: "Ionicons",
 }));
 
-describe("HomeScreen (Dashboard)", () => {
-	const mockPush = jest.fn();
+// --- 3. MOCK REDUX ---
+jest.mock("react-redux", () => ({
+	useDispatch: () => jest.fn(),
+	useSelector: jest.fn((callback) => {
+		const fakeState = {
+			auth: {
+				user: { id: "1", displayName: "John Doe", email: "test@example.com" },
+			},
+		};
+		return callback(fakeState);
+	}),
+}));
 
+// --- 4. MOCK API CỦA DASHBOARD ---
+jest.mock("../src/api/noteApi", () => ({
+	noteApi: {
+		getNotes: jest.fn().mockResolvedValue({
+			data: {
+				notes: [
+					{
+						id: "note-123",
+						title: "Calculus Formula",
+						content: "Derivative definition...",
+						status: "PROCESSED",
+					},
+				],
+			},
+		}),
+	},
+}));
+
+jest.mock("../src/api/dashboardApi", () => ({
+	dashboardApi: {
+		getMetrics: jest.fn().mockResolvedValue({
+			data: { totalNotes: 10, studyNotes: 5 },
+		}),
+	},
+}));
+
+describe("HomeScreen (Dashboard) - Deep Tests", () => {
 	beforeEach(() => {
-		(useRouter as jest.Mock).mockReturnValue({ push: mockPush });
-		(useLocalSearchParams as jest.Mock).mockReturnValue({ showToast: "false" });
+		jest.clearAllMocks();
 	});
 
-	// Test Case 1: Render thành công không crash
-	it("renders safely without crashing", () => {
+	// Kịch bản 1: Render các text tĩnh và dữ liệu Redux (Tên User)
+	it("renders greeting and logo correctly", async () => {
+		const { getByText, getByPlaceholderText } = render(<DashboardScreen />);
+
+		// FIX LỖI ACT(...): Bọc trong waitFor để Jest chờ dữ liệu API load xong
+		await waitFor(() => {
+			expect(getByText("Snapify")).toBeTruthy();
+			expect(getByText("Hello, John Doe")).toBeTruthy();
+			expect(getByText("JO")).toBeTruthy();
+			expect(getByPlaceholderText("Search notes, folders...")).toBeTruthy();
+		});
+	});
+
+	// Kịch bản 2: Render dữ liệu từ API (Ghi chú gần đây)
+	it("fetches and renders recent notes from API", async () => {
 		const { getByText } = render(<DashboardScreen />);
-		// Kiểm tra một text chắc chắn có trên Dashboard của bạn
-		expect(getByText("Đang tải ghi chú...")).toBeTruthy(); // Lúc loading
+
+		await waitFor(() => {
+			expect(getByText("Calculus Formula")).toBeTruthy();
+			expect(getByText("PROCESSED")).toBeTruthy();
+		});
 	});
 
-	// Test Case 2: Kiểm tra các thành phần UI (Header)
-	it("renders the header title correctly", () => {
+	// Kịch bản 3: Tương tác chuyển trang (Navigation)
+	it("navigates to specific routes when elements are pressed", async () => {
 		const { getByText } = render(<DashboardScreen />);
-		// Giả sử sau khi load xong có chữ "Ghi chú của tôi" hoặc tương tự
-		// expect(getByText('Ghi chú của tôi')).toBeTruthy();
-	});
 
-	// Test Case 3: Nút bấm (Button Press) hoạt động
-	it("handles button press to navigate or act", () => {
-		const { getByTestId } = render(<DashboardScreen />);
-		// Thêm testID="add-note-btn" vào nút bấm trên màn hình của bạn
-		// const button = getByTestId('add-note-btn');
-		// fireEvent.press(button);
-		// expect(mockPush).toHaveBeenCalled();
+		// Đợi API load xong giao diện rồi mới tiến hành bấm
+		await waitFor(() => {
+			expect(getByText("View All")).toBeTruthy();
+		});
+
+		// Bấm vào nút "View All"
+		const viewAllBtn = getByText("View All");
+		fireEvent.press(viewAllBtn);
+		expect(mockPush).toHaveBeenCalledWith("/all-notes");
+
+		// Bấm vào Avatar
+		const avatarBtn = getByText("JO");
+		fireEvent.press(avatarBtn);
+		expect(mockPush).toHaveBeenCalledWith("/profile");
+
+		// Bấm vào Ghi chú
+		const noteCard = getByText("Calculus Formula");
+		fireEvent.press(noteCard);
+		expect(mockPush).toHaveBeenCalledWith("/note/note-123");
 	});
 });

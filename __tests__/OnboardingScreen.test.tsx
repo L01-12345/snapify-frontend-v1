@@ -1,39 +1,67 @@
 import React from "react";
 import { render, fireEvent } from "@testing-library/react-native";
-import OnboardingScreen from "../app/onboarding"; // Trỏ đúng đường dẫn file của bạn
+import OnboardingScreen from "../app/onboarding";
 import { useRouter } from "expo-router";
 
-// Mock Expo Router
-jest.mock("expo-router", () => ({
-	useRouter: jest.fn(),
+// --- MOCK CÁC THÀNH PHẦN NATIVE ---
+jest.mock("@expo/vector-icons", () => ({
+	Feather: "Feather",
 }));
 
-describe("OnboardingScreen", () => {
-	const mockReplace = jest.fn();
+jest.mock("expo-linear-gradient", () => ({
+	LinearGradient: "LinearGradient",
+}));
 
+// --- MOCK EXPO ROUTER ---
+const mockReplace = jest.fn();
+jest.mock("expo-router", () => ({
+	useRouter: jest.fn(() => ({ replace: mockReplace })),
+}));
+
+describe("OnboardingScreen - Deep Tests", () => {
 	beforeEach(() => {
-		(useRouter as jest.Mock).mockReturnValue({ replace: mockReplace });
+		jest.clearAllMocks();
 	});
 
-	// Test Case 1: Render không lỗi
+	// Kịch bản 1: Đảm bảo giao diện render đầy đủ (Không crash)
 	it("renders correctly without crashing", () => {
-		const { getByText } = render(<OnboardingScreen />);
-		expect(getByText("Snap it...\nthen lose it?")).toBeTruthy();
+		const { toJSON } = render(<OnboardingScreen />);
+		expect(toJSON()).toBeDefined();
 	});
 
-	// Test Case 2: Nút Skip hoạt động và gọi hàm router.replace
+	// Kịch bản 2: Render chính xác Text của Slide đầu tiên
+	it("renders the first slide texts correctly", () => {
+		const { getByText } = render(<OnboardingScreen />);
+
+		// Tìm chính xác Title của slide 1
+		expect(getByText("Snap it...\nthen lose it?")).toBeTruthy();
+
+		// Tìm chính xác Subtitle của slide 1
+		expect(
+			getByText(
+				"You take hundreds of photos of lecture slides, whiteboards, and documents, but can never find them when needed.",
+			),
+		).toBeTruthy();
+	});
+
+	// Kịch bản 3: Tương tác với nút Skip
 	it("navigates to login when Skip is pressed", () => {
 		const { getByText } = render(<OnboardingScreen />);
-		const skipButton = getByText("Skip");
 
+		// Tìm nút Skip và giả lập thao tác bấm
+		const skipButton = getByText("Skip");
 		fireEvent.press(skipButton);
+
+		// Kiểm tra xem hàm router.replace có được gọi với đúng đường dẫn không
 		expect(mockReplace).toHaveBeenCalledWith("/(auth)/login");
 	});
 
-	// Test Case 3: Chứa danh sách FlatList để swipe
-	it("renders the FlatList for slides", () => {
-		const { getByTestId } = render(<OnboardingScreen />);
-		// Lưu ý: Trong file onboarding.tsx, bạn có thể thêm testID="onboarding-list" vào thẻ FlatList để test dễ hơn
-		// expect(getByTestId('onboarding-list')).toBeTruthy();
+	// Kịch bản 4: Render Button Get Started (Của slide cuối)
+	it("renders Get Started button correctly", () => {
+		const { getByText } = render(<OnboardingScreen />);
+
+		// Dù nằm ở slide cuối (trong FlatList), Jest vẫn render Text này ra DOM ảo
+		expect(getByText("Ready to\nNote Smarter?")).toBeTruthy();
+		expect(getByText("Get Started")).toBeTruthy();
 	});
 });
