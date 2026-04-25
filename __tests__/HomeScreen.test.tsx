@@ -65,7 +65,6 @@ describe("HomeScreen (Dashboard) - Deep Tests", () => {
 	it("renders greeting and logo correctly", async () => {
 		const { getByText, getByPlaceholderText } = render(<DashboardScreen />);
 
-		// FIX LỖI ACT(...): Bọc trong waitFor để Jest chờ dữ liệu API load xong
 		await waitFor(() => {
 			expect(getByText("Snapify")).toBeTruthy();
 			expect(getByText("Hello, John Doe")).toBeTruthy();
