@@ -12,12 +12,12 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # 👈 Đã nâng cấp lên v4
         with:
-          fetch-depth: 0 # Bắt buộc cho SonarCloud
+          fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4 # 👈 Đã nâng cấp lên v4
         with:
           node-version: "18"
           cache: "npm"
@@ -28,16 +28,14 @@ jobs:
       - name: Run Jest Tests with Coverage
         run: npm run test:coverage
 
-      # Artifact theo yêu cầu: Chứa file HTML
       - name: Upload Test Report Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-report
-          path: coverage/lcov-report/ # Thư mục này chứa index.html do Jest tạo ra
+          path: coverage/lcov-report/
 
-      # SonarCloud Scan
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Mặc định có sẵn
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }} # Secret bạn vừa tạo
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
