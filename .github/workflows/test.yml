@@ -1,0 +1,43 @@
+name: React Native Tests & SonarCloud
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+
+jobs:
+  test-and-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Bắt buộc cho SonarCloud
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci || npm install
+
+      - name: Run Jest Tests with Coverage
+        run: npm run test:coverage
+
+      # Artifact theo yêu cầu: Chứa file HTML
+      - name: Upload Test Report Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-report
+          path: coverage/lcov-report/ # Thư mục này chứa index.html do Jest tạo ra
+
+      # SonarCloud Scan
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Mặc định có sẵn
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }} # Secret bạn vừa tạo
