@@ -12,18 +12,18 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4 # 👈 Đã nâng cấp lên v4
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4 # 👈 Đã nâng cấp lên v4
+        uses: actions/setup-node@v4
         with:
           node-version: "18"
           cache: "npm"
 
       - name: Install Dependencies
-        run: npm ci || npm install
+        run: npm ci || npm install --legacy-peer-deps
 
       - name: Run Jest Tests with Coverage
         run: npm run test:coverage
