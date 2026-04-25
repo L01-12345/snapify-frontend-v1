@@ -1,6 +1,6 @@
 # Snapify - Mobile App
 
-[![Test Workflow](https://github.com/ttkien2004/snapify-frontend-v1/actions/workflows/test.yml/badge.svg)](https://github.com/ttkien2004/snapify-frontend-v1/actions/workflows/test.yml)
+[![Test Workflow](https://github.com/L01-12345/snapify-frontend-v1/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/L01-12345/snapify-frontend-v1/actions/workflows/test.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=L01-12345_snapify-frontend-v1&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=L01-12345_snapify-frontend-v1)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=L01-12345_snapify-frontend-v1&metric=coverage)](https://sonarcloud.io/summary/new_code?id=L01-12345_snapify-frontend-v1)
 
