@@ -56,7 +56,10 @@ export default function OcrProcessingScreen() {
 				router.replace(`/note/${newNote.id}`);
 			} catch (error: any) {
 				console.log("OCR Error:", error);
-				Alert.alert("Lỗi xử lý", "Không thể trích xuất văn bản từ ảnh.");
+				Alert.alert(
+					"Processing Error",
+					"Unable to extract text from the image.",
+				);
 				// Hoặc router.replace("/ocr-error"); nếu bạn có màn hình lỗi riêng
 				router.back();
 			}

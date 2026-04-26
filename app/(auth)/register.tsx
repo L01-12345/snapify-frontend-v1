@@ -30,11 +30,14 @@ export default function RegisterScreen() {
 			setLoading(true);
 			const response = await authApi.register({ email, password, displayName }); //
 
-			Alert.alert("Thành công", "Tài khoản của bạn đã được tạo.", [
-				{ text: "Đăng nhập ngay", onPress: () => router.back() },
+			Alert.alert("Success", "Your account has been created.", [
+				{ text: "Log in now", onPress: () => router.back() },
 			]);
 		} catch (error: any) {
-			Alert.alert("Đăng ký lỗi", error.message || "Không thể tạo tài khoản.");
+			Alert.alert(
+				"Registration Error",
+				error.message || "Unable to create account.",
+			);
 		} finally {
 			setLoading(false);
 		}

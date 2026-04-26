@@ -50,7 +50,7 @@ class NoteApi {
 		const newNote = snapRes.data;
 
 		if (!newNote || !newNote.id) {
-			throw new Error("Không thể tạo ghi chú từ ảnh.");
+			throw new Error("Unable to create a note from the image.");
 		}
 
 		// Bước 2: Gọi AI tự động phân loại dựa trên ID vừa tạo

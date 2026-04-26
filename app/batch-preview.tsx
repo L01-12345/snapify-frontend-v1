@@ -6,11 +6,13 @@ import {
 	SafeAreaView,
 	TouchableOpacity,
 	ScrollView,
+	Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "../src/constants/theme";
+import { useLocalSearchParams } from "expo-router";
 
 // import * as ImagePicker from "expo-image-picker";
 // import * as FileSystem from "expo-file-system";
@@ -19,7 +21,8 @@ import { batchApi } from "../src/api/batchApi";
 
 export default function BatchPreviewScreen() {
 	const router = useRouter();
-
+	const { images } = useLocalSearchParams();
+	const imageUris: string[] = images ? JSON.parse(images as string) : [];
 	return (
 		<SafeAreaView style={styles.safeArea}>
 			<View style={styles.header}>
@@ -33,37 +36,28 @@ export default function BatchPreviewScreen() {
 			</View>
 
 			<ScrollView contentContainerStyle={styles.gridContainer}>
-				{/* Page 1 */}
-				<View style={styles.pageCard}>
-					<LinearGradient
-						colors={[COLORS.primary, COLORS.primaryEnd]}
-						style={styles.pageNumber}
-					>
-						<Text style={styles.pageNumberText}>1</Text>
-					</LinearGradient>
-					<Text style={styles.docTitle}>Derivatives</Text>
-					<Text style={styles.docPreview} numberOfLines={3}>
-						The fundamental theorem of calculus links differentiation with
-						integration.
-					</Text>
-				</View>
-
-				{/* Page 2 */}
-				<View style={styles.pageCard}>
-					<LinearGradient
-						colors={[COLORS.primary, COLORS.primaryEnd]}
-						style={styles.pageNumber}
-					>
-						<Text style={styles.pageNumberText}>2</Text>
-					</LinearGradient>
-					<Text style={styles.docTitle}>Rules</Text>
-					<Text style={styles.docPreview}>
-						• Power Rule{"\n"}• Product Rule{"\n"}• Chain Rule
-					</Text>
-				</View>
+				{imageUris.map((uri, index) => (
+					<View key={index} style={styles.pageCard}>
+						<LinearGradient
+							colors={[COLORS.primary, COLORS.primaryEnd]}
+							style={styles.pageNumber}
+						>
+							<Text style={styles.pageNumberText}>{index + 1}</Text>
+						</LinearGradient>
+						{/* Hiển thị ảnh thay vì Text giả */}
+						<Image
+							source={{ uri }}
+							style={{ width: "100%", height: "100%", borderRadius: 8 }}
+							resizeMode="cover"
+						/>
+					</View>
+				))}
 
 				{/* Add Page Button */}
-				<TouchableOpacity style={styles.addPageCard}>
+				<TouchableOpacity
+					style={styles.addPageCard}
+					onPress={() => router.back()}
+				>
 					<Text style={styles.addPagePlus}>+</Text>
 					<Text style={styles.addPageText}>Add Page</Text>
 				</TouchableOpacity>
@@ -81,7 +75,12 @@ export default function BatchPreviewScreen() {
 				</View>
 				<TouchableOpacity
 					style={styles.primaryBtn}
-					onPress={() => router.push("/pdf-preview")}
+					onPress={() =>
+						router.push({
+							pathname: "/pdf-preview",
+							params: { images: JSON.stringify(imageUris) },
+						})
+					}
 				>
 					<LinearGradient
 						colors={[COLORS.primary, COLORS.primaryEnd]}

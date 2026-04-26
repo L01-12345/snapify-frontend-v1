@@ -66,22 +66,26 @@ export default function AllNotesScreen() {
 	// 	},
 	// ];
 	const confirmDelete = (noteId: string, noteTitle: string) => {
-		Alert.alert("Xóa ghi chú", `Bạn có chắc chắn muốn xóa "${noteTitle}"?`, [
-			{ text: "Hủy", style: "cancel" },
-			{
-				text: "Xóa",
-				style: "destructive", // style này làm nút chuyển màu đỏ trên iOS
-				onPress: async () => {
-					try {
-						await noteApi.deleteNote(noteId);
-						// Xóa xong thì lọc bỏ note đó khỏi danh sách UI ngay lập tức
-						setNotes((prevNotes) => prevNotes.filter((n) => n.id !== noteId));
-					} catch (error) {
-						Alert.alert("Lỗi", "Không thể xóa ghi chú này.");
-					}
+		Alert.alert(
+			"Delete Note",
+			`Are you sure you want to delete "${noteTitle}"?`,
+			[
+				{ text: "Cancel", style: "cancel" },
+				{
+					text: "Delete",
+					style: "destructive", // style này làm nút chuyển màu đỏ trên iOS
+					onPress: async () => {
+						try {
+							await noteApi.deleteNote(noteId);
+							// Xóa xong thì lọc bỏ note đó khỏi danh sách UI ngay lập tức
+							setNotes((prevNotes) => prevNotes.filter((n) => n.id !== noteId));
+						} catch (error) {
+							Alert.alert("Error", "Unable to delete this note.");
+						}
+					},
 				},
-			},
-		]);
+			],
+		);
 	};
 
 	return (

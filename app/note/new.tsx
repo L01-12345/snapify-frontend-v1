@@ -27,7 +27,7 @@ export default function NewNoteScreen() {
 
 	const handleSave = async () => {
 		if (!title.trim()) {
-			Alert.alert("Lỗi", "Vui lòng nhập tiêu đề ghi chú.");
+			Alert.alert("Error", "Please enter a note title.");
 			return;
 		}
 		try {
@@ -40,7 +40,7 @@ export default function NewNoteScreen() {
 			// Tạo xong thì quay về trang trước đó
 			router.back();
 		} catch (error: any) {
-			Alert.alert("Lỗi lưu trữ", error.message || "Không thể tạo ghi chú");
+			Alert.alert("Save Error", error.message || "Unable to create note.");
 		} finally {
 			setIsSaving(false);
 		}

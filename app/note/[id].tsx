@@ -38,7 +38,7 @@ export default function NoteDetailScreen() {
 				const response = await noteApi.getNoteById(id);
 				setNote(response.data || null);
 			} catch (error) {
-				Alert.alert("Lỗi", "Không tìm thấy ghi chú.");
+				Alert.alert("Error", "Note not found.");
 				router.back();
 			} finally {
 				setIsLoading(false);
@@ -53,10 +53,10 @@ export default function NoteDetailScreen() {
 	}, [id]);
 
 	const handleDelete = () => {
-		Alert.alert("Xóa ghi chú", "Bạn có chắc muốn xóa ghi chú này?", [
-			{ text: "Hủy", style: "cancel" },
+		Alert.alert("Delete Note", "Are you sure you want to delete this note?", [
+			{ text: "Cancel", style: "cancel" },
 			{
-				text: "Xóa",
+				text: "Delete",
 				style: "destructive",
 				onPress: async () => {
 					await noteApi.deleteNote(id);

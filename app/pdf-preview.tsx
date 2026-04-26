@@ -1,3 +1,4 @@
+// app/pdf-preview.tsx
 import React, { useState } from "react";
 import {
 	View,
@@ -7,28 +8,67 @@ import {
 	TouchableOpacity,
 	TextInput,
 	ScrollView,
+	Image,
+	ActivityIndicator,
+	Alert,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { COLORS } from "../src/constants/theme";
 
+// Import API
+import { batchApi } from "../src/api/batchApi";
+
 export default function PdfPreviewScreen() {
 	const router = useRouter();
-	const [fileName, setFileName] = useState("Calculus_Lec04.pdf");
+	const { images } = useLocalSearchParams();
 
-	const handleSave = () => {
-		// Điều hướng về tab dashboard và gửi parameter showToast
-		router.replace("/(tabs)/dashboard?showToast=true");
+	const [fileName, setFileName] = useState("Scanned_Document.pdf");
+	const [isLoading, setIsLoading] = useState(false);
+
+	// Parse mảng URI hình ảnh được truyền từ màn hình Batch Preview
+	const imageUris: string[] = images ? JSON.parse(images as string) : [];
+
+	const handleSave = async () => {
+		if (imageUris.length === 0) {
+			Alert.alert("Error", "No images available to create a PDF.");
+			return;
+		}
+
+		try {
+			setIsLoading(true);
+
+			// Chuẩn bị payload theo đúng format mà batchApi yêu cầu
+			const payload = {
+				title: fileName,
+				images: imageUris.map((uri, index) => ({
+					uri: uri,
+					name: `page_${index + 1}.jpg`,
+					type: "image/jpeg",
+				})),
+			};
+
+			// Gọi API đẩy dữ liệu lên Backend
+			await batchApi.scanBatch(payload);
+
+			// Thành công -> Điều hướng về tab dashboard và gửi parameter showToast
+			router.replace("/(tabs)/dashboard?showToast=true");
+		} catch (error) {
+			console.error("Error creating PDF:", error);
+			Alert.alert("Error", "Unable to create PDF. Please try again.");
+		} finally {
+			setIsLoading(false);
+		}
 	};
 
 	return (
 		<SafeAreaView style={styles.safeArea}>
 			<View style={styles.header}>
-				<TouchableOpacity onPress={() => router.back()}>
+				<TouchableOpacity onPress={() => router.back()} disabled={isLoading}>
 					<Feather name="arrow-left" size={24} color={COLORS.slate800} />
 				</TouchableOpacity>
 				<Text style={styles.headerTitle}>PDF Document</Text>
-				<TouchableOpacity>
+				<TouchableOpacity disabled={isLoading}>
 					<Feather name="more-vertical" size={24} color={COLORS.slate400} />
 				</TouchableOpacity>
 			</View>
@@ -40,29 +80,45 @@ export default function PdfPreviewScreen() {
 						style={styles.nameInput}
 						value={fileName}
 						onChangeText={setFileName}
+						editable={!isLoading}
 					/>
 					<Feather name="edit-2" size={16} color={COLORS.slate400} />
 				</View>
 			</View>
 
 			<ScrollView contentContainerStyle={styles.scrollContent}>
-				{/* Render PDF Pages (Mockup) */}
-				<View style={styles.pdfPage}>
-					<View style={styles.pageNumberBadge}>
-						<Text style={styles.pageNumberText}>1</Text>
+				{imageUris.length > 0 ? (
+					imageUris.map((uri, index) => (
+						<View key={index} style={styles.pdfPage}>
+							<View style={styles.pageNumberBadge}>
+								<Text style={styles.pageNumberText}>{index + 1}</Text>
+							</View>
+							{/* Hiển thị hình ảnh thay vì Text */}
+							<Image
+								source={{ uri }}
+								style={styles.previewImage}
+								resizeMode="cover"
+							/>
+						</View>
+					))
+				) : (
+					<View style={styles.emptyBox}>
+						<Text style={styles.emptyText}>No images available.</Text>
 					</View>
-					<Text style={styles.pdfTitle}>Calculus: Derivatives</Text>
-					<Text style={styles.pdfText}>
-						The fundamental theorem of calculus links the concept of
-						differentiating a function with the concept of integrating a
-						function.
-					</Text>
-				</View>
+				)}
 			</ScrollView>
 
 			<View style={styles.footer}>
-				<TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-					<Text style={styles.saveBtnText}>Save PDF to Snapify</Text>
+				<TouchableOpacity
+					style={[styles.saveBtn, isLoading && { opacity: 0.7 }]}
+					onPress={handleSave}
+					disabled={isLoading}
+				>
+					{isLoading ? (
+						<ActivityIndicator color={COLORS.white} />
+					) : (
+						<Text style={styles.saveBtnText}>Save PDF to Snapify</Text>
+					)}
 				</TouchableOpacity>
 			</View>
 		</SafeAreaView>
@@ -70,7 +126,7 @@ export default function PdfPreviewScreen() {
 }
 
 const styles = StyleSheet.create({
-	safeArea: { flex: 1, backgroundColor: "#E2E8F0" }, // Nền xám cho PDF viewer
+	safeArea: { flex: 1, backgroundColor: "#E2E8F0" },
 	header: {
 		flexDirection: "row",
 		justifyContent: "space-between",
@@ -115,13 +171,18 @@ const styles = StyleSheet.create({
 	pdfPage: {
 		backgroundColor: COLORS.white,
 		borderRadius: 12,
-		padding: 24,
+		padding: 8, // Giảm padding để ảnh to hơn
 		marginBottom: 24,
 		shadowColor: COLORS.slate400,
 		shadowOffset: { width: 0, height: 4 },
 		shadowOpacity: 0.2,
 		shadowRadius: 8,
 		elevation: 3,
+	},
+	previewImage: {
+		width: "100%",
+		aspectRatio: 0.75, // Giữ tỷ lệ khổ giấy A4/Letter
+		borderRadius: 8,
 	},
 	pageNumberBadge: {
 		position: "absolute",
@@ -135,18 +196,11 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		borderWidth: 2,
 		borderColor: COLORS.white,
+		zIndex: 10,
 	},
 	pageNumberText: { color: COLORS.white, fontWeight: "bold", fontSize: 12 },
-	pdfTitle: {
-		fontSize: 20,
-		fontWeight: "bold",
-		color: COLORS.slate900,
-		borderBottomWidth: 2,
-		borderBottomColor: COLORS.slate200,
-		paddingBottom: 12,
-		marginBottom: 16,
-	},
-	pdfText: { fontSize: 14, color: COLORS.slate700, lineHeight: 24 },
+	emptyBox: { alignItems: "center", marginTop: 40 },
+	emptyText: { color: COLORS.slate500, fontSize: 16 },
 	footer: {
 		backgroundColor: COLORS.white,
 		padding: 24,

@@ -30,7 +30,7 @@ export default function LoginScreen() {
 
 	const handleLogin = async () => {
 		if (!email || !password) {
-			Alert.alert("Lỗi", "Vui lòng nhập đầy đủ thông tin.");
+			Alert.alert("Error", "Please enter all required information.");
 			return;
 		}
 
@@ -56,8 +56,8 @@ export default function LoginScreen() {
 			}
 		} catch (error: any) {
 			Alert.alert(
-				"Đăng nhập thất bại",
-				error.message || "Vui lòng kiểm tra lại tài khoản.",
+				"Login Failed",
+				error.message || "Please check your account credentials.",
 			);
 		} finally {
 			setLoading(false);

@@ -9,6 +9,7 @@ import {
 	ScrollView,
 	TouchableOpacity,
 	Animated,
+	Image,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Feather, Ionicons } from "@expo/vector-icons";
@@ -87,12 +88,18 @@ export default function DashboardScreen() {
 						<Text style={styles.greeting}>Hello, {user?.displayName}</Text>
 					</View>
 					<View style={styles.avatar}>
-						<Text
-							style={styles.avatarText}
-							onPress={() => router.push("/profile")}
-						>
-							{user?.displayName?.substring(0, 2).toUpperCase() || "JD"}
-						</Text>
+						<TouchableOpacity style={styles.avatarBox}>
+							{user?.avatarUrl ? (
+								<Image
+									source={{ uri: user.avatarUrl }}
+									style={styles.avatarImage}
+								/>
+							) : (
+								<Text style={styles.avatarText}>
+									{user?.displayName?.substring(0, 2).toUpperCase() || "JD"}
+								</Text>
+							)}
+						</TouchableOpacity>
 					</View>
 				</View>
 
@@ -107,6 +114,7 @@ export default function DashboardScreen() {
 					<TextInput
 						style={styles.searchInput}
 						placeholder="Search notes, folders..."
+						onPress={() => router.push("/search")}
 						placeholderTextColor={COLORS.slate400}
 					/>
 				</View>
@@ -114,7 +122,10 @@ export default function DashboardScreen() {
 				{/* Quick Actions */}
 				<Text style={styles.sectionTitle}>Quick Actions</Text>
 				<View style={styles.quickActionsRow}>
-					<TouchableOpacity style={styles.actionCard}>
+					<TouchableOpacity
+						style={styles.actionCard}
+						onPress={() => router.push("/camera-batch")}
+					>
 						<View style={styles.actionIconBg}>
 							<Ionicons
 								name="document-text-outline"
@@ -496,4 +507,13 @@ const styles = StyleSheet.create({
 		justifyContent: "space-between",
 		alignItems: "center",
 	},
+	avatarBox: {
+		width: 70,
+		height: 70,
+		borderRadius: 48,
+		backgroundColor: "#EEF2FF",
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	avatarImage: { width: 70, height: 70, borderRadius: 48 },
 });

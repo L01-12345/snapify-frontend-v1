@@ -8,30 +8,14 @@ import {
 	TextInput,
 	TouchableOpacity,
 	ScrollView,
-	Animated,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { COLORS } from "../../src/constants/theme";
 
-// --- MOCK DATA ---
-const MOCK_NOTES = [
-	{
-		id: "1",
-		title: "Calculus Formula",
-		date: "Oct 20",
-		text: "The fundamental theorem of calculus links the concept of differentiating a function...",
-		folder: "Study",
-		icon: "📚",
-	},
-	{
-		id: "2",
-		title: "Math Midterm Prep",
-		date: "Sep 15",
-		text: "Review integration by parts. Make sure to check the calculus cheat sheet provided by...",
-		folder: "Study",
-		icon: "📚",
-	},
-];
+// Import API và Type
+import { noteApi } from "../../src/api/noteApi";
+import { Note } from "../../src/types/api.types";
 
 // --- COMPONENT HIGHLIGHT TEXT ---
 const HighlightedText = ({
@@ -41,6 +25,7 @@ const HighlightedText = ({
 	text: string;
 	keyword: string;
 }) => {
+	if (!text) return null;
 	if (!keyword.trim()) return <Text>{text}</Text>;
 
 	const regex = new RegExp(`(${keyword})`, "gi");
@@ -61,12 +46,20 @@ const HighlightedText = ({
 	);
 };
 
+// Hàm hỗ trợ format ngày tháng đơn giản
+const formatDate = (dateString?: string) => {
+	if (!dateString) return "Just now";
+	const d = new Date(dateString);
+	return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+};
+
 export default function SearchScreen() {
+	const router = useRouter();
 	const [query, setQuery] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
-	const [results, setResults] = useState<typeof MOCK_NOTES>([]);
+	const [results, setResults] = useState<Note[]>([]);
 
-	// Giả lập API Fetching
+	// Tích hợp API Fetching với Debounce
 	useEffect(() => {
 		if (query.trim().length === 0) {
 			setResults([]);
@@ -75,15 +68,19 @@ export default function SearchScreen() {
 		}
 
 		setIsLoading(true);
-		const timeout = setTimeout(() => {
-			// Mock logic: Nếu gõ "Ax", trả về rỗng. Nếu gõ chữ khác, trả về MOCK_NOTES
-			if (query.toLowerCase().includes("ax")) {
+		// Đợi người dùng ngừng gõ 500ms rồi mới gọi API
+		const timeout = setTimeout(async () => {
+			try {
+				const res = await noteApi.searchNotes(query.trim());
+				// API trả về mảng trong res.data
+				setResults(res.data || []);
+			} catch (error) {
+				console.error("Lỗi tìm kiếm ghi chú:", error);
 				setResults([]);
-			} else {
-				setResults(MOCK_NOTES);
+			} finally {
+				setIsLoading(false);
 			}
-			setIsLoading(false);
-		}, 800); // Đợi 800ms để mô phỏng mạng
+		}, 500);
 
 		return () => clearTimeout(timeout);
 	}, [query]);
@@ -99,14 +96,17 @@ export default function SearchScreen() {
 					</TouchableOpacity>
 				</View>
 				<View style={styles.tagWrap}>
-					<TouchableOpacity style={styles.tag}>
+					<TouchableOpacity
+						style={styles.tag}
+						onPress={() => setQuery("Calculus")}
+					>
 						<Text style={styles.tagText}>🕒 Calculus</Text>
 					</TouchableOpacity>
-					<TouchableOpacity style={styles.tag}>
+					<TouchableOpacity
+						style={styles.tag}
+						onPress={() => setQuery("Marketing")}
+					>
 						<Text style={styles.tagText}>🕒 Marketing Q3</Text>
-					</TouchableOpacity>
-					<TouchableOpacity style={styles.tag}>
-						<Text style={styles.tagText}>🕒 Wifi password</Text>
 					</TouchableOpacity>
 				</View>
 			</View>
@@ -134,7 +134,7 @@ export default function SearchScreen() {
 	const renderLoading = () => (
 		<View style={styles.contentPad}>
 			<View style={styles.skeletonLine} />
-			{[1, 2].map((i) => (
+			{[1, 2, 3].map((i) => (
 				<View key={i} style={styles.skeletonCard}>
 					<View style={styles.skeletonTitle} />
 					<View style={styles.skeletonText} />
@@ -174,20 +174,30 @@ export default function SearchScreen() {
 			<Text style={styles.resultCountText}>{results.length} Results Found</Text>
 			<View style={styles.resultList}>
 				{results.map((note) => (
-					<TouchableOpacity key={note.id} style={styles.resultCard}>
+					<TouchableOpacity
+						key={note.id}
+						style={styles.resultCard}
+						onPress={() => router.push(`/note/${note.id}`)}
+					>
 						<View style={styles.resultHeader}>
 							<Text style={styles.resultTitle}>
-								<HighlightedText text={note.title} keyword={query} />
+								<HighlightedText
+									text={note.title || "Untitled Note"}
+									keyword={query}
+								/>
 							</Text>
-							<Text style={styles.resultDate}>{note.date}</Text>
+							<Text style={styles.resultDate}>
+								{formatDate(note.createdAt)}
+							</Text>
 						</View>
 						<Text style={styles.resultText} numberOfLines={2}>
-							<HighlightedText text={note.text} keyword={query} />
+							<HighlightedText text={note.content || ""} keyword={query} />
 						</Text>
 						<View style={styles.resultFooter}>
 							<View style={styles.resultBadge}>
 								<Text style={styles.resultBadgeText}>
-									{note.icon} {note.folder}
+									{/* Nếu có folder thì lấy folder.name, không thì để Uncategorized */}
+									📄 {note.folder?.name || "Uncategorized"}
 								</Text>
 							</View>
 						</View>

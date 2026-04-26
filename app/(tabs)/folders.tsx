@@ -60,7 +60,7 @@ export default function FoldersScreen() {
 			setIsModalVisible(false);
 			fetchFolders(); // Reload lại danh sách
 		} catch (error: any) {
-			Alert.alert("Lỗi", error.message || "Không thể tạo thư mục.");
+			Alert.alert("Error", error.message || "Unable to create folder.");
 		} finally {
 			setIsCreating(false);
 		}
@@ -120,10 +120,8 @@ export default function FoldersScreen() {
 					/>
 				) : folders.length === 0 ? (
 					<View style={styles.emptyState}>
-						<Text style={styles.emptyText}>Chưa có thư mục nào.</Text>
-						<Text style={styles.emptySubText}>
-							Hãy tạo thư mục đầu tiên của bạn!
-						</Text>
+						<Text style={styles.emptyText}>No folders yet.</Text>
+						<Text style={styles.emptySubText}>Create your first folder!</Text>
 					</View>
 				) : (
 					<View style={styles.gridContainer}>
@@ -157,10 +155,10 @@ export default function FoldersScreen() {
 			<Modal visible={isModalVisible} transparent animationType="fade">
 				<View style={styles.modalOverlay}>
 					<View style={styles.modalContent}>
-						<Text style={styles.modalTitle}>Tạo thư mục mới</Text>
+						<Text style={styles.modalTitle}>Create New Folder</Text>
 						<TextInput
 							style={styles.input}
-							placeholder="Tên thư mục (VD: Hóa đơn)"
+							placeholder="Folder name (e.g. Invoices)"
 							value={newFolderName}
 							onChangeText={setNewFolderName}
 							autoFocus
@@ -170,7 +168,7 @@ export default function FoldersScreen() {
 								onPress={() => setIsModalVisible(false)}
 								style={styles.cancelBtn}
 							>
-								<Text style={styles.cancelText}>Hủy</Text>
+								<Text style={styles.cancelText}>Cancel</Text>
 							</TouchableOpacity>
 							<TouchableOpacity
 								onPress={handleCreateFolder}

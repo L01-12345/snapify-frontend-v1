@@ -40,9 +40,9 @@ export default function SnapToNoteScreen() {
 						marginBottom: 20,
 					}}
 				>
-					Snapify cần quyền truy cập Camera để có thể quét tài liệu.
+					Snapify needs camera access to scan documents.
 				</Text>
-				<Button title="Cấp quyền Camera" onPress={requestPermission} />
+				<Button title="Grant Camera Access" onPress={requestPermission} />
 			</View>
 		);
 	}

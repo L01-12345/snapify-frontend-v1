@@ -34,7 +34,7 @@ export default function FolderDetailScreen() {
 			const response = await folderApi.getFolderById(id);
 			setFolder(response.data || null);
 		} catch (error) {
-			Alert.alert("Lỗi", "Không thể tải dữ liệu thư mục");
+			Alert.alert("Error", "Unable to load folder data.");
 			router.back();
 		} finally {
 			setIsLoading(false);
@@ -43,19 +43,19 @@ export default function FolderDetailScreen() {
 
 	const handleDeleteFolder = () => {
 		Alert.alert(
-			"Xóa thư mục",
-			"Bạn có chắc chắn muốn xóa? Các ghi chú bên trong sẽ không bị xóa mà chỉ bị gỡ khỏi thư mục này.",
+			"Delete Folder",
+			"Are you sure you want to delete this folder? Notes inside will not be deleted, only removed from this folder.",
 			[
-				{ text: "Hủy", style: "cancel" },
+				{ text: "Cancel", style: "cancel" },
 				{
-					text: "Xóa",
+					text: "Delete",
 					style: "destructive",
 					onPress: async () => {
 						try {
 							await folderApi.deleteFolder(id);
 							router.back();
 						} catch (error: any) {
-							Alert.alert("Lỗi", error.message);
+							Alert.alert("Error", error.message);
 						}
 					},
 				},

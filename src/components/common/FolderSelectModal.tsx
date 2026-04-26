@@ -1,5 +1,5 @@
 // src/components/common/FolderSelectModal.tsx
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
 	Modal,
 	View,
@@ -8,14 +8,18 @@ import {
 	TouchableOpacity,
 	TouchableWithoutFeedback,
 	Platform,
+	ActivityIndicator,
+	Alert,
 } from "react-native";
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { COLORS } from "../../constants/theme";
+
+import { folderApi } from "../../api/folderApi";
 
 interface Folder {
 	id: string;
 	name: string;
-	icon: string;
+	icon?: string; // Có thể API không có trường này, nên để optional
 	isAiSuggested?: boolean;
 }
 
@@ -23,7 +27,7 @@ interface FolderSelectModalProps {
 	visible: boolean;
 	onClose: () => void;
 	selectedId?: string;
-	onSelect: (id: string) => void;
+	onSelect: (folder: any) => void;
 }
 
 export const FolderSelectModal = ({
@@ -32,12 +36,31 @@ export const FolderSelectModal = ({
 	selectedId,
 	onSelect,
 }: FolderSelectModalProps) => {
-	// Mock danh sách Folder
-	const folders: Folder[] = [
-		{ id: "1", name: "Work", icon: "💼" },
-		{ id: "2", name: "Study", icon: "📚", isAiSuggested: true },
-		{ id: "3", name: "Receipts", icon: "🧾" },
-	];
+	const [folders, setFolders] = useState<Folder[]>([]);
+	const [isLoading, setIsLoading] = useState(false);
+
+	// Gọi API lấy danh sách Folder mỗi khi Modal được hiển thị
+	useEffect(() => {
+		if (visible) {
+			fetchFolders();
+		}
+	}, [visible]);
+
+	const fetchFolders = async () => {
+		try {
+			setIsLoading(true);
+			// Gọi API lấy danh sách thư mục
+			const response = await folderApi.getFolders();
+
+			// Cập nhật danh sách từ API (giả sử dữ liệu nằm trong response.data)
+			setFolders(response.data || []);
+		} catch (error: any) {
+			console.error("Error loading folders:", error);
+			Alert.alert("Error", "Unable to load folder list.");
+		} finally {
+			setIsLoading(false);
+		}
+	};
 
 	return (
 		<Modal
@@ -62,57 +85,72 @@ export const FolderSelectModal = ({
 					</View>
 
 					<View style={styles.listContainer}>
-						{folders.map((folder) => {
-							const isSelected = folder.id === selectedId;
+						{isLoading ? (
+							<ActivityIndicator
+								size="large"
+								color={COLORS.primary}
+								style={{ marginVertical: 20 }}
+							/>
+						) : folders.length === 0 ? (
+							<Text style={styles.emptyText}>
+								You don't have any folders yet.
+							</Text>
+						) : (
+							folders.map((folder) => {
+								const isSelected = folder.id === selectedId;
 
-							return (
-								<TouchableOpacity
-									key={folder.id}
-									style={[
-										styles.itemCard,
-										isSelected && styles.itemCardSelected,
-									]}
-									onPress={() => onSelect(folder.id)}
-									activeOpacity={0.7}
-								>
-									<View style={styles.itemLeft}>
-										<View style={styles.iconBox}>
-											<Text style={styles.iconText}>{folder.icon}</Text>
-										</View>
-										<View>
-											<Text
-												style={[
-													styles.folderName,
-													isSelected && { color: COLORS.slate900 },
-												]}
-											>
-												{folder.name}
-											</Text>
-											{isSelected ? (
-												<Text style={styles.selectedLabel}>SELECTED</Text>
-											) : folder.isAiSuggested ? (
-												<View style={styles.aiTagRow}>
-													<Text style={{ fontSize: 10 }}>✨</Text>
-													<Text style={styles.aiTagText}>AI SUGGESTED</Text>
-												</View>
-											) : null}
-										</View>
-									</View>
-
-									{/* Checkbox / Radio Circle */}
-									<View
+								return (
+									<TouchableOpacity
+										key={folder.id}
 										style={[
-											styles.radioCircle,
-											isSelected && styles.radioCircleSelected,
+											styles.itemCard,
+											isSelected && styles.itemCardSelected,
 										]}
+										onPress={() => onSelect(folder)}
+										activeOpacity={0.7}
 									>
-										{isSelected && (
-											<Feather name="check" size={14} color={COLORS.white} />
-										)}
-									</View>
-								</TouchableOpacity>
-							);
-						})}
+										<View style={styles.itemLeft}>
+											<View style={styles.iconBox}>
+												{/* Nếu API trả về icon thì dùng, không thì dùng mặc định 📂 */}
+												<Text style={styles.iconText}>
+													{folder.icon || "📂"}
+												</Text>
+											</View>
+											<View>
+												<Text
+													style={[
+														styles.folderName,
+														isSelected && { color: COLORS.slate900 },
+													]}
+												>
+													{folder.name}
+												</Text>
+												{isSelected ? (
+													<Text style={styles.selectedLabel}>SELECTED</Text>
+												) : folder.isAiSuggested ? (
+													<View style={styles.aiTagRow}>
+														<Text style={{ fontSize: 10 }}>✨</Text>
+														<Text style={styles.aiTagText}>AI SUGGESTED</Text>
+													</View>
+												) : null}
+											</View>
+										</View>
+
+										{/* Checkbox / Radio Circle */}
+										<View
+											style={[
+												styles.radioCircle,
+												isSelected && styles.radioCircleSelected,
+											]}
+										>
+											{isSelected && (
+												<Feather name="check" size={14} color={COLORS.white} />
+											)}
+										</View>
+									</TouchableOpacity>
+								);
+							})
+						)}
 					</View>
 				</View>
 			</View>
@@ -162,6 +200,12 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 	},
 	listContainer: { gap: 16 },
+	emptyText: {
+		textAlign: "center",
+		color: COLORS.slate500,
+		fontSize: 14,
+		fontStyle: "italic",
+	},
 	itemCard: {
 		flexDirection: "row",
 		alignItems: "center",
