@@ -63,6 +63,7 @@ export default function RegisterScreen() {
 						placeholder="John Doe"
 						value={displayName}
 						onChangeText={setDisplayName}
+						testID="reg-name"
 					/>
 					<Input
 						label="Email Address"
@@ -70,13 +71,15 @@ export default function RegisterScreen() {
 						keyboardType="email-address"
 						value={email}
 						onChangeText={setEmail}
+						testID="reg-email"
 					/>
 					<Input
 						label="Password"
-						placeholder="Min. 8 characters"
+						placeholder="Min. 6 characters"
 						value={password}
 						onChangeText={setPassword}
 						isPassword
+						testID="reg-password"
 					/>
 
 					<Button
@@ -84,6 +87,7 @@ export default function RegisterScreen() {
 						onPress={handleRegister}
 						style={{ marginTop: 32 }}
 						disabled={loading}
+						testID="reg-btn"
 					>
 						{loading && <ActivityIndicator color="white" />}
 					</Button>

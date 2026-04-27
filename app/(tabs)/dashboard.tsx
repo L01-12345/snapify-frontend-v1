@@ -85,7 +85,7 @@ export default function DashboardScreen() {
 				<View style={styles.header}>
 					<View>
 						<Text style={styles.logoText}>Snapify</Text>
-						<Text style={styles.greeting}>Hello, {user?.displayName}</Text>
+						<Text style={styles.greeting}>Hello, {user?.displayName} 👋</Text>
 					</View>
 					<View style={styles.avatar}>
 						<TouchableOpacity style={styles.avatarBox}>
@@ -136,7 +136,10 @@ export default function DashboardScreen() {
 						<Text style={styles.actionText}>Batch</Text>
 					</TouchableOpacity>
 
-					<TouchableOpacity style={styles.actionCard}>
+					<TouchableOpacity
+						style={styles.actionCard}
+						onPress={() => router.push("/archive")}
+					>
 						<View style={styles.actionIconBg}>
 							<Ionicons
 								name="archive-outline"

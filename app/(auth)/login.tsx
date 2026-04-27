@@ -88,12 +88,14 @@ export default function LoginScreen() {
 						value={email}
 						onChangeText={setEmail}
 						autoCapitalize="none"
+						testID="login-email"
 					/>
 					<Input
 						label="Password"
 						value={password}
 						onChangeText={setPassword}
 						isPassword
+						testID="login-password"
 					/>
 
 					<TouchableOpacity style={styles.forgotPass}>
@@ -104,6 +106,7 @@ export default function LoginScreen() {
 						title={loading ? "" : "Log In"}
 						onPress={handleLogin}
 						disabled={loading}
+						testID="login-btn"
 					>
 						{loading && <ActivityIndicator color="white" />}
 					</Button>

@@ -106,7 +106,11 @@ export default function FoldersScreen() {
 		<SafeAreaView style={styles.safeArea}>
 			<View style={styles.header}>
 				<Text style={styles.headerTitle}>Folders</Text>
-				<TouchableOpacity style={styles.addButton}>
+				<TouchableOpacity
+					style={styles.addButton}
+					onPress={() => setIsModalVisible(true)}
+					testID="add-folder-btn"
+				>
 					<Text style={styles.addButtonText}>+</Text>
 				</TouchableOpacity>
 			</View>
@@ -132,6 +136,7 @@ export default function FoldersScreen() {
 									key={folder.id}
 									style={styles.card}
 									onPress={() => router.push(`/folder/${folder.id}`)}
+									testID={`folder-card-${folder.id}`}
 								>
 									<View
 										style={[styles.iconBox, { backgroundColor: style.bgColor }]}
@@ -162,11 +167,13 @@ export default function FoldersScreen() {
 							value={newFolderName}
 							onChangeText={setNewFolderName}
 							autoFocus
+							testID="folder-name-input"
 						/>
 						<View style={styles.modalActions}>
 							<TouchableOpacity
 								onPress={() => setIsModalVisible(false)}
 								style={styles.cancelBtn}
+								testID="cancel-folder-btn"
 							>
 								<Text style={styles.cancelText}>Cancel</Text>
 							</TouchableOpacity>
@@ -174,6 +181,7 @@ export default function FoldersScreen() {
 								onPress={handleCreateFolder}
 								style={styles.createBtn}
 								disabled={isCreating}
+								testID="create-folder-btn"
 							>
 								{isCreating ? (
 									<ActivityIndicator color="white" />

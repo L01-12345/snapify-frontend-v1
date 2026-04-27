@@ -226,11 +226,13 @@ export default function SearchScreen() {
 						value={query}
 						onChangeText={setQuery}
 						autoFocus
+						testID="search-input"
 					/>
 					{query.length > 0 && (
 						<TouchableOpacity
 							style={styles.clearIcon}
 							onPress={() => setQuery("")}
+							testID="header-clear-btn"
 						>
 							<Feather name="x" size={16} color={COLORS.slate400} />
 						</TouchableOpacity>

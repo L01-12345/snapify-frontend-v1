@@ -64,7 +64,11 @@ export default function PdfPreviewScreen() {
 	return (
 		<SafeAreaView style={styles.safeArea}>
 			<View style={styles.header}>
-				<TouchableOpacity onPress={() => router.back()} disabled={isLoading}>
+				<TouchableOpacity
+					onPress={() => router.back()}
+					disabled={isLoading}
+					testID="back-btn"
+				>
 					<Feather name="arrow-left" size={24} color={COLORS.slate800} />
 				</TouchableOpacity>
 				<Text style={styles.headerTitle}>PDF Document</Text>
@@ -81,6 +85,7 @@ export default function PdfPreviewScreen() {
 						value={fileName}
 						onChangeText={setFileName}
 						editable={!isLoading}
+						testID="filename-input"
 					/>
 					<Feather name="edit-2" size={16} color={COLORS.slate400} />
 				</View>

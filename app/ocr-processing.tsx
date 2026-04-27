@@ -60,8 +60,9 @@ export default function OcrProcessingScreen() {
 					"Processing Error",
 					"Unable to extract text from the image.",
 				);
-				// Hoặc router.replace("/ocr-error"); nếu bạn có màn hình lỗi riêng
-				router.back();
+				// Hoặc router.replace("/ocr-error");
+				// router.back();
+				router.replace("ocr-error");
 			}
 		};
 
@@ -136,6 +137,7 @@ export default function OcrProcessingScreen() {
 				<TouchableOpacity
 					style={styles.cancelBtn}
 					onPress={() => router.push("/(tabs)/dashboard")}
+					testID="cancel-btn"
 				>
 					<Text style={styles.cancelBtnText}>Cancel</Text>
 				</TouchableOpacity>

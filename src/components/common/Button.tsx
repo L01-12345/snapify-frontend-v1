@@ -16,6 +16,7 @@ interface ButtonProps {
 	style?: ViewStyle;
 	disabled?: boolean; // Bổ sung prop disabled
 	children?: React.ReactNode; // Bổ sung prop children
+	testID?: string;
 }
 
 export const Button = ({
@@ -25,6 +26,7 @@ export const Button = ({
 	style,
 	disabled = false,
 	children,
+	testID,
 }: ButtonProps) => {
 	if (type === "primary") {
 		return (
@@ -32,6 +34,7 @@ export const Button = ({
 				onPress={onPress}
 				activeOpacity={0.8}
 				disabled={disabled} // Khóa nút khi đang loading
+				testID={testID}
 				style={[
 					styles.container,
 					style,

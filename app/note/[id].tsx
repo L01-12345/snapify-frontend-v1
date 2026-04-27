@@ -70,7 +70,11 @@ export default function NoteDetailScreen() {
 		<SafeAreaView style={styles.safeArea}>
 			{/* Header */}
 			<View style={styles.header}>
-				<TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
+				<TouchableOpacity
+					onPress={() => router.back()}
+					style={styles.iconBtn}
+					testID="back-btn"
+				>
 					<Feather name="arrow-left" size={24} color={COLORS.slate800} />
 				</TouchableOpacity>
 				<Text style={styles.dateText}>OCT 20, 2025</Text>
@@ -139,6 +143,7 @@ export default function NoteDetailScreen() {
 						onPress={() =>
 							router.push({ pathname: "/note/edit", params: { id: id } })
 						}
+						testID="edit-fab"
 					>
 						<LinearGradient
 							colors={[COLORS.primary, COLORS.primaryEnd]}

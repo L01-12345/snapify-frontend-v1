@@ -81,14 +81,22 @@ export default function FolderDetailScreen() {
 	return (
 		<SafeAreaView style={styles.safeArea}>
 			<View style={styles.header}>
-				<TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
+				<TouchableOpacity
+					onPress={() => router.back()}
+					style={styles.iconBtn}
+					testID="back-btn"
+				>
 					<Feather name="arrow-left" size={24} color={COLORS.slate800} />
 				</TouchableOpacity>
 				<View style={styles.headerCenter}>
 					<Text style={styles.headerIcon}>📚</Text>
 					<Text style={styles.headerTitle}>{folder.name}</Text>
 				</View>
-				<TouchableOpacity onPress={handleDeleteFolder} style={styles.iconBtn}>
+				<TouchableOpacity
+					onPress={handleDeleteFolder}
+					style={styles.iconBtn}
+					testID="delete-folder-btn"
+				>
 					<Feather name="trash-2" size={20} color={COLORS.slate400} />
 				</TouchableOpacity>
 			</View>
@@ -107,6 +115,7 @@ export default function FolderDetailScreen() {
 					<TouchableOpacity
 						style={styles.addBtn}
 						onPress={() => router.push("/note/new")}
+						testID="add-note-empty-btn"
 					>
 						<Text style={styles.addBtnText}>+ Add Notes</Text>
 					</TouchableOpacity>
@@ -123,6 +132,7 @@ export default function FolderDetailScreen() {
 							key={note.id}
 							style={styles.noteCard}
 							onPress={() => router.push(`/note/${note.id}`)}
+							testID={`note-card-${note.id}`}
 						>
 							<View style={styles.noteHeader}>
 								<Text style={styles.noteTitle}>{note.title}</Text>
@@ -142,6 +152,7 @@ export default function FolderDetailScreen() {
 				<TouchableOpacity
 					style={styles.fab}
 					onPress={() => router.push("/note/new")}
+					testID="add-note-fab"
 				>
 					<LinearGradient
 						colors={[COLORS.primary, COLORS.primaryEnd]}

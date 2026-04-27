@@ -30,3 +30,15 @@ jest.mock("@expo/vector-icons", () => ({
 	Feather: "Feather",
 	Ionicons: "Ionicons",
 }));
+
+jest.mock("expo-camera", () => ({
+	CameraView: "CameraView",
+	useCameraPermissions: () => [{ granted: true }, jest.fn()],
+}));
+
+jest.mock("expo-image-manipulator", () => ({
+	manipulateAsync: jest.fn(() =>
+		Promise.resolve({ uri: "mock-compressed-uri.jpg" }),
+	),
+	SaveFormat: { JPEG: "jpeg" },
+}));

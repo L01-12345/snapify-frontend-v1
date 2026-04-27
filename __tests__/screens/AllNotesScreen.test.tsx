@@ -1,0 +1,251 @@
+import React from "react";
+import { render, fireEvent, waitFor, act } from "@testing-library/react-native";
+import { Alert } from "react-native";
+import { useRouter } from "expo-router";
+
+// Import component và API
+import AllNotesScreen from "../../app/all-notes";
+import { noteApi } from "../../src/api/noteApi";
+
+// ---------------------------------------------------------
+// 1. MOCK CÁC MODULE BÊN NGOÀI
+// ---------------------------------------------------------
+
+jest.mock("expo-router", () => {
+	// Require react trực tiếp bên trong mock factory
+	const React = require("react");
+
+	return {
+		useRouter: jest.fn(),
+		// Sử dụng React vừa được require
+		useFocusEffect: jest.fn((callback) =>
+			React.useEffect(callback, [callback]),
+		),
+	};
+});
+
+jest.mock("../../src/api/noteApi", () => ({
+	noteApi: {
+		getNotes: jest.fn(),
+		deleteNote: jest.fn(),
+	},
+}));
+
+jest.mock("@expo/vector-icons", () => ({
+	Feather: "Feather",
+}));
+
+jest.spyOn(Alert, "alert");
+
+// ---------------------------------------------------------
+// 2. MOCK COMPONENT NOTE ACTION SHEET
+// ---------------------------------------------------------
+jest.mock("../../src/components/common/NoteActionSheet", () => {
+	const { View, TouchableOpacity, Text } = require("react-native");
+	return {
+		NoteActionSheet: ({
+			visible,
+			onArchive,
+			onDelete,
+			onPin,
+			onMove,
+			onClose,
+		}: any) => {
+			if (!visible) return null;
+			return (
+				<View testID="mock-action-sheet">
+					<TouchableOpacity testID="mock-archive" onPress={onArchive}>
+						<Text>Archive</Text>
+					</TouchableOpacity>
+					<TouchableOpacity testID="mock-delete" onPress={onDelete}>
+						<Text>Delete</Text>
+					</TouchableOpacity>
+					<TouchableOpacity testID="mock-pin" onPress={onPin}>
+						<Text>Pin</Text>
+					</TouchableOpacity>
+					<TouchableOpacity testID="mock-move" onPress={onMove}>
+						<Text>Move</Text>
+					</TouchableOpacity>
+					<TouchableOpacity testID="mock-close" onPress={onClose}>
+						<Text>Close</Text>
+					</TouchableOpacity>
+				</View>
+			);
+		},
+	};
+});
+
+describe("AllNotesScreen - Màn hình tất cả ghi chú", () => {
+	const mockPush = jest.fn();
+	const mockBack = jest.fn();
+
+	const mockNotesData = [
+		{
+			id: "1",
+			title: "Calculus Lecture 04",
+			content: "Math...",
+			status: "PROCESSED",
+		},
+		{
+			id: "2",
+			title: "Physics Chapter 2",
+			content: "Newton...",
+			status: "PENDING",
+		},
+	];
+
+	beforeEach(() => {
+		jest.clearAllMocks();
+		(useRouter as jest.Mock).mockReturnValue({
+			push: mockPush,
+			back: mockBack,
+		});
+	});
+
+	// --- KỊCH BẢN 1: FETCH DATA THÀNH CÔNG VÀ HIỂN THỊ ---
+	it("gọi API lấy danh sách note và hiển thị lên giao diện", async () => {
+		(noteApi.getNotes as jest.Mock).mockResolvedValue({
+			data: { notes: mockNotesData },
+		});
+
+		const { getByText, getByTestId } = render(<AllNotesScreen />);
+
+		await waitFor(() => {
+			// API gọi mặc định không có status param (vì tab All)
+			expect(noteApi.getNotes).toHaveBeenCalledWith({ status: undefined });
+
+			// Hiển thị note
+			expect(getByText("Calculus Lecture 04")).toBeTruthy();
+			expect(getByText("Physics Chapter 2")).toBeTruthy();
+		});
+
+		// Bấm vào note chuyển sang màn hình chi tiết
+		fireEvent.press(getByTestId("note-card-1"));
+		expect(mockPush).toHaveBeenCalledWith("/note/1");
+	});
+
+	// --- KỊCH BẢN 2: TRẠNG THÁI RỖNG (EMPTY STATE) ---
+	it("hiển thị thông báo khi không có ghi chú nào", async () => {
+		(noteApi.getNotes as jest.Mock).mockResolvedValue({ data: { notes: [] } });
+
+		const { getByText } = render(<AllNotesScreen />);
+
+		await waitFor(() => {
+			expect(getByText("There are no notes here.")).toBeTruthy();
+		});
+	});
+
+	// --- KỊCH BẢN 3: LỌC TRẠNG THÁI (FILTERS) ---
+	it("gọi lại API với tham số tương ứng khi bấm vào Pill lọc trạng thái", async () => {
+		(noteApi.getNotes as jest.Mock).mockResolvedValue({ data: { notes: [] } });
+
+		const { getByText } = render(<AllNotesScreen />);
+
+		// Chờ fetch mặc định xong (lần 1)
+		await waitFor(() =>
+			expect(noteApi.getNotes).toHaveBeenCalledWith({ status: undefined }),
+		);
+
+		// Reset lại cờ đếm của mock để test lần 2 cho sạch
+		(noteApi.getNotes as jest.Mock).mockClear();
+
+		// Bọc trong act vì việc bấm nút này sẽ kích hoạt state và API call
+		await act(async () => {
+			fireEvent.press(getByText("Processed"));
+		});
+
+		await waitFor(() => {
+			expect(noteApi.getNotes).toHaveBeenCalledWith({ status: "ACTIONED" });
+		});
+
+		(noteApi.getNotes as jest.Mock).mockClear();
+
+		await act(async () => {
+			fireEvent.press(getByText("Pending"));
+		});
+
+		await waitFor(() => {
+			expect(noteApi.getNotes).toHaveBeenCalledWith({ status: "PENDING" });
+		});
+	});
+
+	// --- KỊCH BẢN 4: BOTTOM SHEET - XÓA GHI CHÚ ---
+	it("nhấn đè hiện Bottom Sheet và thực hiện chức năng Delete", async () => {
+		(noteApi.getNotes as jest.Mock).mockResolvedValue({
+			data: { notes: mockNotesData },
+		});
+		(noteApi.deleteNote as jest.Mock).mockResolvedValue({ status: "success" });
+
+		const { getByTestId, queryByTestId, queryByText } = render(
+			<AllNotesScreen />,
+		);
+
+		// Đợi render list xong
+		await waitFor(() => expect(getByTestId("note-card-1")).toBeTruthy());
+
+		// Nhấn đè
+		fireEvent(getByTestId("note-card-1"), "longPress");
+		expect(getByTestId("mock-action-sheet")).toBeTruthy();
+
+		// SỬA Ở ĐÂY: Bọc thao tác Delete (gọi API async) bằng await act
+		await act(async () => {
+			fireEvent.press(getByTestId("mock-delete"));
+		});
+
+		await waitFor(() => {
+			expect(noteApi.deleteNote).toHaveBeenCalledWith("1");
+			expect(queryByTestId("mock-action-sheet")).toBeNull(); // Modal phải đóng
+			expect(queryByText("Calculus Lecture 04")).toBeNull(); // Note 1 bị xóa
+		});
+	});
+
+	// --- KỊCH BẢN 5: BOTTOM SHEET - LƯU TRỮ VÀ ĐÓNG ---
+	it("hiển thị Alert và ẩn note khỏi UI khi Archive, hỗ trợ đóng Modal", async () => {
+		(noteApi.getNotes as jest.Mock).mockResolvedValue({
+			data: { notes: mockNotesData },
+		});
+
+		const { getByTestId, queryByTestId, queryByText } = render(
+			<AllNotesScreen />,
+		);
+		await waitFor(() => expect(getByTestId("note-card-1")).toBeTruthy());
+
+		// Nhấn đè
+		fireEvent(getByTestId("note-card-1"), "longPress");
+
+		// Bấm Archive
+		fireEvent.press(getByTestId("mock-archive"));
+
+		await waitFor(() => {
+			expect(Alert.alert).toHaveBeenCalledWith(
+				"Archived",
+				'"Calculus Lecture 04" has been moved to Archive.',
+			);
+			// Bị ẩn khỏi UI
+			expect(queryByText("Calculus Lecture 04")).toBeNull();
+		});
+
+		// Test chức năng Pin và Move (Alert)
+		fireEvent(getByTestId("note-card-2"), "longPress");
+		fireEvent.press(getByTestId("mock-pin"));
+		expect(Alert.alert).toHaveBeenCalledWith(
+			"Pinned",
+			'"Physics Chapter 2" pinned to top.',
+		);
+
+		fireEvent(getByTestId("note-card-2"), "longPress");
+		fireEvent.press(getByTestId("mock-close"));
+		expect(queryByTestId("mock-action-sheet")).toBeNull(); // Test nút đóng Modal
+	});
+
+	// --- KỊCH BẢN 6: ĐIỀU HƯỚNG CƠ BẢN ---
+	it("điều hướng khi nhấn FAB và nút Back", () => {
+		const { getByTestId } = render(<AllNotesScreen />);
+
+		fireEvent.press(getByTestId("fab-btn"));
+		expect(mockPush).toHaveBeenCalledWith("/note/new");
+
+		fireEvent.press(getByTestId("back-btn"));
+		expect(mockBack).toHaveBeenCalled();
+	});
+});

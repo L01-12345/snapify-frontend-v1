@@ -116,6 +116,7 @@ export default function CameraBatchScreen() {
 						<TouchableOpacity
 							style={styles.iconBtn}
 							onPress={() => router.back()}
+							testID="back-btn"
 						>
 							<Text style={styles.iconText}>✕</Text>
 						</TouchableOpacity>
@@ -159,12 +160,20 @@ export default function CameraBatchScreen() {
 					</TouchableOpacity>
 
 					{/* Nút chụp */}
-					<TouchableOpacity style={styles.captureOuter} onPress={takePicture}>
+					<TouchableOpacity
+						style={styles.captureOuter}
+						onPress={takePicture}
+						testID="capture-btn"
+					>
 						<View style={styles.captureInner} />
 					</TouchableOpacity>
 
 					{/* Nút Done */}
-					<TouchableOpacity style={styles.doneBtn} onPress={handleDone}>
+					<TouchableOpacity
+						style={styles.doneBtn}
+						onPress={handleDone}
+						testID="done-btn"
+					>
 						<Text style={styles.doneBtnText}>✓</Text>
 					</TouchableOpacity>
 				</View>

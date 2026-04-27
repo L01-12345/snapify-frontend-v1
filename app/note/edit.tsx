@@ -95,7 +95,7 @@ export default function EditNoteScreen() {
 					<Feather name="arrow-left" size={24} color={COLORS.slate800} />
 				</TouchableOpacity>
 				<Text style={styles.headerTitle}>Edit Note</Text>
-				<TouchableOpacity onPress={handleUpdate}>
+				<TouchableOpacity onPress={handleUpdate} testID="save-btn">
 					<Text style={styles.saveBtn}>{isSaving ? "..." : "Save"}</Text>
 				</TouchableOpacity>
 			</View>
@@ -114,6 +114,7 @@ export default function EditNoteScreen() {
 						value={title}
 						onChangeText={setTitle}
 						placeholderTextColor={COLORS.slate300}
+						testID="title-input"
 					/>
 
 					{/* --- ORIGINAL IMAGE --- */}
@@ -130,6 +131,7 @@ export default function EditNoteScreen() {
 								style={[styles.imageBox, { marginBottom: 24 }]}
 								onPress={() => setIsImageZoomVisible(true)}
 								activeOpacity={0.9}
+								testID="image-thumbnail"
 							>
 								<Image
 									source={{ uri: imageUrl }}
@@ -159,6 +161,7 @@ export default function EditNoteScreen() {
 						<TouchableOpacity
 							style={styles.changeBtn}
 							onPress={() => setIsFolderModalVisible(true)}
+							testID="change-folder-btn"
 						>
 							<Text style={styles.changeBtnText}>Change</Text>
 						</TouchableOpacity>
@@ -174,6 +177,7 @@ export default function EditNoteScreen() {
 						textAlignVertical="top"
 						value={content}
 						onChangeText={setContent}
+						testID="content-input"
 					/>
 				</ScrollView>
 			</KeyboardAvoidingView>
@@ -197,6 +201,7 @@ export default function EditNoteScreen() {
 					<TouchableOpacity
 						style={styles.zoomCloseBtn}
 						onPress={() => setIsImageZoomVisible(false)}
+						testID="zoom-close-btn"
 					>
 						<Feather name="x" size={28} color="white" />
 					</TouchableOpacity>
@@ -205,6 +210,7 @@ export default function EditNoteScreen() {
 						activeOpacity={1}
 						style={styles.zoomBackdrop}
 						onPress={() => setIsImageZoomVisible(false)}
+						testID="zoom-backdrop"
 					>
 						<Image
 							source={{ uri: imageUrl || "" }}

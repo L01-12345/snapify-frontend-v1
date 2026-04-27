@@ -53,6 +53,7 @@ export default function NewNoteScreen() {
 				<TouchableOpacity
 					onPress={() => router.back()}
 					style={styles.headerBtn}
+					testID="cancel-btn"
 				>
 					<Text style={styles.cancelText}>Cancel</Text>
 				</TouchableOpacity>
@@ -61,6 +62,7 @@ export default function NewNoteScreen() {
 					onPress={handleSave}
 					style={styles.headerBtn}
 					disabled={isSaving}
+					testID="save-btn"
 				>
 					{isSaving ? (
 						<ActivityIndicator size="small" color={COLORS.primary} />
@@ -83,6 +85,7 @@ export default function NewNoteScreen() {
 							onChangeText={setTitle}
 							placeholder="Note Title"
 							placeholderTextColor={COLORS.slate300}
+							testID="title-input"
 						/>
 					</View>
 
@@ -101,6 +104,7 @@ export default function NewNoteScreen() {
 						placeholderTextColor={COLORS.slate300}
 						multiline
 						textAlignVertical="top"
+						testID="content-input"
 					/>
 				</View>
 

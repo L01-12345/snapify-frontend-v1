@@ -16,11 +16,16 @@ import { COLORS } from "../src/constants/theme";
 import { noteApi } from "../src/api/noteApi";
 import { Note, NoteStatus } from "../src/types/api.types";
 
+import { NoteActionSheet } from "../src/components/common/NoteActionSheet";
+
 export default function AllNotesScreen() {
 	const router = useRouter();
 	const [activeStatus, setActiveStatus] = useState("All");
 	const [notes, setNotes] = useState<Note[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
+
+	const [selectedNoteForAction, setSelectedNoteForAction] =
+		useState<Note | null>(null);
 
 	// Lấy dữ liệu mỗi khi màn hình này được focus
 	useFocusEffect(
@@ -65,34 +70,74 @@ export default function AllNotesScreen() {
 	// 		size: "1.8 MB",
 	// 	},
 	// ];
-	const confirmDelete = (noteId: string, noteTitle: string) => {
+	// const confirmDelete = (noteId: string, noteTitle: string) => {
+	// 	Alert.alert(
+	// 		"Delete Note",
+	// 		`Are you sure you want to delete "${noteTitle}"?`,
+	// 		[
+	// 			{ text: "Cancel", style: "cancel" },
+	// 			{
+	// 				text: "Delete",
+	// 				style: "destructive", // style này làm nút chuyển màu đỏ trên iOS
+	// 				onPress: async () => {
+	// 					try {
+	// 						await noteApi.deleteNote(noteId);
+	// 						// Xóa xong thì lọc bỏ note đó khỏi danh sách UI ngay lập tức
+	// 						setNotes((prevNotes) => prevNotes.filter((n) => n.id !== noteId));
+	// 					} catch (error) {
+	// 						Alert.alert("Error", "Unable to delete this note.");
+	// 					}
+	// 				},
+	// 			},
+	// 		],
+	// 	);
+	// };
+	// --- CÁC HÀM XỬ LÝ ACTION CHO NOTE ---
+	const handleDelete = async () => {
+		if (!selectedNoteForAction) return;
+		try {
+			await noteApi.deleteNote(selectedNoteForAction.id);
+			setNotes((prevNotes) =>
+				prevNotes.filter((n) => n.id !== selectedNoteForAction.id),
+			);
+			setSelectedNoteForAction(null); // Đóng modal
+		} catch (error) {
+			Alert.alert("Error", "Unable to delete this note.");
+		}
+	};
+
+	const handleArchive = async () => {
+		if (!selectedNoteForAction) return;
+		// Giả lập đưa vào Archive (Xóa khỏi UI hiện tại và hiện thông báo)
 		Alert.alert(
-			"Delete Note",
-			`Are you sure you want to delete "${noteTitle}"?`,
-			[
-				{ text: "Cancel", style: "cancel" },
-				{
-					text: "Delete",
-					style: "destructive", // style này làm nút chuyển màu đỏ trên iOS
-					onPress: async () => {
-						try {
-							await noteApi.deleteNote(noteId);
-							// Xóa xong thì lọc bỏ note đó khỏi danh sách UI ngay lập tức
-							setNotes((prevNotes) => prevNotes.filter((n) => n.id !== noteId));
-						} catch (error) {
-							Alert.alert("Error", "Unable to delete this note.");
-						}
-					},
-				},
-			],
+			"Archived",
+			`"${selectedNoteForAction.title}" has been moved to Archive.`,
 		);
+		setNotes((prevNotes) =>
+			prevNotes.filter((n) => n.id !== selectedNoteForAction.id),
+		);
+		setSelectedNoteForAction(null); // Đóng modal
+	};
+
+	const handleMove = () => {
+		Alert.alert("Tính năng đang phát triển", "Mở Folder Modal ở đây.");
+		setSelectedNoteForAction(null);
+	};
+
+	const handlePin = () => {
+		Alert.alert("Pinned", `"${selectedNoteForAction?.title}" pinned to top.`);
+		setSelectedNoteForAction(null);
 	};
 
 	return (
 		<SafeAreaView style={styles.safeArea}>
 			{/* Header */}
 			<View style={styles.header}>
-				<TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
+				<TouchableOpacity
+					onPress={() => router.back()}
+					style={styles.iconBtn}
+					testID="back-btn"
+				>
 					<Feather name="arrow-left" size={24} color={COLORS.slate800} />
 				</TouchableOpacity>
 				<Text style={styles.headerTitle}>All Notes</Text>
@@ -170,7 +215,7 @@ export default function AllNotesScreen() {
 								marginTop: 20,
 							}}
 						>
-							Không có ghi chú nào.
+							There are no notes here.
 						</Text>
 					) : (
 						notes.map((note) => (
@@ -178,7 +223,8 @@ export default function AllNotesScreen() {
 								key={note.id}
 								style={styles.noteCard}
 								onPress={() => router.push(`/note/${note.id}`)}
-								onLongPress={() => confirmDelete(note.id, note.title)}
+								onLongPress={() => setSelectedNoteForAction(note)}
+								testID={`note-card-${note.id}`}
 							>
 								<View style={styles.noteHeader}>
 									<Text style={styles.noteTitle} numberOfLines={1}>
@@ -201,11 +247,22 @@ export default function AllNotesScreen() {
 			<TouchableOpacity
 				style={styles.fab}
 				onPress={() => router.push("/note/new")}
+				testID="fab-btn"
 			>
 				<View style={styles.fabInner}>
 					<Feather name="plus" size={32} color={COLORS.white} />
 				</View>
 			</TouchableOpacity>
+
+			<NoteActionSheet
+				visible={!!selectedNoteForAction}
+				noteTitle={selectedNoteForAction?.title}
+				onClose={() => setSelectedNoteForAction(null)}
+				onArchive={handleArchive}
+				onMove={handleMove}
+				onPin={handlePin}
+				onDelete={handleDelete}
+			/>
 		</SafeAreaView>
 	);
 }

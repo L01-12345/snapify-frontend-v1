@@ -79,7 +79,11 @@ export default function SnapToNoteScreen() {
 
 			{/* Header */}
 			<View style={styles.header}>
-				<TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
+				<TouchableOpacity
+					onPress={() => router.back()}
+					style={styles.iconBtn}
+					testID="back-btn"
+				>
 					<Feather name="x" size={24} color={COLORS.white} />
 				</TouchableOpacity>
 				<TouchableOpacity style={styles.iconBtn}>
@@ -121,6 +125,7 @@ export default function SnapToNoteScreen() {
 					style={styles.shutterBtn}
 					onPress={takePicture}
 					disabled={isTakingPhoto}
+					testID="shutter-btn"
 				>
 					<View style={styles.shutterInner} />
 				</TouchableOpacity>
