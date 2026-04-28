@@ -1,5 +1,5 @@
 import React from "react";
-import { render, fireEvent, waitFor } from "@testing-library/react-native";
+import { render, fireEvent, waitFor, act } from "@testing-library/react-native";
 import { Alert } from "react-native";
 import { useRouter } from "expo-router";
 
@@ -22,14 +22,21 @@ describe("RegisterScreen - Đăng ký tài khoản", () => {
 	});
 
 	it("đăng ký thành công và hiển thị popup yêu cầu đăng nhập", async () => {
-		(authApi.register as jest.Mock).mockResolvedValue({ status: "success" });
+		// Dùng Once để cô lập test
+		(authApi.register as jest.Mock).mockResolvedValueOnce({
+			status: "success",
+		});
 
 		const { getByTestId } = render(<RegisterScreen />);
 
 		fireEvent.changeText(getByTestId("reg-name"), "Snapify User");
 		fireEvent.changeText(getByTestId("reg-email"), "new@abc.com");
 		fireEvent.changeText(getByTestId("reg-password"), "secret123");
-		fireEvent.press(getByTestId("reg-btn"));
+
+		// BỌC ACT VÌ CÓ SET LOADING BẤT ĐỒNG BỘ
+		await act(async () => {
+			fireEvent.press(getByTestId("reg-btn"));
+		});
 
 		await waitFor(() => {
 			expect(authApi.register).toHaveBeenCalledWith({
@@ -56,14 +63,18 @@ describe("RegisterScreen - Đăng ký tài khoản", () => {
 	});
 
 	it("hiển thị báo lỗi khi đăng ký thất bại (trùng email...)", async () => {
-		(authApi.register as jest.Mock).mockRejectedValue(
+		(authApi.register as jest.Mock).mockRejectedValueOnce(
 			new Error("Email already exists"),
 		);
 
 		const { getByTestId } = render(<RegisterScreen />);
 
 		fireEvent.changeText(getByTestId("reg-email"), "exist@abc.com");
-		fireEvent.press(getByTestId("reg-btn"));
+
+		// BỌC ACT
+		await act(async () => {
+			fireEvent.press(getByTestId("reg-btn"));
+		});
 
 		await waitFor(() => {
 			expect(Alert.alert).toHaveBeenCalledWith(
@@ -78,14 +89,19 @@ describe("RegisterScreen - Đăng ký tài khoản", () => {
 		fireEvent.press(getByText("Log in"));
 		expect(mockBack).toHaveBeenCalled();
 	});
+
 	it("hiển thị báo lỗi mặc định khi đăng ký thất bại không có message (Cover line 45)", async () => {
 		// Reject với object rỗng {} để kích hoạt nhánh "|| Unable to create account."
-		(authApi.register as jest.Mock).mockRejectedValue({});
+		(authApi.register as jest.Mock).mockRejectedValueOnce({});
 
 		const { getByTestId } = render(<RegisterScreen />);
 
 		fireEvent.changeText(getByTestId("reg-email"), "test@abc.com");
-		fireEvent.press(getByTestId("reg-btn"));
+
+		// BỌC ACT
+		await act(async () => {
+			fireEvent.press(getByTestId("reg-btn"));
+		});
 
 		await waitFor(() => {
 			expect(Alert.alert).toHaveBeenCalledWith(
