@@ -5,15 +5,23 @@ import OnboardingScreen from "../app/onboarding"; // Sửa lại đường dẫn
 // --- 1. MOCK REACT NATIVE (FLATLIST) ---
 jest.mock("react-native", () => {
 	const RN = jest.requireActual("react-native");
-	// Ép FlatList thành ScrollView để Jest render toàn bộ các slide (bao gồm slide cuối)
-	RN.FlatList = (props: any) => (
-		<RN.ScrollView>
-			{props.data.map((item: any, index: number) =>
-				props.renderItem({ item, index }),
-			)}
-		</RN.ScrollView>
+
+	// Dùng Object.setPrototypeOf để thỏa mãn 2 điều kiện:
+	// 1. Trả về Object mới -> Tránh lỗi Read-only export trên CI/CD
+	// 2. Không duyệt qua các key -> Tránh lỗi kích hoạt Getters (DevMenu) ở Local
+	return Object.setPrototypeOf(
+		{
+			FlatList: (props: any) => (
+				<RN.ScrollView>
+					{props.data &&
+						props.data.map((item: any, index: number) =>
+							props.renderItem({ item, index }),
+						)}
+				</RN.ScrollView>
+			),
+		},
+		RN,
 	);
-	return RN;
 });
 
 // --- 2. MOCK CÁC THƯ VIỆN GIAO DIỆN ---
