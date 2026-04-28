@@ -1,5 +1,5 @@
 import React from "react";
-import { render, fireEvent, waitFor } from "@testing-library/react-native";
+import { render, fireEvent, waitFor, act } from "@testing-library/react-native";
 import { Alert } from "react-native";
 import { useRouter } from "expo-router";
 
@@ -22,11 +22,13 @@ describe("NewNoteScreen - Tạo ghi chú mới", () => {
 		(useRouter as jest.Mock).mockReturnValue({ back: mockBack });
 	});
 
-	it("báo lỗi nếu lưu khi chưa nhập tiêu đề", () => {
+	it("báo lỗi nếu lưu khi chưa nhập tiêu đề", async () => {
 		const { getByTestId } = render(<NewNoteScreen />);
 
-		// Bấm Save ngay khi title trống
-		fireEvent.press(getByTestId("save-btn"));
+		// BỌC ACT: Dù không gọi API nhưng hàm handleSave là async
+		await act(async () => {
+			fireEvent.press(getByTestId("save-btn"));
+		});
 
 		expect(Alert.alert).toHaveBeenCalledWith(
 			"Error",
@@ -36,7 +38,10 @@ describe("NewNoteScreen - Tạo ghi chú mới", () => {
 	});
 
 	it("tạo ghi chú thành công và quay lại trang trước", async () => {
-		(noteApi.createNote as jest.Mock).mockResolvedValue({ status: "success" });
+		// DÙNG Once ĐỂ TRÁNH RÒ RỈ PROMISE
+		(noteApi.createNote as jest.Mock).mockResolvedValueOnce({
+			status: "success",
+		});
 
 		const { getByTestId } = render(<NewNoteScreen />);
 
@@ -47,8 +52,10 @@ describe("NewNoteScreen - Tạo ghi chú mới", () => {
 			"Discuss about Q3 plan.",
 		);
 
-		// Bấm Save
-		fireEvent.press(getByTestId("save-btn"));
+		// BỌC ACT DO CÓ STATE UPDATE (setIsSaving)
+		await act(async () => {
+			fireEvent.press(getByTestId("save-btn"));
+		});
 
 		await waitFor(() => {
 			// Đảm bảo API được gọi đúng cấu trúc
@@ -63,14 +70,19 @@ describe("NewNoteScreen - Tạo ghi chú mới", () => {
 	});
 
 	it("hiển thị Alert lỗi nếu gọi API thất bại", async () => {
-		(noteApi.createNote as jest.Mock).mockRejectedValue(
+		// DÙNG Once
+		(noteApi.createNote as jest.Mock).mockRejectedValueOnce(
 			new Error("Network Error"),
 		);
 
 		const { getByTestId } = render(<NewNoteScreen />);
 
 		fireEvent.changeText(getByTestId("title-input"), "Valid Title");
-		fireEvent.press(getByTestId("save-btn"));
+
+		// BỌC ACT
+		await act(async () => {
+			fireEvent.press(getByTestId("save-btn"));
+		});
 
 		await waitFor(() => {
 			expect(Alert.alert).toHaveBeenCalledWith("Save Error", "Network Error");
@@ -78,9 +90,14 @@ describe("NewNoteScreen - Tạo ghi chú mới", () => {
 		});
 	});
 
-	it("quay về trang trước khi bấm Cancel", () => {
+	it("quay về trang trước khi bấm Cancel", async () => {
 		const { getByTestId } = render(<NewNoteScreen />);
-		fireEvent.press(getByTestId("cancel-btn"));
+
+		// BỌC ACT
+		await act(async () => {
+			fireEvent.press(getByTestId("cancel-btn"));
+		});
+
 		expect(mockBack).toHaveBeenCalled();
 	});
 });
