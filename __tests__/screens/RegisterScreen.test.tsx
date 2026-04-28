@@ -91,14 +91,14 @@ describe("RegisterScreen - Đăng ký tài khoản", () => {
 	});
 
 	it("hiển thị báo lỗi mặc định khi đăng ký thất bại không có message (Cover line 45)", async () => {
-		// Reject với object rỗng {} để kích hoạt nhánh "|| Unable to create account."
-		(authApi.register as jest.Mock).mockRejectedValueOnce({});
+		// SỬA Ở ĐÂY: Dùng new Error("") thay vì {}
+		// Để Node.js trên CI/CD không văng lỗi "Promise rejected with non-error"
+		(authApi.register as jest.Mock).mockRejectedValueOnce(new Error(""));
 
 		const { getByTestId } = render(<RegisterScreen />);
 
 		fireEvent.changeText(getByTestId("reg-email"), "test@abc.com");
 
-		// BỌC ACT
 		await act(async () => {
 			fireEvent.press(getByTestId("reg-btn"));
 		});
