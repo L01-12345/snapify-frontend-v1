@@ -1,110 +1,157 @@
 import React from "react";
 import { render, fireEvent, waitFor } from "@testing-library/react-native";
-import DashboardScreen from "../app/(tabs)/dashboard";
+import { Animated } from "react-native";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { useSelector } from "react-redux";
 
-// --- 1. MOCK EXPO ROUTER ---
-const mockPush = jest.fn();
-jest.mock("expo-router", () => ({
-	useRouter: jest.fn(() => ({ push: mockPush })),
-	useLocalSearchParams: jest.fn(() => ({ showToast: "false" })),
-	// THAY ĐỔI Ở ĐÂY: Dùng require('react') trực tiếp để lách luật Jest
-	useFocusEffect: jest.fn((cb) => require("react").useEffect(cb, [])),
+import DashboardScreen from "../app/(tabs)/dashboard";
+import { noteApi } from "../src/api/noteApi";
+import { dashboardApi } from "../src/api/dashboardApi";
+
+// --- MOCK MODULES ---
+jest.mock("expo-router", () => {
+	const React = require("react");
+	return {
+		useRouter: jest.fn(),
+		useLocalSearchParams: jest.fn(),
+		useFocusEffect: jest.fn((callback) => React.useEffect(callback, [])),
+	};
+});
+
+jest.mock("react-redux", () => ({
+	useSelector: jest.fn(),
+	useDispatch: jest.fn(),
 }));
 
-// --- 2. MOCK VECTOR ICONS ---
+jest.mock("../src/api/noteApi", () => ({
+	noteApi: { getNotes: jest.fn() },
+}));
+jest.mock("../src/api/dashboardApi", () => ({
+	dashboardApi: { getMetrics: jest.fn() },
+}));
 jest.mock("@expo/vector-icons", () => ({
 	Feather: "Feather",
 	Ionicons: "Ionicons",
 }));
 
-// --- 3. MOCK REDUX ---
-jest.mock("react-redux", () => ({
-	useDispatch: () => jest.fn(),
-	useSelector: jest.fn((callback) => {
-		const fakeState = {
-			auth: {
-				user: { id: "1", displayName: "John Doe", email: "test@example.com" },
-			},
-		};
-		return callback(fakeState);
-	}),
-}));
+// Mock Animation để không bị lỗi timeout
+jest.spyOn(Animated, "spring").mockReturnValue({ start: jest.fn() } as any);
+jest.spyOn(Animated, "timing").mockReturnValue({ start: jest.fn() } as any);
 
-// --- 4. MOCK API CỦA DASHBOARD ---
-jest.mock("../src/api/noteApi", () => ({
-	noteApi: {
-		getNotes: jest.fn().mockResolvedValue({
-			data: {
-				notes: [
-					{
-						id: "note-123",
-						title: "Calculus Formula",
-						content: "Derivative definition...",
-						status: "PROCESSED",
-					},
-				],
-			},
-		}),
-	},
-}));
+describe("DashboardScreen - Màn hình chính", () => {
+	const mockPush = jest.fn();
 
-jest.mock("../src/api/dashboardApi", () => ({
-	dashboardApi: {
-		getMetrics: jest.fn().mockResolvedValue({
-			data: { totalNotes: 10, studyNotes: 5 },
-		}),
-	},
-}));
+	const mockUser = {
+		displayName: "John Doe",
+		avatarUrl: "https://example.com/avatar.jpg",
+	};
 
-describe("HomeScreen (Dashboard) - Deep Tests", () => {
+	const mockNotes = [
+		{
+			id: "1",
+			title: "Note 1 Large",
+			content: "Content 1",
+			status: "PROCESSED",
+		},
+		{
+			id: "2",
+			title: "Note 2 Normal",
+			content: "Content 2",
+			status: "PENDING",
+		},
+	];
+
 	beforeEach(() => {
 		jest.clearAllMocks();
+		(useRouter as jest.Mock).mockReturnValue({ push: mockPush });
+		(useLocalSearchParams as jest.Mock).mockReturnValue({ showToast: "false" });
+		(useSelector as unknown as jest.Mock).mockReturnValue({ user: mockUser });
 	});
 
-	// Kịch bản 1: Render các text tĩnh và dữ liệu Redux (Tên User)
-	it("renders greeting and logo correctly", async () => {
-		const { getByText, getByPlaceholderText } = render(<DashboardScreen />);
+	it("fetch dữ liệu và hiển thị thông tin User, Notes thành công", async () => {
+		(noteApi.getNotes as jest.Mock).mockResolvedValue({
+			data: { notes: mockNotes },
+		});
+		(dashboardApi.getMetrics as jest.Mock).mockResolvedValue({ data: {} });
+
+		const { getByText, getByTestId } = render(<DashboardScreen />);
 
 		await waitFor(() => {
-			expect(getByText("Snapify")).toBeTruthy();
-			expect(getByText("Hello, John Doe")).toBeTruthy();
-			expect(getByText("JO")).toBeTruthy();
-			expect(getByPlaceholderText("Search notes, folders...")).toBeTruthy();
+			// 1. Kiểm tra Greeting lấy tên từ Redux
+			expect(getByText("Hello, John Doe 👋")).toBeTruthy();
+
+			// 2. Gọi API đủ
+			expect(noteApi.getNotes).toHaveBeenCalledWith({ limit: 5 });
+			expect(dashboardApi.getMetrics).toHaveBeenCalled();
+
+			// 3. Hiển thị Note
+			expect(getByText("Note 1 Large")).toBeTruthy();
+			expect(getByText("Note 2 Normal")).toBeTruthy();
 		});
+
+		// Test Điều hướng vào Note
+		fireEvent.press(getByTestId("note-card-1"));
+		expect(mockPush).toHaveBeenCalledWith("/note/1");
 	});
 
-	// Kịch bản 2: Render dữ liệu từ API (Ghi chú gần đây)
-	it("fetches and renders recent notes from API", async () => {
-		const { getByText } = render(<DashboardScreen />);
+	it("điều hướng đúng các nút Quick Actions và Header", () => {
+		const { getByTestId } = render(<DashboardScreen />);
 
-		await waitFor(() => {
-			expect(getByText("Calculus Formula")).toBeTruthy();
-			expect(getByText("PROCESSED")).toBeTruthy();
-		});
-	});
+		fireEvent.press(getByTestId("search-input"));
+		expect(mockPush).toHaveBeenCalledWith("/search");
 
-	// Kịch bản 3: Tương tác chuyển trang (Navigation)
-	it("navigates to specific routes when elements are pressed", async () => {
-		const { getByText } = render(<DashboardScreen />);
+		fireEvent.press(getByTestId("action-batch"));
+		expect(mockPush).toHaveBeenCalledWith("/camera-batch");
 
-		// Đợi API load xong giao diện rồi mới tiến hành bấm
-		await waitFor(() => {
-			expect(getByText("View All")).toBeTruthy();
-		});
+		fireEvent.press(getByTestId("action-archive"));
+		expect(mockPush).toHaveBeenCalledWith("/archive");
 
-		// Bấm vào nút "View All"
-		const viewAllBtn = getByText("View All");
-		fireEvent.press(viewAllBtn);
+		fireEvent.press(getByTestId("view-all-notes"));
 		expect(mockPush).toHaveBeenCalledWith("/all-notes");
+	});
 
-		// Bấm vào Avatar
-		const avatarBtn = getByText("JO");
-		fireEvent.press(avatarBtn);
-		expect(mockPush).toHaveBeenCalledWith("/profile");
+	it("kích hoạt Animation Toast khi params showToast = true", () => {
+		(useLocalSearchParams as jest.Mock).mockReturnValue({ showToast: "true" });
 
-		// Bấm vào Ghi chú
-		const noteCard = getByText("Calculus Formula");
-		fireEvent.press(noteCard);
-		expect(mockPush).toHaveBeenCalledWith("/note/note-123");
+		render(<DashboardScreen />);
+
+		// Vì useEffect gọi Animated.spring ngay khi mount (do showToast="true")
+		expect(Animated.spring).toHaveBeenCalled();
+	});
+	it("hiển thị Avatar dạng Image khi user có avatarUrl (Nhánh 1)", async () => {
+		// Giả lập user có avatarUrl
+		const userWithAvatar = {
+			displayName: "John Doe",
+			avatarUrl: "https://example.com/avatar.jpg",
+		};
+		(useSelector as unknown as jest.Mock).mockReturnValue({
+			user: userWithAvatar,
+		});
+
+		(noteApi.getNotes as jest.Mock).mockResolvedValue({ data: { notes: [] } });
+		(dashboardApi.getMetrics as jest.Mock).mockResolvedValue({ data: null });
+
+		const { getByText, queryByText } = render(<DashboardScreen />);
+
+		await waitFor(() => {
+			// Vì đã có avatarUrl nên nó sẽ render thẻ Image, KHÔNG render chữ viết tắt "JO" hay "JD"
+			expect(queryByText("JO")).toBeNull();
+			expect(queryByText("JD")).toBeNull();
+		});
+	});
+
+	it('hiển thị Avatar mặc định "JD" khi user bị null hoặc không có tên (Nhánh 3)', async () => {
+		// Giả lập user bị null hoàn toàn (chưa load kịp thông tin)
+		(useSelector as unknown as jest.Mock).mockReturnValue({ user: null });
+
+		(noteApi.getNotes as jest.Mock).mockResolvedValue({ data: { notes: [] } });
+		(dashboardApi.getMetrics as jest.Mock).mockResolvedValue({ data: null });
+
+		const { getByText } = render(<DashboardScreen />);
+
+		await waitFor(() => {
+			// Đảm bảo chữ "JD" xuất hiện do rơi vào nhánh fallback || "JD"
+			expect(getByText("JD")).toBeTruthy();
+		});
 	});
 });

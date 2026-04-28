@@ -39,7 +39,7 @@ export const NoteActionSheet = ({
 		>
 			<View style={styles.overlay}>
 				{/* Nhấn ra ngoài vùng tối để đóng Modal */}
-				<TouchableWithoutFeedback onPress={onClose}>
+				<TouchableWithoutFeedback onPress={onClose} testID="sheet-backdrop">
 					<View style={styles.backdrop} />
 				</TouchableWithoutFeedback>
 
@@ -56,17 +56,29 @@ export const NoteActionSheet = ({
 					</View>
 
 					<View style={styles.actionGroup}>
-						<TouchableOpacity style={styles.actionBtn} onPress={onArchive}>
+						<TouchableOpacity
+							style={styles.actionBtn}
+							onPress={onArchive}
+							testID="archive-btn"
+						>
 							<Text style={styles.actionIcon}>📦</Text>
 							<Text style={styles.actionText}>Archive Note</Text>
 						</TouchableOpacity>
 
-						<TouchableOpacity style={styles.actionBtn} onPress={onMove}>
+						<TouchableOpacity
+							style={styles.actionBtn}
+							onPress={onMove}
+							testID="move-btn"
+						>
 							<Text style={styles.actionIcon}>📁</Text>
 							<Text style={styles.actionText}>Move to Folder</Text>
 						</TouchableOpacity>
 
-						<TouchableOpacity style={styles.actionBtn} onPress={onPin}>
+						<TouchableOpacity
+							style={styles.actionBtn}
+							onPress={onPin}
+							testID="pin-btn"
+						>
 							<Text style={styles.actionIcon}>📌</Text>
 							<Text style={styles.actionText}>Pin to Top</Text>
 						</TouchableOpacity>
@@ -74,12 +86,20 @@ export const NoteActionSheet = ({
 
 					<View style={styles.divider} />
 
-					<TouchableOpacity style={styles.deleteBtn} onPress={onDelete}>
+					<TouchableOpacity
+						style={styles.deleteBtn}
+						onPress={onDelete}
+						testID="delete-btn"
+					>
 						<Text style={styles.deleteIcon}>🗑️</Text>
 						<Text style={styles.deleteText}>Delete Note</Text>
 					</TouchableOpacity>
 
-					<TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
+					<TouchableOpacity
+						style={styles.cancelBtn}
+						onPress={onClose}
+						testID="cancel-btn"
+					>
 						<Text style={styles.cancelText}>Cancel</Text>
 					</TouchableOpacity>
 				</View>

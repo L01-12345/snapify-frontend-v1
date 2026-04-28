@@ -158,6 +158,7 @@ export default function ProfileScreen() {
 				<TouchableOpacity
 					onPress={() => setModalVisible(true)}
 					style={styles.iconBtn}
+					testID="settings-btn"
 				>
 					<Feather name="more-vertical" size={24} color={COLORS.slate800} />
 				</TouchableOpacity>
@@ -173,6 +174,7 @@ export default function ProfileScreen() {
 						<TouchableOpacity
 							style={styles.avatarBox}
 							onPress={handlePickImage}
+							testID="avatar-picker"
 						>
 							{isUpdatingAvatar ? (
 								<ActivityIndicator color={COLORS.primary} />
@@ -198,6 +200,7 @@ export default function ProfileScreen() {
 							label="Display Name"
 							value={displayName}
 							onChangeText={setDisplayName}
+							testID="profile-name-input"
 						/>
 						<Input
 							label="Email (Read-only)"
@@ -210,6 +213,7 @@ export default function ProfileScreen() {
 							onChangeText={setBio}
 							multiline
 							placeholder="Tell me about yourself..."
+							testID="profile-bio-input"
 						/>
 					</View>
 
@@ -224,6 +228,7 @@ export default function ProfileScreen() {
 							isPassword
 							value={newPassword}
 							onChangeText={setNewPassword}
+							testID="new-password-input"
 						/>
 
 						{/* SỬ DỤNG TOUCHABLE OPACITY THAY VÌ BUTTON COMPONENT ĐỂ ĐẢM BẢO HIỂN THỊ */}
@@ -231,6 +236,7 @@ export default function ProfileScreen() {
 							style={styles.changePasswordBtn}
 							onPress={handleTriggerChangePassword}
 							disabled={isRequestingOtp}
+							testID="change-pass-btn"
 						>
 							{isRequestingOtp ? (
 								<ActivityIndicator color={COLORS.primary} />
@@ -254,6 +260,7 @@ export default function ProfileScreen() {
 						title={loadingProfile ? "Saving..." : "Save Profile"}
 						onPress={handleSaveProfile}
 						disabled={loadingProfile}
+						testID="save-profile-btn"
 					/>
 				</View>
 			</KeyboardAvoidingView>
@@ -278,12 +285,14 @@ export default function ProfileScreen() {
 							value={otp}
 							onChangeText={setOtp}
 							keyboardType="number-pad"
+							testID="otp-input"
 						/>
 
 						<View style={styles.modalActions}>
 							<TouchableOpacity
 								style={styles.cancelBtn}
 								onPress={() => setOtpModalVisible(false)}
+								testID="cancel-otp-btn"
 							>
 								<Text style={styles.cancelBtnText}>Cancel</Text>
 							</TouchableOpacity>
@@ -291,6 +300,7 @@ export default function ProfileScreen() {
 								style={styles.confirmBtn}
 								onPress={handleVerifyAndChangePassword}
 								disabled={isConfirmingPassword}
+								testID="confirm-otp-btn"
 							>
 								{isConfirmingPassword ? (
 									<ActivityIndicator color="white" />

@@ -70,7 +70,10 @@ export const FolderSelectModal = ({
 			onRequestClose={onClose}
 		>
 			<View style={styles.overlay}>
-				<TouchableWithoutFeedback onPress={onClose}>
+				<TouchableWithoutFeedback
+					onPress={onClose}
+					testID="folder-modal-backdrop"
+				>
 					<View style={styles.backdrop} />
 				</TouchableWithoutFeedback>
 
@@ -108,6 +111,7 @@ export const FolderSelectModal = ({
 										]}
 										onPress={() => onSelect(folder)}
 										activeOpacity={0.7}
+										testID={`folder-item-${folder.id}`}
 									>
 										<View style={styles.itemLeft}>
 											<View style={styles.iconBox}>

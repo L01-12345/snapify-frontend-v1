@@ -1,18 +1,34 @@
 import React from "react";
 import { render, fireEvent } from "@testing-library/react-native";
-import OnboardingScreen from "../app/onboarding";
-import { useRouter } from "expo-router";
+import OnboardingScreen from "../app/onboarding"; // Sửa lại đường dẫn nếu file nằm ở chỗ khác
 
-// --- MOCK CÁC THÀNH PHẦN NATIVE ---
-jest.mock("@expo/vector-icons", () => ({
-	Feather: "Feather",
-}));
+// --- 1. MOCK REACT NATIVE (FLATLIST) ---
+jest.mock("react-native", () => {
+	const RN = jest.requireActual("react-native");
+	// Ép FlatList thành ScrollView để Jest render toàn bộ các slide (bao gồm slide cuối)
+	RN.FlatList = (props: any) => (
+		<RN.ScrollView>
+			{props.data.map((item: any, index: number) =>
+				props.renderItem({ item, index }),
+			)}
+		</RN.ScrollView>
+	);
+	return RN;
+});
 
-jest.mock("expo-linear-gradient", () => ({
-	LinearGradient: "LinearGradient",
-}));
+// --- 2. MOCK CÁC THƯ VIỆN GIAO DIỆN ---
+// Thay vì trả về string, ta trả về thẻ <View> hợp lệ của React Native
+jest.mock("@expo/vector-icons", () => {
+	const { View } = require("react-native");
+	return { Feather: (props: any) => <View {...props} /> };
+});
 
-// --- MOCK EXPO ROUTER ---
+jest.mock("expo-linear-gradient", () => {
+	const { View } = require("react-native");
+	return { LinearGradient: (props: any) => <View {...props} /> };
+});
+
+// --- 3. MOCK EXPO ROUTER ---
 const mockReplace = jest.fn();
 jest.mock("expo-router", () => ({
 	useRouter: jest.fn(() => ({ replace: mockReplace })),
@@ -33,10 +49,7 @@ describe("OnboardingScreen - Deep Tests", () => {
 	it("renders the first slide texts correctly", () => {
 		const { getByText } = render(<OnboardingScreen />);
 
-		// Tìm chính xác Title của slide 1
 		expect(getByText("Snap it...\nthen lose it?")).toBeTruthy();
-
-		// Tìm chính xác Subtitle của slide 1
 		expect(
 			getByText(
 				"You take hundreds of photos of lecture slides, whiteboards, and documents, but can never find them when needed.",
@@ -48,11 +61,9 @@ describe("OnboardingScreen - Deep Tests", () => {
 	it("navigates to login when Skip is pressed", () => {
 		const { getByText } = render(<OnboardingScreen />);
 
-		// Tìm nút Skip và giả lập thao tác bấm
 		const skipButton = getByText("Skip");
 		fireEvent.press(skipButton);
 
-		// Kiểm tra xem hàm router.replace có được gọi với đúng đường dẫn không
 		expect(mockReplace).toHaveBeenCalledWith("/(auth)/login");
 	});
 
@@ -60,7 +71,7 @@ describe("OnboardingScreen - Deep Tests", () => {
 	it("renders Get Started button correctly", () => {
 		const { getByText } = render(<OnboardingScreen />);
 
-		// Dù nằm ở slide cuối (trong FlatList), Jest vẫn render Text này ra DOM ảo
+		// Nhờ mock FlatList ở trên, Jest giờ đã có thể thấy slide cuối cùng!
 		expect(getByText("Ready to\nNote Smarter?")).toBeTruthy();
 		expect(getByText("Get Started")).toBeTruthy();
 	});

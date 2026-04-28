@@ -41,6 +41,7 @@ export const Input = ({ label, error, isPassword, ...props }: InputProps) => {
 					<TouchableOpacity
 						onPress={() => setShowPassword(!showPassword)}
 						style={styles.eyeIcon}
+						testID="eye-icon"
 					>
 						<Text style={{ fontSize: 16 }}>{showPassword ? "🙈" : "👁️"}</Text>
 					</TouchableOpacity>

@@ -35,7 +35,7 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
 		>
 			<View style={styles.overlay}>
 				{/* Nhấn ra ngoài để đóng Modal */}
-				<TouchableWithoutFeedback onPress={onClose}>
+				<TouchableWithoutFeedback onPress={onClose} testID="settings-backdrop">
 					<View style={styles.backdrop} />
 				</TouchableWithoutFeedback>
 
@@ -88,7 +88,11 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
 
 					<View style={styles.divider} />
 
-					<TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+					<TouchableOpacity
+						style={styles.logoutBtn}
+						onPress={handleLogout}
+						testID="logout-btn"
+					>
 						<View style={styles.menuLeft}>
 							<View style={styles.logoutIconBox}>
 								<Text style={styles.icon}>🚪</Text>

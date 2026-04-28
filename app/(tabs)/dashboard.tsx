@@ -116,6 +116,7 @@ export default function DashboardScreen() {
 						placeholder="Search notes, folders..."
 						onPress={() => router.push("/search")}
 						placeholderTextColor={COLORS.slate400}
+						testID="search-input"
 					/>
 				</View>
 
@@ -125,6 +126,7 @@ export default function DashboardScreen() {
 					<TouchableOpacity
 						style={styles.actionCard}
 						onPress={() => router.push("/camera-batch")}
+						testID="action-batch"
 					>
 						<View style={styles.actionIconBg}>
 							<Ionicons
@@ -139,6 +141,7 @@ export default function DashboardScreen() {
 					<TouchableOpacity
 						style={styles.actionCard}
 						onPress={() => router.push("/archive")}
+						testID="action-archive"
 					>
 						<View style={styles.actionIconBg}>
 							<Ionicons
@@ -154,7 +157,10 @@ export default function DashboardScreen() {
 				{/* Recent Notes */}
 				<View style={styles.sectionHeader}>
 					<Text style={styles.sectionTitle}>Recent Notes</Text>
-					<TouchableOpacity onPress={() => router.push("/all-notes")}>
+					<TouchableOpacity
+						onPress={() => router.push("/all-notes")}
+						testID="view-all-notes"
+					>
 						<Text style={styles.viewAllText}>View All</Text>
 					</TouchableOpacity>
 				</View>
@@ -168,6 +174,7 @@ export default function DashboardScreen() {
 									key={note.id}
 									style={styles.noteCardLarge}
 									onPress={() => router.push(`/note/${note.id}`)}
+									testID={`note-card-${note.id}`}
 								>
 									<View style={styles.noteHeaderLarge}>
 										<Text style={styles.noteTitleLarge}>{note.title}</Text>
@@ -189,6 +196,7 @@ export default function DashboardScreen() {
 								key={note.id}
 								style={styles.noteCard}
 								onPress={() => router.push(`/note/${note.id}`)}
+								testID={`note-card-${note.id}`}
 							>
 								<View style={styles.noteIconBox}>
 									<Feather name="file-text" size={20} color={COLORS.primary} />
