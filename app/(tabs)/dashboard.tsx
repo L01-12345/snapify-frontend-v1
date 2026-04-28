@@ -58,21 +58,32 @@ export default function DashboardScreen() {
 	);
 
 	useEffect(() => {
-		if (showToast === "true") {
-			Animated.spring(slideAnim, {
-				toValue: 0,
-				useNativeDriver: true,
-				tension: 50,
-				friction: 8,
-			}).start();
-			setTimeout(() => {
-				Animated.timing(slideAnim, {
-					toValue: 150,
-					duration: 300,
-					useNativeDriver: true,
-				}).start();
-			}, 4000);
+		if (showToast !== "true") {
+			return;
 		}
+
+		const hasAnimatedTiming = typeof Animated?.timing === "function";
+		const hasAnimatedSpring = typeof Animated?.spring === "function";
+		if (!hasAnimatedTiming || !hasAnimatedSpring) {
+			return;
+		}
+
+		Animated.spring(slideAnim, {
+			toValue: 0,
+			useNativeDriver: true,
+			tension: 50,
+			friction: 8,
+		}).start();
+
+		const timer = setTimeout(() => {
+			Animated.timing(slideAnim, {
+				toValue: 150,
+				duration: 300,
+				useNativeDriver: true,
+			}).start();
+		}, 4000);
+
+		return () => clearTimeout(timer);
 	}, [showToast]);
 
 	return (
