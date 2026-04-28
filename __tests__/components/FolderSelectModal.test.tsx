@@ -21,100 +21,114 @@ describe("Component: FolderSelectModal", () => {
 
 	it("gọi API fetchFolders khi modal hiển thị (visible = true)", async () => {
 		const mockFolders = [{ id: "1", name: "Work" }];
-		(folderApi.getFolders as jest.Mock).mockResolvedValue({
+		// Dùng Once để tránh rò rỉ bộ nhớ
+		(folderApi.getFolders as jest.Mock).mockResolvedValueOnce({
 			data: mockFolders,
 		});
 
-		const { getByText } = render(
-			<FolderSelectModal
-				visible={true}
-				onClose={mockOnClose}
-				onSelect={mockOnSelect}
-			/>,
-		);
-
-		await waitFor(() => {
-			expect(folderApi.getFolders).toHaveBeenCalledTimes(1);
-			expect(getByText("Work")).toBeTruthy();
+		let component: any;
+		// Ép Jest chờ Component render và API fetch xong xuôi
+		await act(async () => {
+			component = render(
+				<FolderSelectModal
+					visible={true}
+					onClose={mockOnClose}
+					onSelect={mockOnSelect}
+				/>,
+			);
 		});
+
+		expect(folderApi.getFolders).toHaveBeenCalledTimes(1);
+		expect(component.getByText("Work")).toBeTruthy();
 	});
 
 	it("hiển thị thông báo khi danh sách thư mục rỗng", async () => {
-		(folderApi.getFolders as jest.Mock).mockResolvedValue({ data: [] });
+		(folderApi.getFolders as jest.Mock).mockResolvedValueOnce({ data: [] });
 
-		const { getByText } = render(
-			<FolderSelectModal
-				visible={true}
-				onClose={mockOnClose}
-				onSelect={mockOnSelect}
-			/>,
-		);
-
-		await waitFor(() => {
-			expect(getByText("You don't have any folders yet.")).toBeTruthy();
+		let component: any;
+		await act(async () => {
+			component = render(
+				<FolderSelectModal
+					visible={true}
+					onClose={mockOnClose}
+					onSelect={mockOnSelect}
+				/>,
+			);
 		});
+
+		expect(component.getByText("You don't have any folders yet.")).toBeTruthy();
 	});
 
 	it("gọi hàm onSelect khi người dùng chọn một thư mục", async () => {
 		const mockFolders = [{ id: "1", name: "Study" }];
-		(folderApi.getFolders as jest.Mock).mockResolvedValue({
+		(folderApi.getFolders as jest.Mock).mockResolvedValueOnce({
 			data: mockFolders,
 		});
 
-		const { getByTestId } = render(
-			<FolderSelectModal
-				visible={true}
-				onClose={mockOnClose}
-				onSelect={mockOnSelect}
-			/>,
-		);
+		let component: any;
+		await act(async () => {
+			component = render(
+				<FolderSelectModal
+					visible={true}
+					onClose={mockOnClose}
+					onSelect={mockOnSelect}
+				/>,
+			);
+		});
 
-		await waitFor(() => expect(getByTestId("folder-item-1")).toBeTruthy());
+		await act(async () => {
+			fireEvent.press(component.getByTestId("folder-item-1"));
+		});
 
-		fireEvent.press(getByTestId("folder-item-1"));
 		expect(mockOnSelect).toHaveBeenCalledWith(mockFolders[0]);
 	});
 
-	it("gọi hàm onClose khi bấm vào vùng nền mờ (backdrop)", () => {
-		const { getByTestId } = render(
-			<FolderSelectModal
-				visible={true}
-				onClose={mockOnClose}
-				onSelect={mockOnSelect}
-			/>,
-		);
+	it("gọi hàm onClose khi bấm vào vùng nền mờ (backdrop)", async () => {
+		// SỬA LỖI ĐỒNG BỘ Ở ĐÂY: Biến thành async và đợi API chạy xong
+		(folderApi.getFolders as jest.Mock).mockResolvedValueOnce({ data: [] });
 
-		fireEvent.press(getByTestId("folder-modal-backdrop"));
+		let component: any;
+		await act(async () => {
+			component = render(
+				<FolderSelectModal
+					visible={true}
+					onClose={mockOnClose}
+					onSelect={mockOnSelect}
+				/>,
+			);
+		});
+
+		await act(async () => {
+			fireEvent.press(component.getByTestId("folder-modal-backdrop"));
+		});
+
 		expect(mockOnClose).toHaveBeenCalled();
 	});
+
 	it("hiển thị Alert thông báo lỗi khi gọi API thất bại", async () => {
-		// 1. Tạm thời "bịt miệng" console.error để CI/CD không đánh rớt test
 		const consoleSpy = jest
 			.spyOn(console, "error")
 			.mockImplementation(() => {});
 
-		// 2. Sử dụng 'Once' để tránh rò rỉ lỗi (leakage) sang test case khác
 		(folderApi.getFolders as jest.Mock).mockRejectedValueOnce(
 			new Error("Network Error"),
 		);
 
-		render(
-			<FolderSelectModal
-				visible={true}
-				onClose={jest.fn()}
-				onSelect={jest.fn()}
-			/>,
-		);
-
-		await waitFor(() => {
-			// Đảm bảo nhảy vào khối catch và gọi Alert
-			expect(Alert.alert).toHaveBeenCalledWith(
-				"Error",
-				"Unable to load folder list.",
+		await act(async () => {
+			render(
+				<FolderSelectModal
+					visible={true}
+					onClose={jest.fn()}
+					onSelect={jest.fn()}
+				/>,
 			);
 		});
 
-		// 3. Dọn dẹp: Trả lại hàm console.error nguyên thủy sau khi test xong
+		expect(Alert.alert).toHaveBeenCalledWith(
+			"Error",
+			"Unable to load folder list.",
+		);
+
 		consoleSpy.mockRestore();
 	});
 });
