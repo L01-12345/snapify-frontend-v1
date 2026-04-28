@@ -41,6 +41,19 @@ jest.mock("../../src/store/slices/authSlice", () => ({
 		payload,
 	})),
 }));
+jest.mock("../../src/components/common/SettingsModal", () => {
+	const { View, TouchableOpacity } = require("react-native");
+	return {
+		SettingsModal: ({ visible, onClose }: any) => {
+			if (!visible) return null;
+			return (
+				<View testID="mock-settings-modal">
+					<TouchableOpacity testID="mock-settings-close" onPress={onClose} />
+				</View>
+			);
+		},
+	};
+});
 
 describe("ProfileScreen - Quản lý trang cá nhân", () => {
 	const mockDispatch = jest.fn();
@@ -303,15 +316,24 @@ describe("ProfileScreen - Quản lý trang cá nhân", () => {
 		});
 	});
 
-	it("hiển thị Avatar mặc định (JD) nếu user không có displayName và avatarUrl (Cover line 154)", () => {
-		// Ép Redux trả về user rỗng (không tên, không ảnh)
-		(useSelector as unknown as jest.Mock).mockReturnValue({
-			user: { email: "test@abc.com" },
-		});
+	it("hiển thị Avatar mặc định (JD) nếu user hoàn toàn rỗng (Cover line 154)", () => {
+		// SỬA Ở ĐÂY: Ép Redux trả về user null hoàn toàn để kích hoạt nhánh fallback || "JD"
+		(useSelector as unknown as jest.Mock).mockReturnValue({ user: null });
 
 		const { getByText } = render(<ProfileScreen />);
-
-		// Phải hiển thị được chữ JD (Fallback)
 		expect(getByText("JD")).toBeTruthy();
+	});
+	it("đóng Settings Modal khi gọi hàm onClose (Cover line 270)", async () => {
+		const { getByTestId, queryByTestId } = render(<ProfileScreen />);
+
+		// 1. Mở Settings Modal
+		fireEvent.press(getByTestId("settings-btn"));
+		expect(getByTestId("mock-settings-modal")).toBeTruthy();
+
+		// 2. Bấm nút đóng trên Modal Mock
+		fireEvent.press(getByTestId("mock-settings-close"));
+
+		// Đảm bảo Modal đã bị gỡ khỏi UI
+		expect(queryByTestId("mock-settings-modal")).toBeNull();
 	});
 });

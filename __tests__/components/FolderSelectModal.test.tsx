@@ -88,11 +88,15 @@ describe("Component: FolderSelectModal", () => {
 		expect(mockOnClose).toHaveBeenCalled();
 	});
 	it("hiển thị Alert thông báo lỗi khi gọi API thất bại", async () => {
-		// Giả lập API văng lỗi
-		(folderApi.getFolders as jest.Mock).mockRejectedValue(
+		// 1. Tạm thời "bịt miệng" console.error để CI/CD không đánh rớt test
+		const consoleSpy = jest
+			.spyOn(console, "error")
+			.mockImplementation(() => {});
+
+		// 2. Sử dụng 'Once' để tránh rò rỉ lỗi (leakage) sang test case khác
+		(folderApi.getFolders as jest.Mock).mockRejectedValueOnce(
 			new Error("Network Error"),
 		);
-		jest.spyOn(Alert, "alert");
 
 		render(
 			<FolderSelectModal
@@ -103,11 +107,14 @@ describe("Component: FolderSelectModal", () => {
 		);
 
 		await waitFor(() => {
-			// Đảm bảo nhảy vào dòng 58-59
+			// Đảm bảo nhảy vào khối catch và gọi Alert
 			expect(Alert.alert).toHaveBeenCalledWith(
 				"Error",
 				"Unable to load folder list.",
 			);
 		});
+
+		// 3. Dọn dẹp: Trả lại hàm console.error nguyên thủy sau khi test xong
+		consoleSpy.mockRestore();
 	});
 });

@@ -78,4 +78,20 @@ describe("RegisterScreen - Đăng ký tài khoản", () => {
 		fireEvent.press(getByText("Log in"));
 		expect(mockBack).toHaveBeenCalled();
 	});
+	it("hiển thị báo lỗi mặc định khi đăng ký thất bại không có message (Cover line 45)", async () => {
+		// Reject với object rỗng {} để kích hoạt nhánh "|| Unable to create account."
+		(authApi.register as jest.Mock).mockRejectedValue({});
+
+		const { getByTestId } = render(<RegisterScreen />);
+
+		fireEvent.changeText(getByTestId("reg-email"), "test@abc.com");
+		fireEvent.press(getByTestId("reg-btn"));
+
+		await waitFor(() => {
+			expect(Alert.alert).toHaveBeenCalledWith(
+				"Registration Error",
+				"Unable to create account.",
+			);
+		});
+	});
 });

@@ -118,4 +118,34 @@ describe("FoldersScreen - Quản lý danh sách Thư mục", () => {
 			expect(Alert.alert).toHaveBeenCalledWith("Error", "Tên đã tồn tại");
 		});
 	});
+	it("báo lỗi console khi gọi API fetchFolders thất bại (Cover line 48)", async () => {
+		const consoleSpy = jest.spyOn(console, "log").mockImplementation();
+		(folderApi.getFolders as jest.Mock).mockRejectedValue(
+			new Error("Lỗi mạng"),
+		);
+
+		render(<FoldersScreen />);
+
+		await waitFor(() => {
+			expect(consoleSpy).toHaveBeenCalledWith(
+				"Lỗi tải folders:",
+				expect.any(Error),
+			);
+		});
+		consoleSpy.mockRestore(); // Trả lại console.log bình thường
+	});
+
+	it("đóng Modal tạo thư mục khi bấm nút Cancel (Cover line 174)", () => {
+		const { getByTestId, getByText, queryByText } = render(<FoldersScreen />);
+
+		// Mở Modal
+		fireEvent.press(getByTestId("add-folder-btn"));
+		expect(getByText("Create New Folder")).toBeTruthy();
+
+		// Bấm nút Cancel (Tìm bằng text)
+		fireEvent.press(getByText("Cancel"));
+
+		// Đảm bảo Modal đã đóng
+		expect(queryByText("Create New Folder")).toBeNull();
+	});
 });
