@@ -23,7 +23,7 @@ jobs:
           cache: "npm"
 
       - name: Install Dependencies
-        run: npm ci || npm install --legacy-peer-deps
+        run: npm ci
 
       - name: Run Jest Tests with Coverage
         run: npm run test:coverage
