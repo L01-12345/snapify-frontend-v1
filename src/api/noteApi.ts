@@ -9,6 +9,8 @@ import {
 	SmartAction,
 } from "../types/api.types";
 
+import * as Sentry from "@sentry/react-native";
+
 class NoteApi {
 	// --------------------------------------------------------
 	// 1. UPLOAD & AI PROCESSING
@@ -31,12 +33,15 @@ class NoteApi {
 			headers: {
 				"Content-Type": "multipart/form-data",
 			},
+			timeout: 60000,
 		});
 	}
 
 	// POST /notes/{id}/categorize
 	autoCategorize(id: string): Promise<SuccessResponse<Note>> {
-		return axiosClient.post(`/notes/${id}/categorize`);
+		return axiosClient.post(`/notes/${id}/categorize`, undefined, {
+			timeout: 30000,
+		});
 	}
 
 	// Hàm tiện ích: Thực hiện chuỗi hành động Chụp -> Trích xuất -> Phân loại
@@ -54,10 +59,22 @@ class NoteApi {
 		}
 
 		// Bước 2: Gọi AI tự động phân loại dựa trên ID vừa tạo
-		const categoryRes = await this.autoCategorize(newNote.id);
+		try {
+			const categoryRes = await this.autoCategorize(newNote.id);
 
-		// Trả về Note đã được gắn folderId
-		return categoryRes.data || newNote;
+			Sentry.captureMessage("User utilized Smart OCR successfully", {
+				level: "info",
+				tags: { feature: "ocr_scanner", status: "success" },
+			});
+			// Trả về Note đã được gắn folderId
+			return categoryRes.data || newNote;
+		} catch (err) {
+			console.warn(
+				"Auto categorize failed, returning uncategorized note:",
+				err,
+			);
+			return newNote;
+		}
 	}
 
 	// GET /notes/{id}/actions

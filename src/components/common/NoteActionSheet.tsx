@@ -1,5 +1,5 @@
 // src/components/common/NoteActionSheet.tsx
-import React from "react";
+import React, { useState } from "react";
 import {
 	Modal,
 	View,
@@ -8,28 +8,95 @@ import {
 	TouchableOpacity,
 	TouchableWithoutFeedback,
 	Platform,
+	Alert,
+	ActivityIndicator,
 } from "react-native";
 import { COLORS } from "../../constants/theme";
+import { noteApi } from "../../api/noteApi";
 
 interface NoteActionSheetProps {
 	visible: boolean;
 	onClose: () => void;
+	noteId: string;
 	noteTitle?: string;
-	onArchive: () => void;
-	onMove: () => void;
-	onPin: () => void;
-	onDelete: () => void;
+	isArchived?: boolean;
+	onSuccess?: () => void;
+	onMove?: () => void;
+	onPin?: () => void;
 }
 
 export const NoteActionSheet = ({
 	visible,
 	onClose,
+	noteId,
 	noteTitle,
-	onArchive,
+	isArchived = false,
+	onSuccess,
 	onMove,
 	onPin,
-	onDelete,
 }: NoteActionSheetProps) => {
+	const [isProcessing, setIsProcessing] = useState(false);
+	const handleArchive = async () => {
+		try {
+			setIsProcessing(true);
+			// API: Update status thành ARCHIVED
+			await noteApi.updateNote(noteId, { status: "ARCHIVED" });
+			Alert.alert("Archived", "Note has been moved to Archive.");
+
+			if (onSuccess) onSuccess(); // Báo cho màn hình cha cập nhật lại list
+			onClose(); // Đóng Modal
+		} catch (error) {
+			console.error("Archive Error:", error);
+			Alert.alert("Error", "Failed to archive the note.");
+		} finally {
+			setIsProcessing(false);
+		}
+	};
+
+	const handleDelete = () => {
+		Alert.alert(
+			"Delete Note",
+			`Are you sure you want to permanently delete "${noteTitle || "this note"}"?`,
+			[
+				{ text: "Cancel", style: "cancel" },
+				{
+					text: "Delete",
+					style: "destructive",
+					onPress: async () => {
+						try {
+							setIsProcessing(true);
+							await noteApi.deleteNote(noteId);
+							Alert.alert("Deleted", "Note has been deleted.");
+
+							if (onSuccess) onSuccess(); // Báo cho màn hình cha
+							onClose();
+						} catch (error) {
+							console.error("Delete Error:", error);
+							Alert.alert("Error", "Failed to delete the note.");
+						} finally {
+							setIsProcessing(false);
+						}
+					},
+				},
+			],
+		);
+	};
+	const handleRestore = async () => {
+		try {
+			setIsProcessing(true);
+			// Cập nhật status về PENDING để pass qua bộ validate của Backend
+			await noteApi.updateNote(noteId, { status: "PENDING" });
+			Alert.alert("Restored", "Note has been restored.");
+
+			if (onSuccess) onSuccess();
+			onClose();
+		} catch (error) {
+			console.error("Restore Error:", error);
+			Alert.alert("Error", "Failed to restore the note.");
+		} finally {
+			setIsProcessing(false);
+		}
+	};
 	return (
 		<Modal
 			visible={visible}
@@ -44,6 +111,13 @@ export const NoteActionSheet = ({
 				</TouchableWithoutFeedback>
 
 				<View style={styles.sheetContent}>
+					{isProcessing && (
+						<View style={styles.processingOverlay}>
+							<ActivityIndicator size="large" color={COLORS.primary} />
+							<Text style={styles.processingText}>Processing...</Text>
+						</View>
+					)}
+
 					<View style={styles.dragHandle} />
 
 					<View style={styles.header}>
@@ -56,19 +130,34 @@ export const NoteActionSheet = ({
 					</View>
 
 					<View style={styles.actionGroup}>
-						<TouchableOpacity
-							style={styles.actionBtn}
-							onPress={onArchive}
-							testID="archive-btn"
-						>
-							<Text style={styles.actionIcon}>📦</Text>
-							<Text style={styles.actionText}>Archive Note</Text>
-						</TouchableOpacity>
+						{/* Đổi UI Nút tuỳ theo trạng thái isArchived */}
+						{isArchived ? (
+							<TouchableOpacity
+								style={styles.actionBtn}
+								onPress={handleRestore}
+								testID="restore-btn"
+								disabled={isProcessing}
+							>
+								<Text style={styles.actionIcon}>♻️</Text>
+								<Text style={styles.actionText}>Restore Note</Text>
+							</TouchableOpacity>
+						) : (
+							<TouchableOpacity
+								style={styles.actionBtn}
+								onPress={handleArchive}
+								testID="archive-btn"
+								disabled={isProcessing}
+							>
+								<Text style={styles.actionIcon}>📦</Text>
+								<Text style={styles.actionText}>Archive Note</Text>
+							</TouchableOpacity>
+						)}
 
 						<TouchableOpacity
 							style={styles.actionBtn}
 							onPress={onMove}
 							testID="move-btn"
+							disabled={isProcessing}
 						>
 							<Text style={styles.actionIcon}>📁</Text>
 							<Text style={styles.actionText}>Move to Folder</Text>
@@ -78,6 +167,7 @@ export const NoteActionSheet = ({
 							style={styles.actionBtn}
 							onPress={onPin}
 							testID="pin-btn"
+							disabled={isProcessing}
 						>
 							<Text style={styles.actionIcon}>📌</Text>
 							<Text style={styles.actionText}>Pin to Top</Text>
@@ -88,8 +178,9 @@ export const NoteActionSheet = ({
 
 					<TouchableOpacity
 						style={styles.deleteBtn}
-						onPress={onDelete}
+						onPress={handleDelete}
 						testID="delete-btn"
+						disabled={isProcessing}
 					>
 						<Text style={styles.deleteIcon}>🗑️</Text>
 						<Text style={styles.deleteText}>Delete Note</Text>
@@ -99,6 +190,7 @@ export const NoteActionSheet = ({
 						style={styles.cancelBtn}
 						onPress={onClose}
 						testID="cancel-btn"
+						disabled={isProcessing}
 					>
 						<Text style={styles.cancelText}>Cancel</Text>
 					</TouchableOpacity>
@@ -169,4 +261,16 @@ const styles = StyleSheet.create({
 	deleteText: { fontSize: 16, fontWeight: "700", color: "#DC2626" }, // red-600
 	cancelBtn: { paddingVertical: 16, alignItems: "center" },
 	cancelText: { fontSize: 16, fontWeight: "700", color: COLORS.slate500 },
+	processingOverlay: {
+		...StyleSheet.absoluteFillObject,
+		backgroundColor: "rgba(255,255,255,0.8)",
+		zIndex: 999,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	processingText: {
+		marginTop: 8,
+		fontWeight: "600",
+		color: COLORS.primary,
+	},
 });

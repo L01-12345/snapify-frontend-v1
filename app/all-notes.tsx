@@ -257,11 +257,11 @@ export default function AllNotesScreen() {
 			<NoteActionSheet
 				visible={!!selectedNoteForAction}
 				noteTitle={selectedNoteForAction?.title}
+				noteId={selectedNoteForAction?.id || ""}
 				onClose={() => setSelectedNoteForAction(null)}
-				onArchive={handleArchive}
+				onSuccess={() => fetchNotes(activeStatus)}
 				onMove={handleMove}
 				onPin={handlePin}
-				onDelete={handleDelete}
 			/>
 		</SafeAreaView>
 	);

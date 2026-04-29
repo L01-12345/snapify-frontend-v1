@@ -49,10 +49,17 @@ export default function PdfPreviewScreen() {
 			};
 
 			// Gọi API đẩy dữ liệu lên Backend
-			await batchApi.scanBatch(payload);
+			const res = await batchApi.scanBatch(payload);
 
 			// Thành công -> Điều hướng về tab dashboard và gửi parameter showToast
-			router.replace("/(tabs)/dashboard?showToast=true");
+			router.replace({
+				pathname: "/(tabs)/dashboard",
+				params: {
+					showToast: "true",
+					batchId: res.data?.id, // Đẩy ID của batch qua
+					batchTitle: res.data?.title, // Đẩy tiêu đề của batch qua
+				},
+			});
 		} catch (error) {
 			console.error("Error creating PDF:", error);
 			Alert.alert("Error", "Unable to create PDF. Please try again.");

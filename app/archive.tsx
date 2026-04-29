@@ -1,5 +1,5 @@
 // app/archive.tsx
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
 	View,
 	Text,
@@ -8,27 +8,45 @@ import {
 	TouchableOpacity,
 	ScrollView,
 	Alert,
+	ActivityIndicator,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { COLORS } from "../src/constants/theme";
-
-// --- MOCK DATA ---
-const MOCK_ARCHIVED_NOTES = [
-	{ id: "1", title: "Tax Receipt 2024", date: "Apr 15, 2025" },
-	{ id: "2", title: "Old Project Ideas", date: "Feb 22, 2025" },
-	{ id: "3", title: "Grocery List", date: "Jan 10, 2025" },
-];
+import { archiveApi } from "../src/api/archiveApi";
+import { Note } from "../src/types/api.types"; // Import type Note của bạn
 
 export default function ArchiveScreen() {
 	const router = useRouter();
 
-	// Đổi MOCK_ARCHIVED_NOTES thành [] để xem trạng thái Empty State
-	const [notes, setNotes] = useState(MOCK_ARCHIVED_NOTES);
+	const [notes, setNotes] = useState<Note[]>([]);
+	const [isLoading, setIsLoading] = useState(true);
+	const [isProcessing, setIsProcessing] = useState(false); // Trạng thái khi đang Restore/Delete
 
 	// Trạng thái chọn nhiều file
 	const [isSelectionMode, setIsSelectionMode] = useState(false);
 	const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+	// Tự động fetch data khi vào màn hình
+	useFocusEffect(
+		useCallback(() => {
+			fetchArchivedNotes();
+		}, []),
+	);
+
+	const fetchArchivedNotes = async () => {
+		try {
+			setIsLoading(true);
+			const response = await archiveApi.getArchivedNotes();
+			// Chú ý: Dựa vào logic dự án của bạn (response.data.notes hay response.data)
+			setNotes(response.data?.notes || response.data || []);
+		} catch (error: any) {
+			console.error("Error fetching archived notes:", error);
+			Alert.alert("Error", "Unable to load archived notes.");
+		} finally {
+			setIsLoading(false);
+		}
+	};
 
 	const toggleSelectionMode = () => {
 		setIsSelectionMode(!isSelectionMode);
@@ -44,18 +62,86 @@ export default function ArchiveScreen() {
 	};
 
 	const handleRestore = () => {
-		Alert.alert("Restore", `Restored ${selectedIds.length} notes!`);
-		toggleSelectionMode();
+		Alert.alert(
+			"Restore Notes",
+			`Are you sure you want to restore ${selectedIds.length} notes?`,
+			[
+				{ text: "Cancel", style: "cancel" },
+				{
+					text: "Restore",
+					onPress: async () => {
+						try {
+							setIsProcessing(true);
+
+							// Dùng vòng lặp for...of để gọi API từng cái một, an toàn cho Backend
+							for (const id of selectedIds) {
+								await archiveApi.restoreNote(id);
+							}
+
+							Alert.alert("Success", `Restored ${selectedIds.length} notes!`);
+							toggleSelectionMode();
+							fetchArchivedNotes(); // Cập nhật lại danh sách trên UI
+						} catch (error: any) {
+							console.error("Lỗi Restore:", error.response?.data || error);
+							Alert.alert("Error", "Failed to restore some notes.");
+						} finally {
+							setIsProcessing(false);
+						}
+					},
+				},
+			],
+		);
 	};
 
 	const handleDelete = () => {
-		Alert.alert("Delete", `Deleted ${selectedIds.length} notes permanently!`);
-		// Xóa khỏi UI demo
-		setNotes(notes.filter((n) => !selectedIds.includes(n.id)));
-		toggleSelectionMode();
+		Alert.alert(
+			"Delete Permanently",
+			`Are you sure you want to delete ${selectedIds.length} notes? This action cannot be undone.`,
+			[
+				{ text: "Cancel", style: "cancel" },
+				{
+					text: "Delete",
+					style: "destructive",
+					onPress: async () => {
+						try {
+							setIsProcessing(true);
+							// Gọi API delete cho từng ID đã chọn
+							await Promise.all(
+								selectedIds.map((id) => archiveApi.deleteNote(id)),
+							);
+
+							Alert.alert(
+								"Deleted",
+								`Permanently deleted ${selectedIds.length} notes.`,
+							);
+							toggleSelectionMode();
+							fetchArchivedNotes(); // Cập nhật lại UI
+						} catch (error) {
+							Alert.alert("Error", "Failed to delete some notes.");
+						} finally {
+							setIsProcessing(false);
+						}
+					},
+				},
+			],
+		);
 	};
 
-	// --- 1. RENDER EMPTY STATE ---
+	// --- 1. RENDER LOADING STATE ---
+	if (isLoading) {
+		return (
+			<SafeAreaView
+				style={[
+					styles.safeArea,
+					{ justifyContent: "center", alignItems: "center" },
+				]}
+			>
+				<ActivityIndicator size="large" color={COLORS.primary} />
+			</SafeAreaView>
+		);
+	}
+
+	// --- 2. RENDER EMPTY STATE ---
 	if (notes.length === 0) {
 		return (
 			<SafeAreaView style={styles.safeArea}>
@@ -68,7 +154,7 @@ export default function ArchiveScreen() {
 						<Feather name="arrow-left" size={24} color={COLORS.slate800} />
 					</TouchableOpacity>
 					<Text style={styles.headerTitle}>📦 Archive</Text>
-					<View style={styles.iconBtn} /> {/* Giữ cân bằng layout */}
+					<View style={styles.iconBtn} />
 				</View>
 
 				<View style={styles.emptyContainer}>
@@ -86,9 +172,17 @@ export default function ArchiveScreen() {
 		);
 	}
 
-	// --- 2. RENDER LIST & SELECTION STATE ---
+	// --- 3. RENDER LIST & SELECTION STATE ---
 	return (
 		<SafeAreaView style={styles.safeArea}>
+			{/* MÀN CHẮN LOADING KHI ĐANG PROCESS XOÁ/PHỤC HỒI HÀNG LOẠT */}
+			{isProcessing && (
+				<View style={styles.processingOverlay}>
+					<ActivityIndicator size="large" color={COLORS.primary} />
+					<Text style={styles.processingText}>Processing...</Text>
+				</View>
+			)}
+
 			{/* HEADER */}
 			<View style={styles.header}>
 				<TouchableOpacity
@@ -107,27 +201,24 @@ export default function ArchiveScreen() {
 					<Text style={styles.headerTitle}>Archived Notes</Text>
 				)}
 
-				{isSelectionMode ? (
-					<TouchableOpacity
-						onPress={toggleSelectionMode}
-						testID="toggle-select-btn"
+				<TouchableOpacity
+					onPress={toggleSelectionMode}
+					testID="toggle-select-btn"
+				>
+					<Text
+						style={
+							isSelectionMode ? styles.cancelBtnText : styles.selectBtnText
+						}
 					>
-						<Text style={styles.cancelBtnText}>Cancel</Text>
-					</TouchableOpacity>
-				) : (
-					<TouchableOpacity
-						onPress={toggleSelectionMode}
-						testID="toggle-select-btn"
-					>
-						<Text style={styles.selectBtnText}>Select</Text>
-					</TouchableOpacity>
-				)}
+						{isSelectionMode ? "Cancel" : "Select"}
+					</Text>
+				</TouchableOpacity>
 			</View>
 
 			{/* DANH SÁCH NOTES */}
 			<ScrollView contentContainerStyle={styles.scrollContent}>
 				{!isSelectionMode && (
-					<Text style={styles.sectionHeader}>Older than 30 days</Text>
+					<Text style={styles.sectionHeader}>Stored securely</Text>
 				)}
 
 				{notes.map((note) => {
@@ -142,13 +233,18 @@ export default function ArchiveScreen() {
 								isSelectionMode && !isSelected && { opacity: 0.5 },
 							]}
 							onPress={() => {
-								if (isSelectionMode) toggleSelectNote(note.id);
+								if (isSelectionMode) {
+									toggleSelectNote(note.id);
+								} else {
+									// Xem chi tiết ngay cả khi bị Archive (Nếu muốn hỗ trợ xem)
+									router.push(`/note/${note.id}`);
+								}
 							}}
-							disabled={!isSelectionMode}
+							disabled={isProcessing} // Khoá nút khi đang load
 							activeOpacity={0.7}
 							testID={`note-item-${note.id}`}
 						>
-							{/* Nếu đang ở chế độ chọn -> Hiển thị Checkbox, ngược lại hiển thị Icon */}
+							{/* Checkbox / Icon */}
 							{isSelectionMode ? (
 								<View
 									style={[
@@ -172,10 +268,13 @@ export default function ArchiveScreen() {
 										styles.noteTitle,
 										!isSelectionMode && styles.noteTitleArchived,
 									]}
+									numberOfLines={1}
 								>
 									{note.title}
 								</Text>
-								<Text style={styles.noteDate}>{note.date}</Text>
+								<Text style={styles.noteContentPreview} numberOfLines={1}>
+									{note.content}
+								</Text>
 							</View>
 						</TouchableOpacity>
 					);
@@ -198,14 +297,14 @@ export default function ArchiveScreen() {
 						<TouchableOpacity
 							style={styles.restoreBtn}
 							onPress={handleRestore}
-							testID="restore-btn"
+							disabled={isProcessing}
 						>
 							<Text style={styles.restoreBtnText}>Restore</Text>
 						</TouchableOpacity>
 						<TouchableOpacity
 							style={styles.deleteBtn}
 							onPress={handleDelete}
-							testID="delete-btn"
+							disabled={isProcessing}
 						>
 							<Text style={styles.deleteBtnText}>Delete</Text>
 						</TouchableOpacity>
@@ -218,6 +317,14 @@ export default function ArchiveScreen() {
 
 const styles = StyleSheet.create({
 	safeArea: { flex: 1, backgroundColor: COLORS.slate50 },
+	processingOverlay: {
+		...StyleSheet.absoluteFillObject,
+		backgroundColor: "rgba(255,255,255,0.7)",
+		zIndex: 999,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	processingText: { marginTop: 12, fontWeight: "600", color: COLORS.primary },
 	header: {
 		height: 60,
 		flexDirection: "row",
@@ -233,7 +340,6 @@ const styles = StyleSheet.create({
 	selectBtnText: { fontSize: 14, fontWeight: "600", color: COLORS.primary },
 	cancelBtnText: { fontSize: 14, fontWeight: "600", color: COLORS.slate600 },
 
-	// --- Empty State Styles ---
 	emptyContainer: {
 		flex: 1,
 		alignItems: "center",
@@ -270,7 +376,6 @@ const styles = StyleSheet.create({
 		lineHeight: 22,
 	},
 
-	// --- List Styles ---
 	scrollContent: { padding: 24, gap: 16 },
 	sectionHeader: {
 		fontSize: 12,
@@ -289,7 +394,7 @@ const styles = StyleSheet.create({
 		gap: 16,
 	},
 	noteCardSelected: {
-		backgroundColor: "#EEF2FF", // indigo-50
+		backgroundColor: "#EEF2FF",
 		borderColor: COLORS.primary,
 		borderWidth: 2,
 	},
@@ -321,14 +426,13 @@ const styles = StyleSheet.create({
 		textDecorationLine: "line-through",
 		color: COLORS.slate500,
 	},
-	noteDate: {
+	noteContentPreview: {
 		fontSize: 12,
 		fontWeight: "500",
 		color: COLORS.slate400,
 		marginTop: 4,
 	},
 
-	// --- Bottom Sheet Styles ---
 	bottomSheet: {
 		position: "absolute",
 		bottom: 0,
@@ -375,11 +479,11 @@ const styles = StyleSheet.create({
 	restoreBtnText: { fontSize: 16, fontWeight: "600", color: COLORS.slate800 },
 	deleteBtn: {
 		flex: 1,
-		backgroundColor: "#EF4444", // red-500
+		backgroundColor: "#EF4444",
 		paddingVertical: 16,
 		borderRadius: 16,
 		alignItems: "center",
-		shadowColor: "#FECACA", // red-200
+		shadowColor: "#FECACA",
 		shadowOffset: { width: 0, height: 4 },
 		shadowOpacity: 0.8,
 		shadowRadius: 10,

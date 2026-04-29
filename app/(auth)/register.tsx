@@ -8,6 +8,8 @@ import {
 	KeyboardAvoidingView,
 	Platform,
 	ScrollView,
+	TouchableWithoutFeedback,
+	Keyboard,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { COLORS } from "../../src/constants/theme";
@@ -49,62 +51,66 @@ export default function RegisterScreen() {
 				behavior={Platform.OS === "ios" ? "padding" : "height"}
 				style={{ flex: 1 }}
 			>
-				<ScrollView
-					contentContainerStyle={styles.scrollContent}
-					showsVerticalScrollIndicator={false}
-				>
-					<View style={styles.header}>
-						<Text style={styles.title}>Create account</Text>
-						<Text style={styles.subtitle}>Start your journey with Snapify</Text>
-					</View>
-
-					<Input
-						label="Full Name"
-						placeholder="John Doe"
-						value={displayName}
-						onChangeText={setDisplayName}
-						testID="reg-name"
-					/>
-					<Input
-						label="Email Address"
-						placeholder="hello@example.com"
-						keyboardType="email-address"
-						value={email}
-						onChangeText={setEmail}
-						testID="reg-email"
-					/>
-					<Input
-						label="Password"
-						placeholder="Min. 6 characters"
-						value={password}
-						onChangeText={setPassword}
-						isPassword
-						testID="reg-password"
-					/>
-
-					<Button
-						title="Sign Up"
-						onPress={handleRegister}
-						style={{ marginTop: 32 }}
-						disabled={loading}
-						testID="reg-btn"
+				<TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+					<ScrollView
+						contentContainerStyle={styles.scrollContent}
+						showsVerticalScrollIndicator={false}
 					>
-						{loading && <ActivityIndicator color="white" />}
-					</Button>
+						<View style={styles.header}>
+							<Text style={styles.title}>Create account</Text>
+							<Text style={styles.subtitle}>
+								Start your journey with Snapify
+							</Text>
+						</View>
 
-					<Text style={styles.termsText}>
-						By signing up, you agree to our{" "}
-						<Text style={styles.termsLink}>Terms</Text> and{" "}
-						<Text style={styles.termsLink}>Privacy Policy</Text>.
-					</Text>
+						<Input
+							label="Full Name"
+							placeholder="John Doe"
+							value={displayName}
+							onChangeText={setDisplayName}
+							testID="reg-name"
+						/>
+						<Input
+							label="Email Address"
+							placeholder="hello@example.com"
+							keyboardType="email-address"
+							value={email}
+							onChangeText={setEmail}
+							testID="reg-email"
+						/>
+						<Input
+							label="Password"
+							placeholder="Min. 6 characters"
+							value={password}
+							onChangeText={setPassword}
+							isPassword
+							testID="reg-password"
+						/>
 
-					<View style={styles.footer}>
-						<Text style={styles.footerText}>Already have an account? </Text>
-						<TouchableOpacity onPress={() => router.back()}>
-							<Text style={styles.footerLink}>Log in</Text>
-						</TouchableOpacity>
-					</View>
-				</ScrollView>
+						<Button
+							title="Sign Up"
+							onPress={handleRegister}
+							style={{ marginTop: 32 }}
+							disabled={loading}
+							testID="reg-btn"
+						>
+							{loading && <ActivityIndicator color="white" />}
+						</Button>
+
+						<Text style={styles.termsText}>
+							By signing up, you agree to our{" "}
+							<Text style={styles.termsLink}>Terms</Text> and{" "}
+							<Text style={styles.termsLink}>Privacy Policy</Text>.
+						</Text>
+
+						<View style={styles.footer}>
+							<Text style={styles.footerText}>Already have an account? </Text>
+							<TouchableOpacity onPress={() => router.back()}>
+								<Text style={styles.footerLink}>Log in</Text>
+							</TouchableOpacity>
+						</View>
+					</ScrollView>
+				</TouchableWithoutFeedback>
 			</KeyboardAvoidingView>
 		</SafeAreaView>
 	);

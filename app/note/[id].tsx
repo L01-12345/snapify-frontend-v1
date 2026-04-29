@@ -16,6 +16,7 @@ import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "../../src/constants/theme";
 import { SettingsModal } from "../../src/components/common/SettingsModal";
+import { NoteActionSheet } from "../../src/components/common/NoteActionSheet";
 
 import { noteApi } from "../../src/api/noteApi";
 import { Note } from "../../src/types/api.types";
@@ -26,29 +27,28 @@ export default function NoteDetailScreen() {
 	const [note, setNote] = useState<Note | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [modalVisible, setModalVisible] = useState(false);
-	console.log("ID nhận được từ Router:", id);
 
 	const firstImage =
 		note?.images && note.images.length > 0 ? note.images[0].imageUrl : null;
 	// if (isLoading) return <ActivityIndicator style={{ flex: 1 }} />;
-
+	const fetchNote = async () => {
+		try {
+			const response = await noteApi.getNoteById(id);
+			setNote(response.data || null);
+		} catch (error) {
+			// Nếu Note đã bị xóa, API trả lỗi 404 -> Alert và Back về list
+			Alert.alert("Notice", "Note not found or has been deleted.");
+			router.back();
+		} finally {
+			setIsLoading(false);
+		}
+	};
 	useEffect(() => {
-		const fetchNote = async () => {
-			try {
-				const response = await noteApi.getNoteById(id);
-				setNote(response.data || null);
-			} catch (error) {
-				Alert.alert("Error", "Note not found.");
-				router.back();
-			} finally {
-				setIsLoading(false);
-			}
-		};
 		if (id) {
 			fetchNote();
 		} else {
 			console.warn("Không tìm thấy ID trong params");
-			setIsLoading(false); //
+			setIsLoading(false);
 		}
 	}, [id]);
 
@@ -92,7 +92,7 @@ export default function NoteDetailScreen() {
 				>
 					<ActivityIndicator size="large" color={COLORS.primary} />
 					<Text style={{ marginTop: 12, color: COLORS.slate400 }}>
-						Đang tải ghi chú...
+						Loading notes...
 					</Text>
 				</View>
 			) : (
@@ -157,9 +157,17 @@ export default function NoteDetailScreen() {
 			)}
 
 			{/* Tích hợp Modal */}
-			<SettingsModal
+			{/* <SettingsModal
 				visible={modalVisible}
 				onClose={() => setModalVisible(false)}
+			/> */}
+			<NoteActionSheet
+				visible={modalVisible}
+				onClose={() => setModalVisible(false)}
+				noteId={id}
+				noteTitle={note?.title}
+				isArchived={note?.status === "ARCHIVED"}
+				onSuccess={() => fetchNote()}
 			/>
 		</SafeAreaView>
 	);

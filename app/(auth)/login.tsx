@@ -7,6 +7,8 @@ import {
 	SafeAreaView,
 	KeyboardAvoidingView,
 	Platform,
+	TouchableWithoutFeedback,
+	Keyboard,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -20,6 +22,8 @@ import { authApi } from "../../src/api/authApi";
 
 import { useDispatch } from "react-redux";
 import { setCredentials } from "../../src/store/slices/authSlice";
+
+import * as Sentry from "@sentry/react-native";
 
 export default function LoginScreen() {
 	const router = useRouter();
@@ -51,6 +55,11 @@ export default function LoginScreen() {
 					}),
 				);
 
+				Sentry.setUser({
+					id: response.data.user.id,
+					email: response.data.user.email,
+					username: response.data.user.displayName,
+				});
 				// 3. Chuyển hướng
 				router.replace("/(tabs)/dashboard");
 			}
@@ -69,75 +78,79 @@ export default function LoginScreen() {
 				behavior={Platform.OS === "ios" ? "padding" : "height"}
 				style={styles.container}
 			>
-				<View style={styles.content}>
-					{/* Header & Logo */}
-					<View style={styles.header}>
-						<LinearGradient
-							colors={[COLORS.primary, COLORS.primaryEnd]}
-							style={styles.logoBox}
+				<TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+					<View style={styles.content}>
+						{/* Header & Logo */}
+						<View style={styles.header}>
+							<LinearGradient
+								colors={[COLORS.primary, COLORS.primaryEnd]}
+								style={styles.logoBox}
+							>
+								<Text style={styles.logoText}>S</Text>
+							</LinearGradient>
+							<Text style={styles.title}>Welcome back</Text>
+							<Text style={styles.subtitle}>
+								Log in to your Snapify account
+							</Text>
+						</View>
+
+						{/* Form */}
+						<Input
+							label="Email Address"
+							value={email}
+							onChangeText={setEmail}
+							autoCapitalize="none"
+							testID="login-email"
+						/>
+						<Input
+							label="Password"
+							value={password}
+							onChangeText={setPassword}
+							isPassword
+							testID="login-password"
+						/>
+
+						<TouchableOpacity style={styles.forgotPass}>
+							<Text style={styles.forgotPassText}>Forgot password?</Text>
+						</TouchableOpacity>
+
+						<Button
+							title={loading ? "" : "Log In"}
+							onPress={handleLogin}
+							disabled={loading}
+							testID="login-btn"
 						>
-							<Text style={styles.logoText}>S</Text>
-						</LinearGradient>
-						<Text style={styles.title}>Welcome back</Text>
-						<Text style={styles.subtitle}>Log in to your Snapify account</Text>
+							{loading && <ActivityIndicator color="white" />}
+						</Button>
+
+						{/* Divider */}
+						<View style={styles.dividerContainer}>
+							<View style={styles.dividerLine} />
+							<Text style={styles.dividerText}>OR CONTINUE WITH</Text>
+							<View style={styles.dividerLine} />
+						</View>
+
+						{/* Social Buttons (Làm đơn giản dạng View) */}
+						<View style={styles.socialContainer}>
+							<TouchableOpacity style={styles.socialBtn}>
+								<Text style={styles.socialIcon}>G</Text>
+								<Text style={styles.socialText}>Google</Text>
+							</TouchableOpacity>
+							<TouchableOpacity style={styles.socialBtn}>
+								<Text style={styles.socialIcon}></Text>
+								<Text style={styles.socialText}>Apple</Text>
+							</TouchableOpacity>
+						</View>
+
+						{/* Footer */}
+						<View style={styles.footer}>
+							<Text style={styles.footerText}>Don't have an account? </Text>
+							<TouchableOpacity onPress={() => router.push("/register")}>
+								<Text style={styles.footerLink}>Sign up</Text>
+							</TouchableOpacity>
+						</View>
 					</View>
-
-					{/* Form */}
-					<Input
-						label="Email Address"
-						value={email}
-						onChangeText={setEmail}
-						autoCapitalize="none"
-						testID="login-email"
-					/>
-					<Input
-						label="Password"
-						value={password}
-						onChangeText={setPassword}
-						isPassword
-						testID="login-password"
-					/>
-
-					<TouchableOpacity style={styles.forgotPass}>
-						<Text style={styles.forgotPassText}>Forgot password?</Text>
-					</TouchableOpacity>
-
-					<Button
-						title={loading ? "" : "Log In"}
-						onPress={handleLogin}
-						disabled={loading}
-						testID="login-btn"
-					>
-						{loading && <ActivityIndicator color="white" />}
-					</Button>
-
-					{/* Divider */}
-					<View style={styles.dividerContainer}>
-						<View style={styles.dividerLine} />
-						<Text style={styles.dividerText}>OR CONTINUE WITH</Text>
-						<View style={styles.dividerLine} />
-					</View>
-
-					{/* Social Buttons (Làm đơn giản dạng View) */}
-					<View style={styles.socialContainer}>
-						<TouchableOpacity style={styles.socialBtn}>
-							<Text style={styles.socialIcon}>G</Text>
-							<Text style={styles.socialText}>Google</Text>
-						</TouchableOpacity>
-						<TouchableOpacity style={styles.socialBtn}>
-							<Text style={styles.socialIcon}></Text>
-							<Text style={styles.socialText}>Apple</Text>
-						</TouchableOpacity>
-					</View>
-
-					{/* Footer */}
-					<View style={styles.footer}>
-						<Text style={styles.footerText}>Don't have an account? </Text>
-						<TouchableOpacity onPress={() => router.push("/register")}>
-							<Text style={styles.footerLink}>Sign up</Text>
-						</TouchableOpacity>
-					</View>
-				</View>
+				</TouchableWithoutFeedback>
 			</KeyboardAvoidingView>
 		</SafeAreaView>
 	);

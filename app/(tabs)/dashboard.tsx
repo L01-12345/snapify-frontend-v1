@@ -10,38 +10,69 @@ import {
 	TouchableOpacity,
 	Animated,
 	Image,
+	Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { COLORS } from "../../src/constants/theme";
 
 import { noteApi } from "../../src/api/noteApi";
+import { batchApi } from "../../src/api/batchApi";
 import { dashboardApi, DashboardMetrics } from "../../src/api/dashboardApi";
 import { Note } from "../../src/types/api.types";
 import { useFocusEffect } from "expo-router";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../src/store";
+import { FolderSelectModal } from "../../src/components/common/FolderSelectModal";
 
 export default function DashboardScreen() {
 	const router = useRouter();
-	const { showToast } = useLocalSearchParams();
+	const { showToast, batchId, batchTitle } = useLocalSearchParams();
 	const slideAnim = useRef(new Animated.Value(150)).current;
 
-	const [notes, setNotes] = useState<Note[]>([]);
+	// const [notes, setNotes] = useState<Note[]>([]);
+	const [recentItems, setRecentItems] = useState<any[]>([]);
 	const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
 	const [loading, setLoading] = useState(true);
 	const { user } = useSelector((state: RootState) => state.auth);
 
+	// Trạng thái cho Modal chuyển thư mục
+	const [isFolderModalVisible, setIsFolderModalVisible] = useState(false);
+	const [targetBatchId, setTargetBatchId] = useState<string | null>(null);
+
 	const fetchData = async () => {
 		try {
 			setLoading(true);
-			// Gọi song song cả 2 API để tối ưu tốc độ
-			const [notesRes, metricsRes] = await Promise.all([
-				noteApi.getNotes({ limit: 5 }), // Lấy 5 note gần nhất
+			// Gọi song song 3 API để tối ưu tốc độ
+			const [notesRes, metricsRes, batchesRes] = await Promise.all([
+				noteApi.getNotes({ limit: 10 }),
 				dashboardApi.getMetrics(),
+				batchApi.getBatches(), // Lấy danh sách PDF
 			]);
 
-			setNotes(notesRes.data?.notes || []);
+			// Format dữ liệu an toàn
+			const fetchedNotes = Array.isArray(notesRes.data)
+				? notesRes.data
+				: notesRes.data?.notes || [];
+			const fetchedBatches = Array.isArray(batchesRes.data)
+				? batchesRes.data
+				: [];
+
+			// Trộn 2 mảng lại và thêm trường itemType để phân biệt khi render
+			const combined = [
+				...fetchedNotes.map((n: any) => ({ ...n, itemType: "note" })),
+				...fetchedBatches.map((b: any) => ({ ...b, itemType: "batch" })),
+			];
+
+			// Sắp xếp mới nhất lên đầu dựa vào createdAt
+			combined.sort(
+				(a, b) =>
+					new Date(b.createdAt || 0).getTime() -
+					new Date(a.createdAt || 0).getTime(),
+			);
+
+			// Lấy 5 items gần nhất hiển thị ra Dashboard
+			setRecentItems(combined.slice(0, 5));
 			setMetrics(metricsRes.data || null);
 		} catch (error) {
 			console.error("Lỗi tải Dashboard:", error);
@@ -81,10 +112,39 @@ export default function DashboardScreen() {
 				duration: 300,
 				useNativeDriver: true,
 			}).start();
-		}, 4000);
+		}, 6000);
 
 		return () => clearTimeout(timer);
 	}, [showToast]);
+
+	// Xử lý khi user bấm nút "Change" trên Toast
+	const handleChangeFolder = () => {
+		if (batchId) {
+			setTargetBatchId(batchId as string);
+			setIsFolderModalVisible(true);
+		}
+	};
+
+	// Xử lý khi user chọn một thư mục trong Modal
+	const onFolderSelect = async (folder: any) => {
+		if (!targetBatchId) return;
+		try {
+			// Gọi API cập nhật folderId cho Batch PDF
+			await batchApi.updateBatch(targetBatchId, { folderId: folder.id });
+			Alert.alert("Success", `Document moved to ${folder.name}`);
+			setIsFolderModalVisible(false);
+			fetchData(); // Load lại list ở dưới
+
+			// Ẩn Toast luôn
+			Animated.timing(slideAnim, {
+				toValue: 150,
+				duration: 300,
+				useNativeDriver: true,
+			}).start();
+		} catch (error) {
+			Alert.alert("Error", "Failed to move the document.");
+		}
+	};
 
 	return (
 		<SafeAreaView style={styles.safeArea}>
@@ -177,25 +237,49 @@ export default function DashboardScreen() {
 				</View>
 
 				<View style={styles.notesList}>
-					{notes?.map((note, index) => {
-						// Ghi chú đầu tiên (index === 0) sẽ dùng style Large
+					{recentItems?.map((item, index) => {
+						const isNote = item.itemType === "note";
+
+						// Route chuyển hướng: Nếu là note thì vào /note/[id], nếu là batch thì mở link pdf hoặc màn batch
+						const handlePress = () => {
+							if (isNote) router.push(`/note/${item.id}`);
+							else {
+								// Giả sử mở PDF hoặc chuyển sang màn hình detail của batch
+								Alert.alert("PDF Document", `Viewing: ${item.pdfUrl}`);
+							}
+						};
+
+						// Ghi chú đầu tiên (index === 0) dùng style Large
 						if (index === 0) {
 							return (
 								<TouchableOpacity
-									key={note.id}
+									key={item.id}
 									style={styles.noteCardLarge}
-									onPress={() => router.push(`/note/${note.id}`)}
-									testID={`note-card-${note.id}`}
+									onPress={handlePress}
+									testID={`card-${item.id}`}
 								>
 									<View style={styles.noteHeaderLarge}>
-										<Text style={styles.noteTitleLarge}>{note.title}</Text>
-										<View style={styles.badge}>
-											<Text style={styles.badgeText}>{note.status}</Text>
+										<Text style={styles.noteTitleLarge}>{item.title}</Text>
+										<View
+											style={[
+												styles.badge,
+												!isNote && { backgroundColor: "#FEE2E2" },
+											]}
+										>
+											<Text
+												style={[
+													styles.badgeText,
+													!isNote && { color: "#B91C1C" },
+												]}
+											>
+												{isNote ? item.status : "PDF DOC"}
+											</Text>
 										</View>
 									</View>
-									{/* Giả sử content chứa nội dung trích xuất */}
 									<Text style={styles.noteSubtitle} numberOfLines={2}>
-										{note.content}
+										{isNote
+											? item.content
+											: `Scanned PDF • ${new Date(item.createdAt).toLocaleDateString()}`}
 									</Text>
 								</TouchableOpacity>
 							);
@@ -204,18 +288,37 @@ export default function DashboardScreen() {
 						// Các ghi chú còn lại dùng style bình thường
 						return (
 							<TouchableOpacity
-								key={note.id}
+								key={item.id}
 								style={styles.noteCard}
-								onPress={() => router.push(`/note/${note.id}`)}
-								testID={`note-card-${note.id}`}
+								onPress={handlePress}
+								testID={`card-${item.id}`}
 							>
-								<View style={styles.noteIconBox}>
-									<Feather name="file-text" size={20} color={COLORS.primary} />
+								<View
+									style={[
+										styles.noteIconBox,
+										!isNote && { backgroundColor: "#FEF2F2" },
+									]}
+								>
+									{isNote ? (
+										<Feather
+											name="file-text"
+											size={20}
+											color={COLORS.primary}
+										/>
+									) : (
+										<Ionicons
+											name="document-attach"
+											size={20}
+											color="#DC2626"
+										/>
+									)}
 								</View>
 								<View style={styles.noteContent}>
-									<Text style={styles.noteTitle}>{note.title}</Text>
+									<Text style={styles.noteTitle}>{item.title}</Text>
 									<Text style={styles.noteSubtitle} numberOfLines={1}>
-										{note.content}
+										{isNote
+											? item.content
+											: `Saved on ${new Date(item.createdAt).toLocaleDateString()}`}
 									</Text>
 								</View>
 							</TouchableOpacity>
@@ -236,20 +339,27 @@ export default function DashboardScreen() {
 			>
 				<View style={styles.toastLeft}>
 					<View style={styles.toastIconBox}>
-						<Text style={{ fontSize: 20 }}>📂</Text>
+						<Text style={{ fontSize: 20 }}>📑</Text>
 						<Text style={styles.toastSparkle}>✨</Text>
 					</View>
 					<View>
-						<Text style={styles.toastTitle}>Saved to Study</Text>
+						<Text style={styles.toastTitle}>PDF Created</Text>
 						<Text style={styles.toastSubtitle} numberOfLines={1}>
-							Calculus_Lec04.pdf
+							{batchTitle || "Scanned_Document.pdf"}
 						</Text>
 					</View>
 				</View>
-				<TouchableOpacity style={styles.toastBtn}>
-					<Text style={styles.toastBtnText}>Change</Text>
+				<TouchableOpacity style={styles.toastBtn} onPress={handleChangeFolder}>
+					<Text style={styles.toastBtnText}>Move</Text>
 				</TouchableOpacity>
 			</Animated.View>
+
+			{/* MODAL CHỌN THƯ MỤC */}
+			<FolderSelectModal
+				visible={isFolderModalVisible}
+				onClose={() => setIsFolderModalVisible(false)}
+				onSelect={onFolderSelect}
+			/>
 		</SafeAreaView>
 	);
 }
