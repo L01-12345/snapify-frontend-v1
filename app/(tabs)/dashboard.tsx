@@ -244,8 +244,14 @@ export default function DashboardScreen() {
 						const handlePress = () => {
 							if (isNote) router.push(`/note/${item.id}`);
 							else {
-								// Giả sử mở PDF hoặc chuyển sang màn hình detail của batch
-								Alert.alert("PDF Document", `Viewing: ${item.pdfUrl}`);
+								// Alert.alert("PDF Document", `Viewing: ${item.pdfUrl}`);
+								router.push({
+									pathname: "/pdf-details",
+									params: {
+										pdfUrl: item.pdfUrl,
+										title: item.title,
+									},
+								});
 							}
 						};
 

@@ -11,19 +11,31 @@ import {
 	Alert,
 	ActivityIndicator,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { COLORS } from "../../src/constants/theme";
 
 import { noteApi } from "../../src/api/noteApi";
 import { folderApi } from "../../src/api/folderApi";
 import { Folder } from "../../src/types/api.types";
+import { FolderSelectModal } from "../../src/components/common/FolderSelectModal";
 
 export default function NewNoteScreen() {
 	const router = useRouter();
+	const params = useLocalSearchParams<{
+		folderId?: string;
+		folderName?: string;
+	}>();
+
 	const [title, setTitle] = useState("");
 	const [content, setContent] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
+	const [isFolderModalVisible, setIsFolderModalVisible] = useState(false);
+	const [selectedFolder, setSelectedFolder] = useState({
+		id: params.folderId || "",
+		name: params.folderName || "Uncategorized",
+		icon: "📁",
+	});
 
 	const handleSave = async () => {
 		if (!title.trim()) {
@@ -32,18 +44,32 @@ export default function NewNoteScreen() {
 		}
 		try {
 			setIsSaving(true);
-			await noteApi.createNote({
-				title,
-				content,
-				folderId: null, // Mặc định chưa gán thư mục (Unassigned)
-			});
-			// Tạo xong thì quay về trang trước đó
+
+			// Đẩy folderId vào payload nếu người dùng có chọn Folder
+			const payload: any = { title, content };
+			if (selectedFolder.id) {
+				payload.folderId = selectedFolder.id;
+			}
+
+			await noteApi.createNote(payload);
 			router.back();
 		} catch (error: any) {
 			Alert.alert("Save Error", error.message || "Unable to create note.");
 		} finally {
 			setIsSaving(false);
 		}
+	};
+	const handleSelectFolder = (folder: any) => {
+		if (folder) {
+			setSelectedFolder({
+				id: folder.id,
+				name: folder.name,
+				icon: folder.icon || "📁",
+			});
+		} else {
+			setSelectedFolder({ id: "", name: "Uncategorized", icon: "📁" });
+		}
+		setIsFolderModalVisible(false);
 	};
 
 	return (
@@ -90,9 +116,12 @@ export default function NewNoteScreen() {
 					</View>
 
 					{/* Folder Select Badge */}
-					<TouchableOpacity style={styles.folderBadge}>
-						<Text style={styles.folderBadgeIcon}>📚</Text>
-						<Text style={styles.folderBadgeText}>Study</Text>
+					<TouchableOpacity
+						style={styles.folderBadge}
+						onPress={() => setIsFolderModalVisible(true)}
+					>
+						<Text style={styles.folderBadgeIcon}>{selectedFolder.icon}</Text>
+						<Text style={styles.folderBadgeText}>{selectedFolder.name}</Text>
 					</TouchableOpacity>
 
 					{/* Body Text Area */}
@@ -124,6 +153,12 @@ export default function NewNoteScreen() {
 					</TouchableOpacity>
 				</View>
 			</KeyboardAvoidingView>
+			<FolderSelectModal
+				visible={isFolderModalVisible}
+				onClose={() => setIsFolderModalVisible(false)}
+				selectedId={selectedFolder.id}
+				onSelect={handleSelectFolder}
+			/>
 		</SafeAreaView>
 	);
 }

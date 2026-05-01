@@ -115,9 +115,14 @@ describe("PdfPreviewScreen - Tạo file PDF", () => {
 			});
 
 			// 2. Chuyển hướng về Dashboard và truyền kèm trigger bật Toast
-			expect(mockReplace).toHaveBeenCalledWith(
-				"/(tabs)/dashboard?showToast=true",
-			);
+			expect(mockReplace).toHaveBeenCalledWith({
+				pathname: "/(tabs)/dashboard",
+				params: {
+					showToast: "true",
+					batchId: undefined,
+					batchTitle: undefined,
+				},
+			});
 		});
 	});
 

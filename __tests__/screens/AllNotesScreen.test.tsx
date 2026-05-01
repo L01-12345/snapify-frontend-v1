@@ -6,6 +6,7 @@ import { useRouter } from "expo-router";
 // Import component và API
 import AllNotesScreen from "../../app/all-notes";
 import { noteApi } from "../../src/api/noteApi";
+import { batchApi } from "../../src/api/batchApi";
 
 // ---------------------------------------------------------
 // 1. MOCK CÁC MODULE BÊN NGOÀI
@@ -37,34 +38,28 @@ jest.mock("@expo/vector-icons", () => ({
 
 jest.spyOn(Alert, "alert");
 
+jest.mock("../../src/api/batchApi", () => ({
+	batchApi: {
+		getBatches: jest.fn(),
+	},
+}));
+
 // ---------------------------------------------------------
 // 2. MOCK COMPONENT NOTE ACTION SHEET
 // ---------------------------------------------------------
 jest.mock("../../src/components/common/NoteActionSheet", () => {
 	const { View, TouchableOpacity, Text } = require("react-native");
 	return {
-		NoteActionSheet: ({
-			visible,
-			onArchive,
-			onDelete,
-			onPin,
-			onMove,
-			onClose,
-		}: any) => {
+		NoteActionSheet: ({ visible, onSuccess, onMove, onPin, onClose }: any) => {
 			if (!visible) return null;
 			return (
 				<View testID="mock-action-sheet">
-					<TouchableOpacity testID="mock-archive" onPress={onArchive}>
-						<Text>Archive</Text>
-					</TouchableOpacity>
-					<TouchableOpacity testID="mock-delete" onPress={onDelete}>
-						<Text>Delete</Text>
+					{/* Nút giả lập hành động xóa/archive đã thành công từ bên trong Modal */}
+					<TouchableOpacity testID="mock-success" onPress={onSuccess}>
+						<Text>Success</Text>
 					</TouchableOpacity>
 					<TouchableOpacity testID="mock-pin" onPress={onPin}>
 						<Text>Pin</Text>
-					</TouchableOpacity>
-					<TouchableOpacity testID="mock-move" onPress={onMove}>
-						<Text>Move</Text>
 					</TouchableOpacity>
 					<TouchableOpacity testID="mock-close" onPress={onClose}>
 						<Text>Close</Text>
@@ -100,6 +95,7 @@ describe("AllNotesScreen - Màn hình tất cả ghi chú", () => {
 			push: mockPush,
 			back: mockBack,
 		});
+		(batchApi.getBatches as jest.Mock).mockResolvedValue({ data: [] });
 	});
 
 	// --- KỊCH BẢN 1: FETCH DATA THÀNH CÔNG VÀ HIỂN THỊ ---
@@ -120,7 +116,7 @@ describe("AllNotesScreen - Màn hình tất cả ghi chú", () => {
 		});
 
 		// Bấm vào note chuyển sang màn hình chi tiết
-		fireEvent.press(getByTestId("note-card-1"));
+		fireEvent.press(getByTestId("card-1"));
 		expect(mockPush).toHaveBeenCalledWith("/note/1");
 	});
 
@@ -131,7 +127,7 @@ describe("AllNotesScreen - Màn hình tất cả ghi chú", () => {
 		const { getByText } = render(<AllNotesScreen />);
 
 		await waitFor(() => {
-			expect(getByText("There are no notes here.")).toBeTruthy();
+			expect(getByText("There are no documents here.")).toBeTruthy();
 		});
 	});
 
@@ -168,74 +164,39 @@ describe("AllNotesScreen - Màn hình tất cả ghi chú", () => {
 			expect(noteApi.getNotes).toHaveBeenCalledWith({ status: "PENDING" });
 		});
 	});
-
-	// --- KỊCH BẢN 4: BOTTOM SHEET - XÓA GHI CHÚ ---
-	it("nhấn đè hiện Bottom Sheet và thực hiện chức năng Delete", async () => {
+	// --- KỊCH BẢN 4 & 5 (GỘP): BOTTOM SHEET THÀNH CÔNG VÀ TẢI LẠI LIST ---
+	it("gọi lại API để lấy danh sách mới khi thực hiện hành động thành công trong Modal", async () => {
 		(noteApi.getNotes as jest.Mock).mockResolvedValue({
 			data: { notes: mockNotesData },
 		});
-		(noteApi.deleteNote as jest.Mock).mockResolvedValue({ status: "success" });
 
-		const { getByTestId, queryByTestId, queryByText } = render(
-			<AllNotesScreen />,
-		);
+		const { getByTestId, queryByTestId } = render(<AllNotesScreen />);
+		await waitFor(() => expect(getByTestId("card-1")).toBeTruthy());
 
-		// Đợi render list xong
-		await waitFor(() => expect(getByTestId("note-card-1")).toBeTruthy());
-
-		// Nhấn đè
-		fireEvent(getByTestId("note-card-1"), "longPress");
+		// 1. Nhấn đè mở Modal
+		fireEvent(getByTestId("card-1"), "longPress");
 		expect(getByTestId("mock-action-sheet")).toBeTruthy();
 
-		// SỬA Ở ĐÂY: Bọc thao tác Delete (gọi API async) bằng await act
+		// Xóa lịch sử gọi API trước đó để test lần gọi mới
+		(noteApi.getNotes as jest.Mock).mockClear();
+
+		// 2. Giả lập Modal đã xử lý Delete/Archive xong và gọi onSuccess
 		await act(async () => {
-			fireEvent.press(getByTestId("mock-delete"));
+			fireEvent.press(getByTestId("mock-success"));
 		});
 
+		// 3. Đảm bảo AllNotesScreen đã gọi lại API fetchItems
 		await waitFor(() => {
-			expect(noteApi.deleteNote).toHaveBeenCalledWith("1");
-			expect(queryByTestId("mock-action-sheet")).toBeNull(); // Modal phải đóng
-			expect(queryByText("Calculus Lecture 04")).toBeNull(); // Note 1 bị xóa
-		});
-	});
-
-	// --- KỊCH BẢN 5: BOTTOM SHEET - LƯU TRỮ VÀ ĐÓNG ---
-	it("hiển thị Alert và ẩn note khỏi UI khi Archive, hỗ trợ đóng Modal", async () => {
-		(noteApi.getNotes as jest.Mock).mockResolvedValue({
-			data: { notes: mockNotesData },
+			expect(noteApi.getNotes).toHaveBeenCalled();
 		});
 
-		const { getByTestId, queryByTestId, queryByText } = render(
-			<AllNotesScreen />,
-		);
-		await waitFor(() => expect(getByTestId("note-card-1")).toBeTruthy());
-
-		// Nhấn đè
-		fireEvent(getByTestId("note-card-1"), "longPress");
-
-		// Bấm Archive
-		fireEvent.press(getByTestId("mock-archive"));
-
-		await waitFor(() => {
-			expect(Alert.alert).toHaveBeenCalledWith(
-				"Archived",
-				'"Calculus Lecture 04" has been moved to Archive.',
-			);
-			// Bị ẩn khỏi UI
-			expect(queryByText("Calculus Lecture 04")).toBeNull();
-		});
-
-		// Test chức năng Pin và Move (Alert)
-		fireEvent(getByTestId("note-card-2"), "longPress");
+		// 4. Test chức năng Pin (Alert)
+		fireEvent(getByTestId("card-2"), "longPress");
 		fireEvent.press(getByTestId("mock-pin"));
 		expect(Alert.alert).toHaveBeenCalledWith(
 			"Pinned",
 			'"Physics Chapter 2" pinned to top.',
 		);
-
-		fireEvent(getByTestId("note-card-2"), "longPress");
-		fireEvent.press(getByTestId("mock-close"));
-		expect(queryByTestId("mock-action-sheet")).toBeNull(); // Test nút đóng Modal
 	});
 
 	// --- KỊCH BẢN 6: ĐIỀU HƯỚNG CƠ BẢN ---

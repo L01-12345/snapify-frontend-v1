@@ -7,6 +7,7 @@ import { useSelector } from "react-redux";
 import DashboardScreen from "../app/(tabs)/dashboard";
 import { noteApi } from "../src/api/noteApi";
 import { dashboardApi } from "../src/api/dashboardApi";
+import { batchApi } from "../src/api/batchApi";
 
 // --- MOCK MODULES ---
 jest.mock("expo-router", () => {
@@ -28,6 +29,9 @@ jest.mock("../src/api/noteApi", () => ({
 }));
 jest.mock("../src/api/dashboardApi", () => ({
 	dashboardApi: { getMetrics: jest.fn() },
+}));
+jest.mock("../src/api/batchApi", () => ({
+	batchApi: { getBatches: jest.fn() },
 }));
 jest.mock("@expo/vector-icons", () => ({
 	Feather: "Feather",
@@ -66,6 +70,7 @@ describe("DashboardScreen - Màn hình chính", () => {
 		(useRouter as jest.Mock).mockReturnValue({ push: mockPush });
 		(useLocalSearchParams as jest.Mock).mockReturnValue({ showToast: "false" });
 		(useSelector as unknown as jest.Mock).mockReturnValue({ user: mockUser });
+		(batchApi.getBatches as jest.Mock).mockResolvedValue({ data: [] });
 	});
 
 	it("fetch dữ liệu và hiển thị thông tin User, Notes thành công", async () => {
@@ -81,7 +86,7 @@ describe("DashboardScreen - Màn hình chính", () => {
 			expect(getByText("Hello, John Doe 👋")).toBeTruthy();
 
 			// 2. Gọi API đủ
-			expect(noteApi.getNotes).toHaveBeenCalledWith({ limit: 5 });
+			expect(noteApi.getNotes).toHaveBeenCalledWith({ limit: 10 });
 			expect(dashboardApi.getMetrics).toHaveBeenCalled();
 
 			// 3. Hiển thị Note
@@ -90,7 +95,7 @@ describe("DashboardScreen - Màn hình chính", () => {
 		});
 
 		// Test Điều hướng vào Note
-		fireEvent.press(getByTestId("note-card-1"));
+		fireEvent.press(getByTestId("card-1"));
 		expect(mockPush).toHaveBeenCalledWith("/note/1");
 	});
 
@@ -152,6 +157,52 @@ describe("DashboardScreen - Màn hình chính", () => {
 		await waitFor(() => {
 			// Đảm bảo chữ "JD" xuất hiện do rơi vào nhánh fallback || "JD"
 			expect(getByText("JD")).toBeTruthy();
+		});
+	});
+	it("hiển thị danh sách PDF và điều hướng sang trang PDF Details", async () => {
+		// Mock để tab All Notes trả về 1 PDF thay vì Note
+		(noteApi.getNotes as jest.Mock).mockResolvedValue({ data: { notes: [] } });
+		(dashboardApi.getMetrics as jest.Mock).mockResolvedValue({ data: {} });
+		(batchApi.getBatches as jest.Mock).mockResolvedValue({
+			data: [
+				{
+					id: "batch-1",
+					title: "My PDF",
+					pdfUrl: "https://pdf.com",
+					createdAt: new Date(),
+				},
+			],
+		});
+
+		const { getByText, getByTestId } = render(<DashboardScreen />);
+
+		await waitFor(() => {
+			expect(getByText("My PDF")).toBeTruthy();
+		});
+
+		// Bấm vào PDF
+		fireEvent.press(getByTestId("card-batch-1"));
+
+		// Đảm bảo được Push sang trang PDF thay vì trang Note
+		expect(mockPush).toHaveBeenCalledWith({
+			pathname: "/pdf-details",
+			params: { pdfUrl: "https://pdf.com", title: "My PDF" },
+		});
+	});
+
+	it("không crash và bỏ qua ngầm nếu API bị lỗi mạng", async () => {
+		(noteApi.getNotes as jest.Mock).mockRejectedValue(
+			new Error("Network Error"),
+		);
+		(dashboardApi.getMetrics as jest.Mock).mockRejectedValue(
+			new Error("Network Error"),
+		);
+
+		const { getByText } = render(<DashboardScreen />);
+
+		await waitFor(() => {
+			// Vẫn hiển thị giao diện cơ bản chứ không sập app
+			expect(getByText("Hello, John Doe 👋")).toBeTruthy();
 		});
 	});
 });

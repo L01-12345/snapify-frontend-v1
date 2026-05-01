@@ -130,6 +130,7 @@ describe("EditNoteScreen - Chỉnh sửa ghi chú", () => {
 			expect(noteApi.updateNote).toHaveBeenCalledWith("note-1", {
 				title: "New Title",
 				content: "New Content Update",
+				folderId: null,
 			});
 			// Update xong thì lùi lại màn hình trước
 			expect(mockBack).toHaveBeenCalled();

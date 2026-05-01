@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { COLORS } from "../../constants/theme";
 import { noteApi } from "../../api/noteApi";
+import { batchApi } from "../../api/batchApi";
 
 interface NoteActionSheetProps {
 	visible: boolean;
@@ -23,6 +24,7 @@ interface NoteActionSheetProps {
 	onSuccess?: () => void;
 	onMove?: () => void;
 	onPin?: () => void;
+	itemType?: "note" | "batch";
 }
 
 export const NoteActionSheet = ({
@@ -34,8 +36,11 @@ export const NoteActionSheet = ({
 	onSuccess,
 	onMove,
 	onPin,
+	itemType = "note",
 }: NoteActionSheetProps) => {
 	const [isProcessing, setIsProcessing] = useState(false);
+	const isBatch = itemType === "batch";
+
 	const handleArchive = async () => {
 		try {
 			setIsProcessing(true);
@@ -54,9 +59,11 @@ export const NoteActionSheet = ({
 	};
 
 	const handleDelete = () => {
+		const docName = isBatch ? "PDF Document" : "Note";
+
 		Alert.alert(
-			"Delete Note",
-			`Are you sure you want to permanently delete "${noteTitle || "this note"}"?`,
+			`Delete ${docName}`,
+			`Are you sure you want to permanently delete "${noteTitle || "this document"}"?`,
 			[
 				{ text: "Cancel", style: "cancel" },
 				{
@@ -65,14 +72,23 @@ export const NoteActionSheet = ({
 					onPress: async () => {
 						try {
 							setIsProcessing(true);
-							await noteApi.deleteNote(noteId);
-							Alert.alert("Deleted", "Note has been deleted.");
 
-							if (onSuccess) onSuccess(); // Báo cho màn hình cha
+							// Phân nhánh gọi API tùy theo loại
+							if (isBatch) {
+								await batchApi.deleteBatch(noteId);
+							} else {
+								await noteApi.deleteNote(noteId);
+							}
+
+							Alert.alert("Deleted", `${docName} has been deleted.`);
+							if (onSuccess) onSuccess();
 							onClose();
 						} catch (error) {
 							console.error("Delete Error:", error);
-							Alert.alert("Error", "Failed to delete the note.");
+							Alert.alert(
+								"Error",
+								`Failed to delete the ${docName.toLowerCase()}.`,
+							);
 						} finally {
 							setIsProcessing(false);
 						}
@@ -121,7 +137,9 @@ export const NoteActionSheet = ({
 					<View style={styles.dragHandle} />
 
 					<View style={styles.header}>
-						<Text style={styles.title}>Note Actions</Text>
+						<Text style={styles.title}>
+							{isBatch ? "PDF Actions" : "Note Actions"}
+						</Text>
 						{noteTitle && (
 							<Text style={styles.subtitle} numberOfLines={1}>
 								{noteTitle}
@@ -130,29 +148,32 @@ export const NoteActionSheet = ({
 					</View>
 
 					<View style={styles.actionGroup}>
-						{/* Đổi UI Nút tuỳ theo trạng thái isArchived */}
-						{isArchived ? (
-							<TouchableOpacity
-								style={styles.actionBtn}
-								onPress={handleRestore}
-								testID="restore-btn"
-								disabled={isProcessing}
-							>
-								<Text style={styles.actionIcon}>♻️</Text>
-								<Text style={styles.actionText}>Restore Note</Text>
-							</TouchableOpacity>
-						) : (
-							<TouchableOpacity
-								style={styles.actionBtn}
-								onPress={handleArchive}
-								testID="archive-btn"
-								disabled={isProcessing}
-							>
-								<Text style={styles.actionIcon}>📦</Text>
-								<Text style={styles.actionText}>Archive Note</Text>
-							</TouchableOpacity>
+						{/* CHỈ HIỂN THỊ ARCHIVE/RESTORE/PIN NẾU LÀ NOTE */}
+						{!isBatch && (
+							<>
+								{isArchived ? (
+									<TouchableOpacity
+										style={styles.actionBtn}
+										onPress={handleRestore}
+										disabled={isProcessing}
+									>
+										<Text style={styles.actionIcon}>♻️</Text>
+										<Text style={styles.actionText}>Restore Note</Text>
+									</TouchableOpacity>
+								) : (
+									<TouchableOpacity
+										style={styles.actionBtn}
+										onPress={handleArchive}
+										disabled={isProcessing}
+									>
+										<Text style={styles.actionIcon}>📦</Text>
+										<Text style={styles.actionText}>Archive Note</Text>
+									</TouchableOpacity>
+								)}
+							</>
 						)}
 
+						{/* Move áp dụng được cho cả hai */}
 						<TouchableOpacity
 							style={styles.actionBtn}
 							onPress={onMove}
@@ -163,15 +184,17 @@ export const NoteActionSheet = ({
 							<Text style={styles.actionText}>Move to Folder</Text>
 						</TouchableOpacity>
 
-						<TouchableOpacity
-							style={styles.actionBtn}
-							onPress={onPin}
-							testID="pin-btn"
-							disabled={isProcessing}
-						>
-							<Text style={styles.actionIcon}>📌</Text>
-							<Text style={styles.actionText}>Pin to Top</Text>
-						</TouchableOpacity>
+						{!isBatch && (
+							<TouchableOpacity
+								style={styles.actionBtn}
+								onPress={onPin}
+								testID="pin-btn"
+								disabled={isProcessing}
+							>
+								<Text style={styles.actionIcon}>📌</Text>
+								<Text style={styles.actionText}>Pin to Top</Text>
+							</TouchableOpacity>
+						)}
 					</View>
 
 					<View style={styles.divider} />
@@ -183,13 +206,14 @@ export const NoteActionSheet = ({
 						disabled={isProcessing}
 					>
 						<Text style={styles.deleteIcon}>🗑️</Text>
-						<Text style={styles.deleteText}>Delete Note</Text>
+						<Text style={styles.deleteText}>
+							Delete {isBatch ? "PDF" : "Note"}
+						</Text>
 					</TouchableOpacity>
 
 					<TouchableOpacity
 						style={styles.cancelBtn}
 						onPress={onClose}
-						testID="cancel-btn"
 						disabled={isProcessing}
 					>
 						<Text style={styles.cancelText}>Cancel</Text>

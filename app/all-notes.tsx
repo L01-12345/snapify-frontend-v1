@@ -18,35 +18,81 @@ import { Note, NoteStatus } from "../src/types/api.types";
 
 import { NoteActionSheet } from "../src/components/common/NoteActionSheet";
 
+import { batchApi } from "../src/api/batchApi";
+
 export default function AllNotesScreen() {
 	const router = useRouter();
 	const [activeStatus, setActiveStatus] = useState("All");
-	const [notes, setNotes] = useState<Note[]>([]);
+	// const [notes, setNotes] = useState<Note[]>([]);
+	const [items, setItems] = useState<any[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 
-	const [selectedNoteForAction, setSelectedNoteForAction] =
-		useState<Note | null>(null);
+	const [selectedNoteForAction, setSelectedNoteForAction] = useState<
+		any | null
+	>(null);
 
 	// Lấy dữ liệu mỗi khi màn hình này được focus
 	useFocusEffect(
 		useCallback(() => {
-			fetchNotes(activeStatus);
+			fetchItems(activeStatus);
 		}, [activeStatus]),
 	);
 
-	const fetchNotes = async (statusFilter: string) => {
+	// const fetchNotes = async (statusFilter: string) => {
+	// 	try {
+	// 		setIsLoading(true);
+	// 		// Map trạng thái UI sang trạng thái API (PENDING, ACTIONED)
+	// 		let statusParam: NoteStatus | undefined = undefined;
+	// 		if (statusFilter === "Processed") statusParam = "ACTIONED";
+	// 		if (statusFilter === "Pending") statusParam = "PENDING";
+
+	// 		const response = await noteApi.getNotes({ status: statusParam });
+
+	// 		setNotes(response.data?.notes || []);
+	// 	} catch (error) {
+	// 		console.log("Lỗi fetch notes:", error);
+	// 	} finally {
+	// 		setIsLoading(false);
+	// 	}
+	// };
+	const fetchItems = async (statusFilter: string) => {
 		try {
 			setIsLoading(true);
-			// Map trạng thái UI sang trạng thái API (PENDING, ACTIONED)
+
 			let statusParam: NoteStatus | undefined = undefined;
 			if (statusFilter === "Processed") statusParam = "ACTIONED";
 			if (statusFilter === "Pending") statusParam = "PENDING";
 
-			const response = await noteApi.getNotes({ status: statusParam });
+			// GỌI SONG SONG 2 API
+			const [notesRes, batchesRes] = await Promise.all([
+				noteApi.getNotes({ status: statusParam }),
+				batchApi.getBatches(),
+			]);
 
-			setNotes(response.data?.notes || []);
+			const fetchedNotes = notesRes.data?.notes || [];
+			const fetchedBatches = batchesRes.data || [];
+
+			// Trộn dữ liệu và gắn cờ itemType
+			let combined = [
+				...fetchedNotes.map((n: any) => ({ ...n, itemType: "note" })),
+				...fetchedBatches.map((b: any) => ({ ...b, itemType: "batch" })),
+			];
+
+			// Nếu user đang lọc "Pending", ta tạm ẩn các PDF vì PDF thường coi là đã xử lý xong
+			if (statusFilter === "Pending") {
+				combined = combined.filter((item) => item.itemType === "note");
+			}
+
+			// Sắp xếp mới nhất lên đầu
+			combined.sort(
+				(a, b) =>
+					new Date(b.createdAt || 0).getTime() -
+					new Date(a.createdAt || 0).getTime(),
+			);
+
+			setItems(combined);
 		} catch (error) {
-			console.log("Lỗi fetch notes:", error);
+			console.log("Lỗi fetch items:", error);
 		} finally {
 			setIsLoading(false);
 		}
@@ -93,31 +139,31 @@ export default function AllNotesScreen() {
 	// 	);
 	// };
 	// --- CÁC HÀM XỬ LÝ ACTION CHO NOTE ---
-	const handleDelete = async () => {
-		if (!selectedNoteForAction) return;
-		try {
-			await noteApi.deleteNote(selectedNoteForAction.id);
-			setNotes((prevNotes) =>
-				prevNotes.filter((n) => n.id !== selectedNoteForAction.id),
-			);
-			setSelectedNoteForAction(null); // Đóng modal
-		} catch (error) {
-			Alert.alert("Error", "Unable to delete this note.");
-		}
-	};
+	// const handleDelete = async () => {
+	// 	if (!selectedNoteForAction) return;
+	// 	try {
+	// 		await noteApi.deleteNote(selectedNoteForAction.id);
+	// 		setNotes((prevNotes) =>
+	// 			prevNotes.filter((n) => n.id !== selectedNoteForAction.id),
+	// 		);
+	// 		setSelectedNoteForAction(null); // Đóng modal
+	// 	} catch (error) {
+	// 		Alert.alert("Error", "Unable to delete this note.");
+	// 	}
+	// };
 
-	const handleArchive = async () => {
-		if (!selectedNoteForAction) return;
-		// Giả lập đưa vào Archive (Xóa khỏi UI hiện tại và hiện thông báo)
-		Alert.alert(
-			"Archived",
-			`"${selectedNoteForAction.title}" has been moved to Archive.`,
-		);
-		setNotes((prevNotes) =>
-			prevNotes.filter((n) => n.id !== selectedNoteForAction.id),
-		);
-		setSelectedNoteForAction(null); // Đóng modal
-	};
+	// const handleArchive = async () => {
+	// 	if (!selectedNoteForAction) return;
+	// 	// Giả lập đưa vào Archive (Xóa khỏi UI hiện tại và hiện thông báo)
+	// 	Alert.alert(
+	// 		"Archived",
+	// 		`"${selectedNoteForAction.title}" has been moved to Archive.`,
+	// 	);
+	// 	setNotes((prevNotes) =>
+	// 		prevNotes.filter((n) => n.id !== selectedNoteForAction.id),
+	// 	);
+	// 	setSelectedNoteForAction(null); // Đóng modal
+	// };
 
 	const handleMove = () => {
 		Alert.alert("Tính năng đang phát triển", "Mở Folder Modal ở đây.");
@@ -207,7 +253,7 @@ export default function AllNotesScreen() {
 				<View style={styles.listContainer}>
 					{isLoading ? (
 						<ActivityIndicator size="large" color={COLORS.primary} />
-					) : notes.length === 0 ? (
+					) : items.length === 0 ? (
 						<Text
 							style={{
 								textAlign: "center",
@@ -215,30 +261,60 @@ export default function AllNotesScreen() {
 								marginTop: 20,
 							}}
 						>
-							There are no notes here.
+							There are no documents here.
 						</Text>
 					) : (
-						notes.map((note) => (
-							<TouchableOpacity
-								key={note.id}
-								style={styles.noteCard}
-								onPress={() => router.push(`/note/${note.id}`)}
-								onLongPress={() => setSelectedNoteForAction(note)}
-								testID={`note-card-${note.id}`}
-							>
-								<View style={styles.noteHeader}>
-									<Text style={styles.noteTitle} numberOfLines={1}>
-										{note.title}
-									</Text>
-									<View style={styles.badge}>
-										<Text style={styles.badgeText}>{note.status}</Text>
+						items.map((item) => {
+							const isNote = item.itemType === "note";
+
+							// Phân luồng điều hướng
+							const handlePress = () => {
+								if (isNote) {
+									router.push(`/note/${item.id}`);
+								} else {
+									router.push({
+										pathname: "/pdf-details",
+										params: { pdfUrl: item.pdfUrl, title: item.title },
+									});
+								}
+							};
+
+							return (
+								<TouchableOpacity
+									key={item.id}
+									style={styles.noteCard}
+									onPress={handlePress}
+									onLongPress={() => setSelectedNoteForAction(item)}
+									testID={`card-${item.id}`}
+								>
+									<View style={styles.noteHeader}>
+										<Text style={styles.noteTitle} numberOfLines={1}>
+											{item.title}
+										</Text>
+										<View
+											style={[
+												styles.badge,
+												!isNote && { backgroundColor: "#FEE2E2" },
+											]}
+										>
+											<Text
+												style={[
+													styles.badgeText,
+													!isNote && { color: "#B91C1C" },
+												]}
+											>
+												{isNote ? item.status : "PDF DOC"}
+											</Text>
+										</View>
 									</View>
-								</View>
-								<Text style={styles.notePreview} numberOfLines={2}>
-									{note.content}
-								</Text>
-							</TouchableOpacity>
-						))
+									<Text style={styles.notePreview} numberOfLines={2}>
+										{isNote
+											? item.content
+											: `Scanned PDF • Saved on ${new Date(item.createdAt).toLocaleDateString()}`}
+									</Text>
+								</TouchableOpacity>
+							);
+						})
 					)}
 				</View>
 			</ScrollView>
@@ -259,9 +335,10 @@ export default function AllNotesScreen() {
 				noteTitle={selectedNoteForAction?.title}
 				noteId={selectedNoteForAction?.id || ""}
 				onClose={() => setSelectedNoteForAction(null)}
-				onSuccess={() => fetchNotes(activeStatus)}
+				onSuccess={() => fetchItems(activeStatus)}
 				onMove={handleMove}
 				onPin={handlePin}
+				itemType={selectedNoteForAction?.itemType}
 			/>
 		</SafeAreaView>
 	);

@@ -1,10 +1,12 @@
 import React from "react";
 import { render, fireEvent, waitFor, act } from "@testing-library/react-native";
 import { Alert } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
 
-import FolderDetailScreen from "../../app/folder/[id]"; // Cập nhật đường dẫn
+import FolderDetailScreen from "../../app/folder/[id]";
 import { folderApi } from "../../src/api/folderApi";
+import { batchApi } from "../../src/api/batchApi";
+import { noteApi } from "../../src/api/noteApi";
 
 jest.mock("expo-router", () => {
 	const React = require("react");
@@ -20,9 +22,54 @@ jest.mock("expo-router", () => {
 jest.mock("../../src/api/folderApi", () => ({
 	folderApi: { getFolderById: jest.fn(), deleteFolder: jest.fn() },
 }));
+jest.mock("../../src/api/batchApi", () => ({
+	batchApi: { getBatches: jest.fn(), updateBatch: jest.fn() },
+}));
+jest.mock("../../src/api/noteApi", () => ({
+	noteApi: { updateNote: jest.fn() },
+}));
 
 jest.spyOn(Alert, "alert");
 jest.mock("@expo/vector-icons", () => ({ Feather: "Feather" }));
+
+// Mock 2 Modals
+jest.mock("../../src/components/common/NoteActionSheet", () => {
+	const { View, TouchableOpacity } = require("react-native");
+	return {
+		NoteActionSheet: ({ visible, onMove, onPin, onSuccess, onClose }: any) => {
+			if (!visible) return null;
+			return (
+				<View testID="mock-action-sheet">
+					<TouchableOpacity testID="mock-move" onPress={onMove} />
+					<TouchableOpacity testID="mock-pin" onPress={onPin} />
+					<TouchableOpacity testID="mock-success" onPress={onSuccess} />
+					<TouchableOpacity testID="mock-close" onPress={onClose} />
+				</View>
+			);
+		},
+	};
+});
+jest.mock("../../src/components/common/FolderSelectModal", () => {
+	const { View, TouchableOpacity } = require("react-native");
+	return {
+		FolderSelectModal: ({ visible, onSelect, onClose }: any) => {
+			if (!visible) return null;
+			return (
+				<View testID="mock-folder-modal">
+					<TouchableOpacity
+						testID="mock-select-new-folder"
+						onPress={() => onSelect({ id: "folder-new" })}
+					/>
+					<TouchableOpacity
+						testID="mock-select-same-folder"
+						onPress={() => onSelect({ id: "folder-1" })}
+					/>
+					<TouchableOpacity testID="mock-close-folder" onPress={onClose} />
+				</View>
+			);
+		},
+	};
+});
 
 describe("FolderDetailScreen - Chi tiết Thư mục", () => {
 	const mockBack = jest.fn();
@@ -37,107 +84,95 @@ describe("FolderDetailScreen - Chi tiết Thư mục", () => {
 		(useLocalSearchParams as jest.Mock).mockReturnValue({ id: "folder-1" });
 	});
 
-	it("báo lỗi và quay lại trang trước nếu không tải được folder", async () => {
-		(folderApi.getFolderById as jest.Mock).mockRejectedValue(
-			new Error("Lỗi mạng"),
+	it("tải danh sách trộn (Note và PDF) và điều hướng đúng khi click", async () => {
+		(folderApi.getFolderById as jest.Mock).mockResolvedValue({
+			data: {
+				id: "folder-1",
+				name: "Lịch sử",
+				notes: [{ id: "n1", title: "Note 1" }],
+			},
+		});
+		(batchApi.getBatches as jest.Mock).mockResolvedValue({
+			data: [{ id: "b1", title: "PDF 1", folderId: "folder-1", pdfUrl: "url" }],
+		});
+
+		const { getByTestId, getByText } = render(<FolderDetailScreen />);
+		await waitFor(() =>
+			expect(getByText("2 items in this folder")).toBeTruthy(),
 		);
 
-		render(<FolderDetailScreen />);
+		// Click Note
+		fireEvent.press(getByTestId("card-n1"));
+		expect(mockPush).toHaveBeenCalledWith("/note/n1");
 
+		// Click PDF
+		fireEvent.press(getByTestId("card-b1"));
+		expect(mockPush).toHaveBeenCalledWith({
+			pathname: "/pdf-details",
+			params: { pdfUrl: "url", title: "PDF 1" },
+		});
+	});
+
+	it("nhấn đè mở Modal, ghim, di chuyển và đóng modal Folder", async () => {
+		(folderApi.getFolderById as jest.Mock).mockResolvedValue({
+			data: { id: "folder-1", notes: [{ id: "n1", title: "Note 1" }] },
+		});
+		(batchApi.getBatches as jest.Mock).mockResolvedValue({ data: [] });
+
+		const { getByTestId, queryByTestId } = render(<FolderDetailScreen />);
+		await waitFor(() => expect(getByTestId("card-n1")).toBeTruthy());
+
+		// 1. Nhấn đè mở Action Sheet
+		fireEvent(getByTestId("card-n1"), "longPress");
+		expect(getByTestId("mock-action-sheet")).toBeTruthy();
+
+		// 2. Test Pin
+		fireEvent.press(getByTestId("mock-pin"));
+		expect(Alert.alert).toHaveBeenCalledWith("Pinned", expect.any(String));
+
+		// 3. Mở lại và test Move (Mở Folder Modal)
+		fireEvent(getByTestId("card-n1"), "longPress");
+		fireEvent.press(getByTestId("mock-move"));
+		expect(queryByTestId("mock-action-sheet")).toBeNull();
+		expect(getByTestId("mock-folder-modal")).toBeTruthy();
+
+		// 4. Chọn thư mục mới -> Gọi API -> Cập nhật List
+		await act(async () => {
+			fireEvent.press(getByTestId("mock-select-new-folder"));
+		});
 		await waitFor(() => {
-			expect(Alert.alert).toHaveBeenCalledWith(
-				"Error",
-				"Unable to load folder data.",
+			expect(noteApi.updateNote).toHaveBeenCalledWith(
+				"n1",
+				expect.objectContaining({ folderId: "folder-new" }),
 			);
-			expect(mockBack).toHaveBeenCalled();
+			expect(queryByTestId("mock-folder-modal")).toBeNull();
 		});
 	});
 
-	it("hiển thị giao diện rỗng và điều hướng thêm Note khi thư mục không có ghi chú", async () => {
+	it("chuyển PDF sang thư mục khác thành công", async () => {
 		(folderApi.getFolderById as jest.Mock).mockResolvedValue({
-			data: { id: "folder-1", name: "Lịch sử", notes: [] },
+			data: { id: "folder-1", notes: [] },
 		});
-
-		const { getByText, getByTestId } = render(<FolderDetailScreen />);
-
-		await waitFor(() => {
-			expect(getByText("Lịch sử")).toBeTruthy();
-			expect(getByText("This folder is empty")).toBeTruthy();
+		(batchApi.getBatches as jest.Mock).mockResolvedValue({
+			data: [{ id: "b1", title: "PDF 1", folderId: "folder-1" }],
 		});
-
-		fireEvent.press(getByTestId("add-note-empty-btn"));
-		expect(mockPush).toHaveBeenCalledWith("/note/new");
-	});
-
-	it("hiển thị danh sách ghi chú và nút FAB khi thư mục có dữ liệu", async () => {
-		const mockData = {
-			id: "folder-1",
-			name: "Lịch sử",
-			notes: [
-				{
-					id: "note-1",
-					title: "Bài 1",
-					content: "Nội dung",
-					status: "PROCESSED",
-				},
-			],
-		};
-		(folderApi.getFolderById as jest.Mock).mockResolvedValue({
-			data: mockData,
-		});
-
-		const { getByText, getByTestId, queryByText } = render(
-			<FolderDetailScreen />,
-		);
-
-		await waitFor(() => {
-			expect(getByText("1 Notes in this folder")).toBeTruthy();
-			expect(getByText("Bài 1")).toBeTruthy();
-			expect(queryByText("This folder is empty")).toBeNull();
-		});
-
-		// Bấm vào Note
-		fireEvent.press(getByTestId("note-card-note-1"));
-		expect(mockPush).toHaveBeenCalledWith("/note/note-1");
-
-		// Bấm vào FAB thêm note
-		fireEvent.press(getByTestId("add-note-fab"));
-		expect(mockPush).toHaveBeenCalledWith("/note/new");
-	});
-
-	it("hiển thị popup cảnh báo xóa thư mục và thực hiện xóa thành công", async () => {
-		(folderApi.getFolderById as jest.Mock).mockResolvedValue({
-			data: { id: "folder-1", name: "Lịch sử", notes: [] },
-		});
-		(folderApi.deleteFolder as jest.Mock).mockResolvedValue({
+		(batchApi.updateBatch as jest.Mock).mockResolvedValue({
 			status: "success",
 		});
 
 		const { getByTestId } = render(<FolderDetailScreen />);
+		await waitFor(() => expect(getByTestId("card-b1")).toBeTruthy());
 
-		await waitFor(() => expect(getByTestId("delete-folder-btn")).toBeTruthy());
-
-		// 1. Nhấn nút xóa
-		fireEvent.press(getByTestId("delete-folder-btn"));
-
-		// 2. Kiểm tra Alert cảnh báo đã xuất hiện
-		expect(Alert.alert).toHaveBeenCalledWith(
-			"Delete Folder",
-			expect.any(String),
-			expect.any(Array),
-		);
-
-		// 3. Trích xuất nút "Delete" từ Alert và giả lập việc người dùng bấm vào
-		const alertCallArgs = (Alert.alert as jest.Mock).mock.calls[0];
-		const deleteConfirmButton = alertCallArgs[2][1]; // Nút thứ 2 trong mảng là Delete
-
+		fireEvent(getByTestId("card-b1"), "longPress"); // Mở Modal
+		fireEvent.press(getByTestId("mock-move")); // Bấm Move
 		await act(async () => {
-			deleteConfirmButton.onPress();
-		});
+			fireEvent.press(getByTestId("mock-select-new-folder"));
+		}); // Chọn folder
 
 		await waitFor(() => {
-			expect(folderApi.deleteFolder).toHaveBeenCalledWith("folder-1");
-			expect(mockBack).toHaveBeenCalled(); // Xóa xong phải quay lại
+			expect(batchApi.updateBatch).toHaveBeenCalledWith("b1", {
+				folderId: "folder-new",
+			});
 		});
 	});
 });

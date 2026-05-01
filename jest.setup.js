@@ -1,4 +1,5 @@
 // jest.setup.js
+
 if (typeof global.structuredClone === "undefined") {
 	global.structuredClone = (obj) => JSON.parse(JSON.stringify(obj));
 }
@@ -16,7 +17,7 @@ jest.mock("expo-router", () => ({
 		back: jest.fn(),
 	}),
 	useLocalSearchParams: () => ({ id: "1" }),
-	useFocusEffect: jest.fn(),
+	useFocusEffect: jest.fn((callback) => require("react").useEffect(callback, [])),
 	Redirect: "Redirect",
 	Link: "Link",
 }));
@@ -29,6 +30,26 @@ jest.mock("expo-linear-gradient", () => ({
 jest.mock("@expo/vector-icons", () => ({
 	Feather: "Feather",
 	Ionicons: "Ionicons",
+}));
+
+// 4. Giả lập Sentry để tránh lỗi ESM parsing trong Jest
+jest.mock("@sentry/react-native", () => ({
+	captureException: jest.fn(),
+	captureEvent: jest.fn(),
+	captureMessage: jest.fn(),
+	addBreadcrumb: jest.fn(),
+	setUser: jest.fn(),
+	setContext: jest.fn(),
+	setExtra: jest.fn(),
+	setTag: jest.fn(),
+	setTags: jest.fn(),
+	startTransaction: jest.fn(),
+	withScope: jest.fn((cb) => cb({ setTag: jest.fn(), setContext: jest.fn() })),
+	init: jest.fn(),
+	configureScope: jest.fn(),
+	NativeTransport: jest.fn(),
+	getCurrentHub: jest.fn(),
+	startTransaction: jest.fn(),
 }));
 
 jest.mock("expo-camera", () => ({

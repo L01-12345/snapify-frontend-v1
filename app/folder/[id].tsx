@@ -16,12 +16,72 @@ import { COLORS } from "../../src/constants/theme";
 
 import { folderApi } from "../../src/api/folderApi";
 import { FolderDetail } from "../../src/types/api.types";
+import { batchApi } from "../../src/api/batchApi";
+import { noteApi } from "../../src/api/noteApi";
+
+import { NoteActionSheet } from "../../src/components/common/NoteActionSheet";
+import { FolderSelectModal } from "../../src/components/common/FolderSelectModal";
 
 export default function FolderDetailScreen() {
 	const router = useRouter();
 	const { id } = useLocalSearchParams<{ id: string }>();
 	const [folder, setFolder] = useState<FolderDetail | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
+	const [combinedItems, setCombinedItems] = useState<any[]>([]);
+	const [selectedItemForAction, setSelectedItemForAction] = useState<
+		any | null
+	>(null);
+
+	const [isFolderModalVisible, setIsFolderModalVisible] = useState(false);
+	const [itemToMove, setItemToMove] = useState<any | null>(null);
+
+	const handleMove = () => {
+		setItemToMove(selectedItemForAction);
+		setSelectedItemForAction(null);
+		setIsFolderModalVisible(true);
+	};
+
+	const executeMove = async (selectedFolder: any) => {
+		setIsFolderModalVisible(false); // Đóng modal ngay lập tức
+
+		if (!selectedFolder || !itemToMove) {
+			setItemToMove(null);
+			return;
+		}
+
+		// Nếu chọn lại đúng thư mục hiện tại thì không làm gì cả
+		if (selectedFolder.id === id) {
+			setItemToMove(null);
+			return;
+		}
+
+		setCombinedItems((prev) =>
+			prev.filter((item) => item.id !== itemToMove.id),
+		);
+
+		try {
+			// SỬA LẠI PAYLOAD CHO GỌN VÀ CHUẨN XÁC
+			const payload = { folderId: selectedFolder.id || null };
+
+			if (itemToMove.itemType === "note") {
+				await noteApi.updateNote(itemToMove.id, payload);
+			} else {
+				await batchApi.updateBatch(itemToMove.id, payload);
+			}
+
+			await fetchFolderDetail();
+		} catch (error) {
+			Alert.alert("Error", "Failed to move the document.");
+			await fetchFolderDetail();
+		} finally {
+			setItemToMove(null);
+		}
+	};
+
+	const handlePin = () => {
+		Alert.alert("Pinned", `"${selectedItemForAction?.title}" pinned to top.`);
+		setSelectedItemForAction(null);
+	};
 
 	useFocusEffect(
 		useCallback(() => {
@@ -31,8 +91,33 @@ export default function FolderDetailScreen() {
 
 	const fetchFolderDetail = async () => {
 		try {
-			const response = await folderApi.getFolderById(id);
-			setFolder(response.data || null);
+			// Lấy thông tin Folder và Lấy toàn bộ Batch
+			const [folderRes, batchesRes] = await Promise.all([
+				folderApi.getFolderById(id),
+				batchApi.getBatches(),
+			]);
+
+			const folderData = folderRes.data || null;
+			setFolder(folderData);
+
+			if (folderData) {
+				// 1. Gắn type cho notes trong folder
+				const notes =
+					folderData.notes?.map((n: any) => ({ ...n, itemType: "note" })) || [];
+
+				// 2. Lọc các Batch (PDF) có folderId trùng với thư mục hiện tại
+				const batches = (batchesRes.data || [])
+					.filter((b: any) => b.folderId === id)
+					.map((b: any) => ({ ...b, itemType: "batch" }));
+
+				// 3. Trộn và sắp xếp lại
+				const combined = [...notes, ...batches].sort(
+					(a, b) =>
+						new Date(b.createdAt || 0).getTime() -
+						new Date(a.createdAt || 0).getTime(),
+				);
+				setCombinedItems(combined);
+			}
 		} catch (error) {
 			Alert.alert("Error", "Unable to load folder data.");
 			router.back();
@@ -76,7 +161,7 @@ export default function FolderDetailScreen() {
 		);
 	}
 
-	const isEmpty = !folder.notes || folder.notes.length === 0;
+	const isEmpty = combinedItems.length === 0;
 
 	return (
 		<SafeAreaView style={styles.safeArea}>
@@ -114,7 +199,12 @@ export default function FolderDetailScreen() {
 					</Text>
 					<TouchableOpacity
 						style={styles.addBtn}
-						onPress={() => router.push("/note/new")}
+						onPress={() =>
+							router.push({
+								pathname: "/note/new",
+								params: { folderId: id, folderName: folder.name },
+							})
+						}
 						testID="add-note-empty-btn"
 					>
 						<Text style={styles.addBtnText}>+ Add Notes</Text>
@@ -124,34 +214,67 @@ export default function FolderDetailScreen() {
 				// GIAO DIỆN CÓ DATA
 				<ScrollView contentContainerStyle={styles.listContainer}>
 					<Text style={styles.listSubtitle}>
-						{folder.notes.length} Notes in this folder
+						{combinedItems.length} items in this folder
 					</Text>
 
-					{folder.notes.map((note) => (
-						<TouchableOpacity
-							key={note.id}
-							style={styles.noteCard}
-							onPress={() => router.push(`/note/${note.id}`)}
-							testID={`note-card-${note.id}`}
-						>
-							<View style={styles.noteHeader}>
-								<Text style={styles.noteTitle}>{note.title}</Text>
-								<View style={styles.badge}>
-									<Text style={styles.badgeText}>{note.status}</Text>
+					{combinedItems.map((item) => {
+						const isNote = item.itemType === "note";
+
+						const handlePress = () => {
+							if (isNote) router.push(`/note/${item.id}`);
+							else
+								router.push({
+									pathname: "/pdf-details",
+									params: { pdfUrl: item.pdfUrl, title: item.title },
+								});
+						};
+
+						return (
+							<TouchableOpacity
+								key={item.id}
+								style={styles.noteCard}
+								onPress={handlePress}
+								testID={`card-${item.id}`}
+								onLongPress={() => setSelectedItemForAction(item)}
+							>
+								<View style={styles.noteHeader}>
+									<Text style={styles.noteTitle} numberOfLines={1}>
+										{item.title}
+									</Text>
+									<View
+										style={[
+											styles.badge,
+											!isNote && { backgroundColor: "#FEE2E2" },
+										]}
+									>
+										<Text
+											style={[
+												styles.badgeText,
+												!isNote && { color: "#B91C1C" },
+											]}
+										>
+											{isNote ? item.status : "PDF"}
+										</Text>
+									</View>
 								</View>
-							</View>
-							<Text style={styles.notePreview} numberOfLines={2}>
-								{note.content}
-							</Text>
-						</TouchableOpacity>
-					))}
+								<Text style={styles.notePreview} numberOfLines={2}>
+									{isNote ? item.content : `Scanned PDF Document`}
+								</Text>
+							</TouchableOpacity>
+						);
+					})}
 				</ScrollView>
 			)}
 			{/* Floating Action Button */}
 			{!isEmpty && (
 				<TouchableOpacity
 					style={styles.fab}
-					onPress={() => router.push("/note/new")}
+					onPress={() =>
+						router.push({
+							pathname: "/note/new",
+							params: { folderId: id, folderName: folder.name },
+						})
+					}
 					testID="add-note-fab"
 				>
 					<LinearGradient
@@ -162,6 +285,26 @@ export default function FolderDetailScreen() {
 					</LinearGradient>
 				</TouchableOpacity>
 			)}
+			<NoteActionSheet
+				visible={!!selectedItemForAction}
+				noteTitle={selectedItemForAction?.title}
+				noteId={selectedItemForAction?.id || ""}
+				itemType={selectedItemForAction?.itemType}
+				onClose={() => setSelectedItemForAction(null)}
+				onSuccess={() => fetchFolderDetail()} // Gọi lại hàm fetch để load lại list sau khi xóa/archive
+				onMove={handleMove}
+				onPin={handlePin}
+			/>
+			{/* FOLDER SELECT MODAL */}
+			<FolderSelectModal
+				visible={isFolderModalVisible}
+				onClose={() => {
+					setIsFolderModalVisible(false);
+					setItemToMove(null);
+				}}
+				selectedId={id}
+				onSelect={executeMove}
+			/>
 		</SafeAreaView>
 	);
 }

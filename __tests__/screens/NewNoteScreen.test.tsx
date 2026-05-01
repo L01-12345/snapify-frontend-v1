@@ -7,7 +7,10 @@ import NewNoteScreen from "../../app/note/new";
 import { noteApi } from "../../src/api/noteApi";
 
 // --- MOCK MODULES ---
-jest.mock("expo-router", () => ({ useRouter: jest.fn() }));
+jest.mock("expo-router", () => ({
+	useRouter: jest.fn(),
+	useLocalSearchParams: jest.fn(() => ({})),
+}));
 jest.mock("../../src/api/noteApi", () => ({
 	noteApi: { createNote: jest.fn() },
 }));
@@ -62,7 +65,6 @@ describe("NewNoteScreen - Tạo ghi chú mới", () => {
 			expect(noteApi.createNote).toHaveBeenCalledWith({
 				title: "Meeting Notes",
 				content: "Discuss about Q3 plan.",
-				folderId: null,
 			});
 			// Đảm bảo chuyển trang thành công
 			expect(mockBack).toHaveBeenCalled();

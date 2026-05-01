@@ -17,6 +17,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { COLORS } from "../../src/constants/theme";
 import { noteApi } from "../../src/api/noteApi";
+import { folderApi } from "../../src/api/folderApi";
 // Import FolderSelectModal
 import { FolderSelectModal } from "../../src/components/common/FolderSelectModal";
 
@@ -42,7 +43,7 @@ export default function EditNoteScreen() {
 	const [isImageZoomVisible, setIsImageZoomVisible] = useState(false);
 
 	useEffect(() => {
-		const fetchNote = async () => {
+		const fetchNoteAndFolder = async () => {
 			try {
 				const response = await noteApi.getNoteById(id);
 				const data = response.data;
@@ -52,7 +53,23 @@ export default function EditNoteScreen() {
 					if (data.images && data.images.length > 0) {
 						setImageUrl(data.images[0].imageUrl);
 					}
-					// Nếu API có trả về folder, cập nhật vào selectedFolder ở đây
+
+					// LẤY THÔNG TIN FOLDER HIỆN TẠI
+					if (data.folderId) {
+						const foldersRes = await folderApi.getFolders();
+						const folders = foldersRes.data || [];
+						const matchedFolder = folders.find((f) => f.id === data.folderId);
+						if (matchedFolder) {
+							setSelectedFolder({
+								id: matchedFolder.id,
+								name: matchedFolder.name,
+								icon: matchedFolder.icon || "📂",
+							});
+						}
+					} else {
+						// Nếu Note chưa thuộc thư mục nào
+						setSelectedFolder({ id: "", name: "Uncategorized", icon: "📁" });
+					}
 				}
 			} catch (error) {
 				Alert.alert("Error", "Unable to load content.");
@@ -60,16 +77,22 @@ export default function EditNoteScreen() {
 				setIsLoading(false);
 			}
 		};
-		fetchNote();
+
+		fetchNoteAndFolder();
 	}, [id]);
 
 	const handleUpdate = async () => {
 		try {
 			setIsSaving(true);
-			await noteApi.updateNote(id, { title, content });
+			const payload: any = { title, content };
+			if (selectedFolder.id) {
+				payload.folderId = selectedFolder.id;
+			}
+			payload.folderId = selectedFolder.id ? selectedFolder.id : null;
+			await noteApi.updateNote(id, payload);
 			router.back();
 		} catch (error: any) {
-			Alert.alert("Error", error.message);
+			Alert.alert("Error", error.message || "Lỗi lưu ghi chú");
 		} finally {
 			setIsSaving(false);
 		}

@@ -1,5 +1,5 @@
 // app/note/[id].tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
 	View,
 	Text,
@@ -11,7 +11,7 @@ import {
 	Alert,
 	Image,
 } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "../../src/constants/theme";
@@ -20,6 +20,7 @@ import { NoteActionSheet } from "../../src/components/common/NoteActionSheet";
 
 import { noteApi } from "../../src/api/noteApi";
 import { Note } from "../../src/types/api.types";
+import { folderApi } from "../../src/api/folderApi";
 
 export default function NoteDetailScreen() {
 	const router = useRouter();
@@ -27,6 +28,7 @@ export default function NoteDetailScreen() {
 	const [note, setNote] = useState<Note | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [modalVisible, setModalVisible] = useState(false);
+	const [folderName, setFolderName] = useState<string>("UNCATEGORIZED");
 
 	const firstImage =
 		note?.images && note.images.length > 0 ? note.images[0].imageUrl : null;
@@ -34,7 +36,22 @@ export default function NoteDetailScreen() {
 	const fetchNote = async () => {
 		try {
 			const response = await noteApi.getNoteById(id);
-			setNote(response.data || null);
+			const noteData = response.data || null;
+			setNote(noteData);
+			if (noteData && noteData.folderId) {
+				try {
+					const foldersRes = await folderApi.getFolders();
+					const folders = foldersRes.data || [];
+					const matchedFolder = folders.find((f) => f.id === noteData.folderId);
+					if (matchedFolder) {
+						setFolderName(
+							`${matchedFolder.icon || "📂"} ${matchedFolder.name}`.toUpperCase(),
+						);
+					}
+				} catch (err) {
+					console.warn("Lỗi không lấy được tên folder:", err);
+				}
+			}
 		} catch (error) {
 			// Nếu Note đã bị xóa, API trả lỗi 404 -> Alert và Back về list
 			Alert.alert("Notice", "Note not found or has been deleted.");
@@ -43,14 +60,16 @@ export default function NoteDetailScreen() {
 			setIsLoading(false);
 		}
 	};
-	useEffect(() => {
-		if (id) {
-			fetchNote();
-		} else {
-			console.warn("Không tìm thấy ID trong params");
-			setIsLoading(false);
-		}
-	}, [id]);
+	useFocusEffect(
+		useCallback(() => {
+			if (id) {
+				fetchNote();
+			} else {
+				console.warn("Không tìm thấy ID trong params");
+				setIsLoading(false);
+			}
+		}, [id]),
+	);
 
 	const handleDelete = () => {
 		Alert.alert("Delete Note", "Are you sure you want to delete this note?", [
@@ -117,10 +136,12 @@ export default function NoteDetailScreen() {
 					{/* Badges */}
 					<View style={styles.badgeRow}>
 						<View style={styles.folderBadge}>
-							<Text style={styles.folderBadgeText}>📚 STUDY</Text>
+							<Text style={styles.folderBadgeText} numberOfLines={1}>
+								{folderName}
+							</Text>
 						</View>
 						<View style={styles.statusBadge}>
-							<Text style={styles.statusBadgeText}>PROCESSED</Text>
+							<Text style={styles.statusBadgeText}>{note?.status}</Text>
 						</View>
 					</View>
 

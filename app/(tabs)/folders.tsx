@@ -148,7 +148,7 @@ export default function FoldersScreen() {
 											{folder.name}
 										</Text>
 										<Text style={styles.cardSubtitle}>
-											{folder.type === "SMART" ? "Tự động" : "Thủ công"}
+											{folder.type === "SMART" ? "AUTO" : "MANUAL"}
 										</Text>
 									</View>
 								</TouchableOpacity>
