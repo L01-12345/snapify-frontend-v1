@@ -175,4 +175,20 @@ describe("FolderDetailScreen - Chi tiết Thư mục", () => {
 			});
 		});
 	});
+	it("Báo lỗi và văng ra ngoài khi fetchFolderDetail (trong FocusEffect) bị lỗi mạng", async () => {
+		(folderApi.getFolderById as jest.Mock).mockRejectedValueOnce(
+			new Error("Mạng chập chờn"),
+		);
+
+		const { queryByText } = render(<FolderDetailScreen />);
+
+		// API văng lỗi sẽ hiện Alert và gọi router.back()
+		await waitFor(() => {
+			expect(Alert.alert).toHaveBeenCalledWith(
+				"Error",
+				"Unable to load folder data.",
+			);
+			expect(mockBack).toHaveBeenCalled();
+		});
+	});
 });

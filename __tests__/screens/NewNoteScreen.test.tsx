@@ -16,6 +16,26 @@ jest.mock("../../src/api/noteApi", () => ({
 }));
 jest.spyOn(Alert, "alert");
 jest.mock("@expo/vector-icons", () => ({ Feather: "Feather" }));
+jest.mock("../../src/components/common/FolderSelectModal", () => {
+	const { View, TouchableOpacity } = require("react-native");
+	return {
+		FolderSelectModal: ({ visible, onSelect }: any) => {
+			if (!visible) return null;
+			return (
+				<View testID="mock-folder-modal">
+					<TouchableOpacity
+						testID="select-work"
+						onPress={() => onSelect({ id: "f-work", name: "Work", icon: "💼" })}
+					/>
+					<TouchableOpacity
+						testID="select-null"
+						onPress={() => onSelect(null)}
+					/>
+				</View>
+			);
+		},
+	};
+});
 
 describe("NewNoteScreen - Tạo ghi chú mới", () => {
 	const mockBack = jest.fn();
@@ -101,5 +121,53 @@ describe("NewNoteScreen - Tạo ghi chú mới", () => {
 		});
 
 		expect(mockBack).toHaveBeenCalled();
+	});
+	it("mở FolderSelectModal, cập nhật UI khi chọn thư mục và gửi đủ dữ liệu khi Save", async () => {
+		(noteApi.createNote as jest.Mock).mockResolvedValueOnce({
+			status: "success",
+		});
+
+		const { getByText, getByTestId, queryByTestId } = render(<NewNoteScreen />);
+
+		// 1. Nhập tiêu đề
+		fireEvent.changeText(getByTestId("title-input"), "My Folder Note");
+
+		// 2. Bấm vào nút Badge (hiện chữ Uncategorized) để mở Modal
+		fireEvent.press(getByText("Uncategorized"));
+		expect(getByTestId("mock-folder-modal")).toBeTruthy();
+
+		// 3. Chọn thư mục Work
+		fireEvent.press(getByTestId("select-work"));
+
+		// Modal đóng và hiển thị chữ Work
+		await waitFor(() => {
+			expect(queryByTestId("mock-folder-modal")).toBeNull();
+			expect(getByText("Work")).toBeTruthy();
+			expect(getByText("💼")).toBeTruthy();
+		});
+
+		// 4. Bấm Save
+		await act(async () => {
+			fireEvent.press(getByTestId("save-btn"));
+		});
+
+		// 5. Kiểm tra API gửi đi có đính kèm folderId
+		await waitFor(() => {
+			expect(noteApi.createNote).toHaveBeenCalledWith({
+				title: "My Folder Note",
+				content: "",
+				folderId: "f-work", // Dữ liệu quan trọng nhất để ăn điểm Coverage
+			});
+		});
+	});
+
+	it("chọn null từ FolderModal sẽ reset về Uncategorized", async () => {
+		const { getByText, getByTestId } = render(<NewNoteScreen />);
+		fireEvent.press(getByText("Uncategorized")); // Mở modal
+		fireEvent.press(getByTestId("select-null")); // Chọn Null
+
+		await waitFor(() => {
+			expect(getByText("Uncategorized")).toBeTruthy(); // Quay về mặc định
+		});
 	});
 });
