@@ -12,6 +12,8 @@ import {
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImageManipulator from "expo-image-manipulator";
 import { useRouter } from "expo-router";
+import { COLORS } from "../src/constants/theme";
+import { Icon } from "../src/components/common/Icon";
 
 export default function CameraBatchScreen() {
 	const router = useRouter();
@@ -118,10 +120,15 @@ export default function CameraBatchScreen() {
 							onPress={() => router.back()}
 							testID="back-btn"
 						>
-							<Text style={styles.iconText}>✕</Text>
+							<Icon name="x" size={24} color={COLORS.slate800} />
 						</TouchableOpacity>
 						<TouchableOpacity style={styles.flashBtn}>
-							<Text style={styles.flashText}>⚡</Text>
+							<Icon
+								name="flash"
+								size={20}
+								color={COLORS.white}
+								style={styles.flashText}
+							/>
 						</TouchableOpacity>
 					</View>
 				</SafeAreaView>
@@ -151,7 +158,7 @@ export default function CameraBatchScreen() {
 				<View style={styles.bottomBar}>
 					{/* Thumbnail / Counter */}
 					<TouchableOpacity style={styles.galleryBtn}>
-						<Text style={{ fontSize: 24, opacity: 0.8 }}>📄</Text>
+						<Icon name="document" size={24} color="rgba(255,255,255,0.8)" />
 						{capturedImages.length > 0 && (
 							<View style={styles.badge}>
 								<Text style={styles.badgeText}>{capturedImages.length}</Text>
@@ -174,7 +181,7 @@ export default function CameraBatchScreen() {
 						onPress={handleDone}
 						testID="done-btn"
 					>
-						<Text style={styles.doneBtnText}>✓</Text>
+						<Icon name="check" size={20} color={COLORS.white} />
 					</TouchableOpacity>
 				</View>
 			</View>

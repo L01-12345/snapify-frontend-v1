@@ -15,14 +15,16 @@ import { useRouter, useFocusEffect } from "expo-router";
 import { COLORS } from "../../src/constants/theme";
 import { folderApi } from "../../src/api/folderApi";
 import { Folder } from "../../src/types/api.types";
+import { Icon, type IconName } from "../../src/components/common/Icon";
 
 // Bộ màu và icon tĩnh để gắn cho các folder (do API không lưu màu)
-const FOLDER_STYLES = [
-	{ icon: "📚", bgColor: "#EEF2FF", iconColor: "#6366F1" },
-	{ icon: "💼", bgColor: "#ECFDF5", iconColor: "#10B981" },
-	{ icon: "🧾", bgColor: "#FFFBEB", iconColor: "#F59E0B" },
-	{ icon: "❤️", bgColor: "#FFF1F2", iconColor: "#F43F5E" },
-];
+const FOLDER_STYLES: { icon: IconName; bgColor: string; iconColor: string }[] =
+	[
+		{ icon: "folder", bgColor: "#EEF2FF", iconColor: "#6366F1" },
+		{ icon: "briefcase", bgColor: "#ECFDF5", iconColor: "#10B981" },
+		{ icon: "receipt", bgColor: "#FFFBEB", iconColor: "#F59E0B" },
+		{ icon: "heart", bgColor: "#FFF1F2", iconColor: "#F43F5E" },
+	];
 
 export default function FoldersScreen() {
 	const router = useRouter();
@@ -141,7 +143,12 @@ export default function FoldersScreen() {
 									<View
 										style={[styles.iconBox, { backgroundColor: style.bgColor }]}
 									>
-										<Text style={styles.iconText}>{style.icon}</Text>
+										<Icon
+											name={style.icon}
+											size={20}
+											color={style.iconColor}
+											style={styles.iconSvg}
+										/>
 									</View>
 									<View style={styles.cardInfo}>
 										<Text style={styles.cardTitle} numberOfLines={1}>
@@ -255,6 +262,10 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 	},
 	iconText: { fontSize: 24 },
+	iconSvg: {
+		width: 24,
+		height: 24,
+	},
 	cardInfo: { gap: 4 },
 	cardTitle: { fontSize: 18, fontWeight: "700", color: COLORS.slate900 },
 	cardSubtitle: { fontSize: 12, fontWeight: "500", color: COLORS.slate500 },

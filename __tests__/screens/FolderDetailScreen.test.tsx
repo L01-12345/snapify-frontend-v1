@@ -191,4 +191,122 @@ describe("FolderDetailScreen - Chi tiết Thư mục", () => {
 			expect(mockBack).toHaveBeenCalled();
 		});
 	});
+	it("không làm gì cả và đóng Modal nếu chọn lại đúng thư mục hiện tại khi Move", async () => {
+		(folderApi.getFolderById as jest.Mock).mockResolvedValue({
+			data: { id: "folder-1", notes: [{ id: "n1", title: "Note 1" }] },
+		});
+		const { getByTestId, queryByTestId } = render(<FolderDetailScreen />);
+		await waitFor(() => expect(getByTestId("card-n1")).toBeTruthy());
+
+		// Mở Modal
+		fireEvent(getByTestId("card-n1"), "longPress");
+		fireEvent.press(getByTestId("mock-move"));
+
+		// Chọn lại CÙNG một thư mục (folder-1)
+		await act(async () => {
+			fireEvent.press(getByTestId("mock-select-same-folder"));
+		});
+
+		// API không được gọi
+		expect(noteApi.updateNote).not.toHaveBeenCalled();
+		// Modal Move phải tự đóng
+		expect(queryByTestId("mock-folder-modal")).toBeNull();
+	});
+
+	it("hiển thị Alert lỗi và khôi phục giao diện khi API chuyển tài liệu thất bại", async () => {
+		(folderApi.getFolderById as jest.Mock).mockResolvedValue({
+			data: { id: "folder-1", notes: [{ id: "n1", title: "Note 1" }] },
+		});
+		// Giả lập API Move bị lỗi
+		(noteApi.updateNote as jest.Mock).mockRejectedValueOnce(
+			new Error("Lỗi API Move"),
+		);
+
+		const { getByTestId } = render(<FolderDetailScreen />);
+		await waitFor(() => expect(getByTestId("card-n1")).toBeTruthy());
+
+		fireEvent(getByTestId("card-n1"), "longPress");
+		fireEvent.press(getByTestId("mock-move"));
+
+		await act(async () => {
+			fireEvent.press(getByTestId("mock-select-new-folder"));
+		});
+
+		await waitFor(() => {
+			expect(Alert.alert).toHaveBeenCalledWith(
+				"Error",
+				"Failed to move the document.",
+			);
+		});
+	});
+
+	it("hiển thị Alert lỗi nếu API xóa thư mục thất bại (catch block)", async () => {
+		(folderApi.getFolderById as jest.Mock).mockResolvedValue({
+			data: { id: "folder-1", name: "Lịch sử", notes: [] },
+		});
+		// Giả lập API Delete Folder bị lỗi
+		(folderApi.deleteFolder as jest.Mock).mockRejectedValueOnce(
+			new Error("Không thể xóa thư mục"),
+		);
+
+		const { getByTestId } = render(<FolderDetailScreen />);
+		await waitFor(() => expect(getByTestId("delete-folder-btn")).toBeTruthy());
+
+		fireEvent.press(getByTestId("delete-folder-btn"));
+
+		const alertCallArgs = (Alert.alert as jest.Mock).mock.calls[0];
+		const deleteConfirmButton = alertCallArgs[2][1];
+
+		await act(async () => {
+			deleteConfirmButton.onPress(); // Bấm đồng ý xóa
+		});
+
+		await waitFor(() => {
+			expect(Alert.alert).toHaveBeenCalledWith(
+				"Error",
+				"Không thể xóa thư mục",
+			);
+		});
+	});
+	it("không làm gì cả và trả về trạng thái ban đầu nếu đóng Folder Modal mà không chọn", async () => {
+		(folderApi.getFolderById as jest.Mock).mockResolvedValue({
+			data: {
+				id: "folder-1",
+				notes: [{ id: "n1", title: "Note 1", itemType: "note" }],
+			},
+		});
+
+		const { getByTestId, queryByTestId } = render(<FolderDetailScreen />);
+		await waitFor(() => expect(getByTestId("card-n1")).toBeTruthy());
+
+		// 1. Nhấn đè và mở Move Modal
+		fireEvent(getByTestId("card-n1"), "longPress");
+		fireEvent.press(getByTestId("mock-move"));
+
+		// 2. Bấm nút Hủy (Close) trên Folder Modal
+		await act(async () => {
+			fireEvent.press(getByTestId("mock-close-folder"));
+		});
+
+		// Đảm bảo không có API nào bị gọi sai
+		expect(noteApi.updateNote).not.toHaveBeenCalled();
+		expect(queryByTestId("mock-folder-modal")).toBeNull();
+	});
+
+	it("hiển thị chính xác UI Uncategorized nếu truyền itemType null (Edge Case Data)", async () => {
+		// Cố tình đẩy một Note rác vào để test luồng hiển thị
+		(folderApi.getFolderById as jest.Mock).mockResolvedValue({
+			data: {
+				id: "folder-1",
+				notes: [{ id: "n-broken", title: "Broken Note", itemType: null }],
+			},
+		});
+		(batchApi.getBatches as jest.Mock).mockResolvedValue({ data: [] });
+
+		const { getByText } = render(<FolderDetailScreen />);
+
+		await waitFor(() => {
+			expect(getByText("Broken Note")).toBeTruthy();
+		});
+	});
 });

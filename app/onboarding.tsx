@@ -14,6 +14,7 @@ import {
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
+import { Icon } from "../src/components/common/Icon";
 import { COLORS } from "../src/constants/theme";
 
 const { width, height } = Dimensions.get("window");
@@ -70,13 +71,23 @@ export default function OnboardingScreen() {
 		<View style={[styles.graphicContainer, { backgroundColor: "#f1f5f9" }]}>
 			{/* Fake Pattern overlay có thể dùng Image, ở đây dùng background màu */}
 			<View style={styles.g1Card1}>
-				<Text style={{ fontSize: 40, opacity: 0.7 }}>📄</Text>
+				<Icon
+					name="file-text"
+					size={40}
+					color="#0f172a"
+					style={{ opacity: 0.7 }}
+				/>
 			</View>
 			<View style={styles.g1Card2}>
-				<Text style={{ fontSize: 40, opacity: 0.8 }}>📷</Text>
+				<Icon
+					name="camera"
+					size={40}
+					color="#0f172a"
+					style={{ opacity: 0.8 }}
+				/>
 			</View>
 			<View style={styles.g1Card3}>
-				<Text style={{ fontSize: 50 }}>❓</Text>
+				<Icon name="help" size={50} color="#0f172a" />
 			</View>
 		</View>
 	);
@@ -88,7 +99,7 @@ export default function OnboardingScreen() {
 		>
 			<View style={styles.g2Container}>
 				<View style={styles.g2Box1}>
-					<Text style={{ fontSize: 40 }}>📷</Text>
+					<Icon name="camera" size={40} color="#ffffff" />
 					<View
 						style={{
 							width: "75%",
@@ -108,7 +119,12 @@ export default function OnboardingScreen() {
 						}}
 					/>
 				</View>
-				<Text style={{ fontSize: 40, marginVertical: 12 }}>✨</Text>
+				<Icon
+					name="sparkle"
+					size={40}
+					color="#ffffff"
+					style={{ marginVertical: 12 }}
+				/>
 				<View style={styles.g2Box2}>
 					<Text
 						style={{
@@ -164,13 +180,13 @@ export default function OnboardingScreen() {
 
 			<View style={styles.g3Folder1}>
 				<View style={styles.g3FolderIcon1}>
-					<Text>📚</Text>
+					<Icon name="folder" size={24} color="#0f172a" />
 				</View>
 				<Text style={styles.g3FolderText}>Study</Text>
 			</View>
 			<View style={styles.g3Folder2}>
 				<View style={styles.g3FolderIcon2}>
-					<Text>💼</Text>
+					<Icon name="briefcase" size={24} color="#0f172a" />
 				</View>
 				<Text style={styles.g3FolderText}>Work</Text>
 			</View>
@@ -178,7 +194,7 @@ export default function OnboardingScreen() {
 				colors={["#4f46e5", "#8b5cf6"]}
 				style={styles.g3SearchIcon}
 			>
-				<Text style={{ fontSize: 32 }}>🔍</Text>
+				<Icon name="search" size={32} color="#ffffff" />
 			</LinearGradient>
 		</View>
 	);

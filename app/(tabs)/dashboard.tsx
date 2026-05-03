@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Feather, Ionicons } from "@expo/vector-icons";
+import { Icon } from "../../src/components/common/Icon";
 import { COLORS } from "../../src/constants/theme";
 
 import { noteApi } from "../../src/api/noteApi";
@@ -345,8 +346,13 @@ export default function DashboardScreen() {
 			>
 				<View style={styles.toastLeft}>
 					<View style={styles.toastIconBox}>
-						<Text style={{ fontSize: 20 }}>📑</Text>
-						<Text style={styles.toastSparkle}>✨</Text>
+						<Icon name="pdf" size={20} color={COLORS.primary} />
+						<Icon
+							name="sparkle"
+							size={14}
+							color={COLORS.primary}
+							style={styles.toastSparkle}
+						/>
 					</View>
 					<View>
 						<Text style={styles.toastTitle}>PDF Created</Text>

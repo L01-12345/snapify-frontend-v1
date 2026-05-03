@@ -12,6 +12,7 @@ import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "../src/constants/theme";
+import { Icon } from "../src/components/common/Icon";
 import { useLocalSearchParams } from "expo-router";
 
 // import * as ImagePicker from "expo-image-picker";
@@ -67,10 +68,38 @@ export default function BatchPreviewScreen() {
 			<View style={styles.bottomBar}>
 				<View style={styles.rowActions}>
 					<TouchableOpacity style={styles.secondaryBtn}>
-						<Text style={styles.secondaryBtnText}>🔃 Reorder</Text>
+						<View
+							style={{
+								flexDirection: "row",
+								alignItems: "center",
+								justifyContent: "center",
+							}}
+						>
+							<Icon
+								name="refresh-ccw"
+								size={16}
+								color={COLORS.slate700}
+								style={{ marginRight: 8 }}
+							/>
+							<Text style={styles.secondaryBtnText}>Reorder</Text>
+						</View>
 					</TouchableOpacity>
 					<TouchableOpacity style={styles.dangerBtn}>
-						<Text style={styles.dangerBtnText}>🗑️ Delete</Text>
+						<View
+							style={{
+								flexDirection: "row",
+								alignItems: "center",
+								justifyContent: "center",
+							}}
+						>
+							<Icon
+								name="trash-2"
+								size={16}
+								color="#DC2626"
+								style={{ marginRight: 8 }}
+							/>
+							<Text style={styles.dangerBtnText}>Delete</Text>
+						</View>
 					</TouchableOpacity>
 				</View>
 				<TouchableOpacity

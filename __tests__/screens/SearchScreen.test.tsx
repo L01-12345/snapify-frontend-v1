@@ -55,7 +55,7 @@ describe("SearchScreen - Tìm kiếm Ghi chú", () => {
 		const { getByText, getByTestId } = render(<SearchScreen />);
 
 		// Bấm vào tag "Calculus"
-		fireEvent.press(getByText("🕒 Calculus"));
+		fireEvent.press(getByText("Calculus"));
 
 		// Input phải được cập nhật
 		expect(getByTestId("search-input").props.value).toBe("Calculus");
@@ -128,10 +128,10 @@ describe("SearchScreen - Tìm kiếm Ghi chú", () => {
 
 		await waitFor(() => {
 			// Phải thấy tiêu đề Note và số lượng kết quả
-			expect(getByText("1 Results Found")).toBeTruthy();
+			expect(getByText(/1\s*Results Found/)).toBeTruthy();
 			expect(getByText("Math Homework")).toBeTruthy();
 			// Phải render ra text "Study" từ folder
-			expect(getByText("📄 Study")).toBeTruthy();
+			expect(getByText("Study")).toBeTruthy();
 		});
 
 		// Bấm vào thẻ kết quả

@@ -3,6 +3,7 @@ import React from "react";
 import { View, StyleSheet, Text, Platform } from "react-native";
 import { Tabs, useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
+import { Icon } from "../../src/components/common/Icon";
 import { COLORS } from "../../src/constants/theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -41,9 +42,12 @@ export default function TabLayout() {
 				options={{
 					tabBarIcon: ({ focused }) => (
 						<View style={styles.iconContainer}>
-							<Text style={[styles.emojiIcon, { opacity: focused ? 1 : 0.4 }]}>
-								🏠
-							</Text>
+							<Icon
+								name="home"
+								size={24}
+								color={focused ? COLORS.primary : COLORS.slate400}
+								style={{ opacity: focused ? 1 : 0.4 }}
+							/>
 						</View>
 					),
 				}}
@@ -55,9 +59,12 @@ export default function TabLayout() {
 				options={{
 					tabBarIcon: ({ focused }) => (
 						<View style={styles.iconContainer}>
-							<Text style={[styles.emojiIcon, { opacity: focused ? 1 : 0.4 }]}>
-								🔍
-							</Text>
+							<Icon
+								name="search"
+								size={24}
+								color={focused ? COLORS.primary : COLORS.slate400}
+								style={{ opacity: focused ? 1 : 0.4 }}
+							/>
 						</View>
 					),
 				}}
@@ -95,9 +102,12 @@ export default function TabLayout() {
 				options={{
 					tabBarIcon: ({ focused }) => (
 						<View style={styles.iconContainer}>
-							<Text style={[styles.emojiIcon, { opacity: focused ? 1 : 0.4 }]}>
-								📁
-							</Text>
+							<Icon
+								name="folder"
+								size={24}
+								color={focused ? COLORS.primary : COLORS.slate400}
+								style={{ opacity: focused ? 1 : 0.4 }}
+							/>
 						</View>
 					),
 				}}
@@ -109,9 +119,12 @@ export default function TabLayout() {
 				options={{
 					tabBarIcon: ({ focused }) => (
 						<View style={styles.iconContainer}>
-							<Text style={[styles.emojiIcon, { opacity: focused ? 1 : 0.4 }]}>
-								👤
-							</Text>
+							<Icon
+								name="profile"
+								size={24}
+								color={focused ? COLORS.primary : COLORS.slate400}
+								style={{ opacity: focused ? 1 : 0.4 }}
+							/>
 						</View>
 					),
 				}}

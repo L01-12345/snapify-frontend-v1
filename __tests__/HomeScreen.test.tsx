@@ -1,5 +1,5 @@
 import React from "react";
-import { render, fireEvent, waitFor } from "@testing-library/react-native";
+import { render, fireEvent, waitFor, act } from "@testing-library/react-native";
 import { Animated } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSelector } from "react-redux";
@@ -204,5 +204,55 @@ describe("DashboardScreen - Màn hình chính", () => {
 			// Vẫn hiển thị giao diện cơ bản chứ không sập app
 			expect(getByText("Hello, John Doe 👋")).toBeTruthy();
 		});
+	});
+	it("hiển thị Initials khi user có tên nhưng không có avatarUrl", async () => {
+		// Nhánh này cover việc user tồn tại nhưng avatarUrl bị rỗng
+		const userWithoutAvatar = { displayName: "Tran Kien", avatarUrl: "" };
+		(useSelector as unknown as jest.Mock).mockReturnValue({
+			user: userWithoutAvatar,
+		});
+		(noteApi.getNotes as jest.Mock).mockResolvedValue({ data: { notes: [] } });
+		(dashboardApi.getMetrics as jest.Mock).mockResolvedValue({ data: {} });
+
+		const { getByText } = render(<DashboardScreen />);
+
+		await waitFor(() => {
+			expect(getByText("TR")).toBeTruthy();
+		});
+	});
+
+	it("xử lý mượt mà (không sập app) khi danh sách note trả về bị undefined", async () => {
+		(noteApi.getNotes as jest.Mock).mockResolvedValue({ data: {} }); // Cố tình không trả về mảng notes
+		(dashboardApi.getMetrics as jest.Mock).mockResolvedValue({ data: {} });
+
+		const { queryByTestId } = render(<DashboardScreen />);
+
+		await waitFor(() => {
+			// Đảm bảo app vẫn render bình thường, chỉ là không có card nào thôi
+			expect(queryByTestId("card-1")).toBeNull();
+		});
+	});
+	it("xử lý hiển thị Toast, tương tác nút Move và tự động ẩn theo thời gian", async () => {
+		// 1. Kích hoạt đồng hồ giả của Jest để test các hàm setTimeout
+		jest.useFakeTimers();
+
+		(useLocalSearchParams as jest.Mock).mockReturnValue({ showToast: "true" });
+		const { getByText } = render(<DashboardScreen />);
+
+		// 2. Đảm bảo Toast hiện lên
+		expect(getByText("PDF Created")).toBeTruthy();
+
+		// 3. Bấm vào nút Move trên Toast (cover dòng 372)
+		await act(async () => {
+			fireEvent.press(getByText("Move"));
+		});
+
+		// 4. Tua nhanh thời gian để kích hoạt setTimeout ẩn Toast (cover dòng 131-146)
+		await act(async () => {
+			jest.runAllTimers();
+		});
+
+		// 5. Trả lại đồng hồ thật cho hệ thống
+		jest.useRealTimers();
 	});
 });

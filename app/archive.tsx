@@ -15,6 +15,7 @@ import { Feather } from "@expo/vector-icons";
 import { COLORS } from "../src/constants/theme";
 import { archiveApi } from "../src/api/archiveApi";
 import { Note } from "../src/types/api.types"; // Import type Note của bạn
+import { Icon } from "../src/components/common/Icon";
 
 export default function ArchiveScreen() {
 	const router = useRouter();
@@ -153,14 +154,19 @@ export default function ArchiveScreen() {
 					>
 						<Feather name="arrow-left" size={24} color={COLORS.slate800} />
 					</TouchableOpacity>
-					<Text style={styles.headerTitle}>📦 Archive</Text>
+					<Text style={styles.headerTitle}>Archive</Text>
 					<View style={styles.iconBtn} />
 				</View>
 
 				<View style={styles.emptyContainer}>
 					<View style={styles.emptyIconWrapper}>
 						<View style={styles.emptyIconBg} />
-						<Text style={{ fontSize: 64, zIndex: 10 }}>📦</Text>
+						<Icon
+							name="archive"
+							size={64}
+							color={COLORS.primary}
+							style={{ zIndex: 10 }}
+						/>
 					</View>
 					<Text style={styles.emptyTitle}>No archived notes</Text>
 					<Text style={styles.emptySubtitle}>

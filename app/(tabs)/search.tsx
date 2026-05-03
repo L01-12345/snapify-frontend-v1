@@ -8,8 +8,10 @@ import {
 	TextInput,
 	TouchableOpacity,
 	ScrollView,
+	Alert,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { Icon } from "../../src/components/common/Icon";
 import { useRouter } from "expo-router";
 import { COLORS } from "../../src/constants/theme";
 
@@ -71,6 +73,10 @@ export default function SearchScreen() {
 		// Đợi người dùng ngừng gõ 500ms rồi mới gọi API
 		const timeout = setTimeout(async () => {
 			try {
+				if (query.trim().length < 2) {
+					Alert.alert("Keyword must be at least 2 words");
+					return;
+				}
 				const res = await noteApi.searchNotes(query.trim());
 				// API trả về mảng trong res.data
 				setResults(res.data || []);
@@ -100,13 +106,29 @@ export default function SearchScreen() {
 						style={styles.tag}
 						onPress={() => setQuery("Calculus")}
 					>
-						<Text style={styles.tagText}>🕒 Calculus</Text>
+						<View style={styles.tagLabel}>
+							<Icon
+								name="clock"
+								size={14}
+								color={COLORS.primary}
+								style={styles.tagIcon}
+							/>
+							<Text style={styles.tagText}>Calculus</Text>
+						</View>
 					</TouchableOpacity>
 					<TouchableOpacity
 						style={styles.tag}
 						onPress={() => setQuery("Marketing")}
 					>
-						<Text style={styles.tagText}>🕒 Marketing Q3</Text>
+						<View style={styles.tagLabel}>
+							<Icon
+								name="clock"
+								size={14}
+								color={COLORS.primary}
+								style={styles.tagIcon}
+							/>
+							<Text style={styles.tagText}>Marketing Q3</Text>
+						</View>
 					</TouchableOpacity>
 				</View>
 			</View>
@@ -116,13 +138,13 @@ export default function SearchScreen() {
 				<View style={styles.folderGrid}>
 					<TouchableOpacity style={styles.folderCard}>
 						<View style={[styles.folderIconBg, { backgroundColor: "#EEF2FF" }]}>
-							<Text>📚</Text>
+							<Icon name="folder" size={20} color="#6366F1" />
 						</View>
 						<Text style={styles.folderText}>Study</Text>
 					</TouchableOpacity>
 					<TouchableOpacity style={styles.folderCard}>
 						<View style={[styles.folderIconBg, { backgroundColor: "#ECFDF5" }]}>
-							<Text>💼</Text>
+							<Icon name="briefcase" size={20} color="#10B981" />
 						</View>
 						<Text style={styles.folderText}>Work</Text>
 					</TouchableOpacity>
@@ -149,9 +171,9 @@ export default function SearchScreen() {
 		<View style={styles.emptyContainer}>
 			<View style={styles.emptyBox}>
 				<View style={styles.emptyIconBox}>
-					<Text style={{ fontSize: 40 }}>🔍</Text>
+					<Icon name="search" size={40} color={COLORS.slate400} />
 					<View style={styles.emptyQuestionMark}>
-						<Text style={{ fontSize: 12 }}>❓</Text>
+						<Icon name="help" size={12} color={COLORS.white} />
 					</View>
 				</View>
 				<Text style={styles.emptyTitle}>No results found</Text>
@@ -194,10 +216,16 @@ export default function SearchScreen() {
 							<HighlightedText text={note.content || ""} keyword={query} />
 						</Text>
 						<View style={styles.resultFooter}>
-							<View style={styles.resultBadge}>
+							<View style={styles.resultBadgeRow}>
+								<Icon
+									name="file-text"
+									size={12}
+									color={COLORS.primary}
+									style={styles.resultBadgeIcon}
+								/>
 								<Text style={styles.resultBadgeText}>
 									{/* Nếu có folder thì lấy folder.name, không thì để Uncategorized */}
-									📄 {note.folder?.name || "Uncategorized"}
+									{note.folder?.name || "Uncategorized"}
 								</Text>
 							</View>
 						</View>
@@ -345,6 +373,12 @@ const styles = StyleSheet.create({
 		borderRadius: 12,
 	},
 	tagText: { fontSize: 14, fontWeight: "500", color: COLORS.slate600 },
+	tagLabel: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 6,
+	},
+	tagIcon: { marginRight: 4 },
 	folderGrid: { flexDirection: "row", gap: 12 },
 	folderCard: {
 		flex: 1,
@@ -411,6 +445,17 @@ const styles = StyleSheet.create({
 		paddingVertical: 4,
 		borderRadius: 6,
 	},
+	resultBadgeRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		alignSelf: "flex-start",
+		backgroundColor: "#EEF2FF",
+		paddingHorizontal: 10,
+		paddingVertical: 4,
+		borderRadius: 6,
+		gap: 4,
+	},
+	resultBadgeIcon: { marginRight: 6 },
 	resultBadgeText: {
 		fontSize: 10,
 		fontWeight: "800",
