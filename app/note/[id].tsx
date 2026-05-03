@@ -22,6 +22,8 @@ import { noteApi } from "../../src/api/noteApi";
 import { Note } from "../../src/types/api.types";
 import { folderApi } from "../../src/api/folderApi";
 
+import { Icon } from "../../src/components/common/Icon";
+import { formatDate } from "../../src/utils/formatters";
 export default function NoteDetailScreen() {
 	const router = useRouter();
 	const { id } = useLocalSearchParams<{ id: string }>();
@@ -96,7 +98,7 @@ export default function NoteDetailScreen() {
 				>
 					<Feather name="arrow-left" size={24} color={COLORS.slate800} />
 				</TouchableOpacity>
-				<Text style={styles.dateText}>OCT 20, 2025</Text>
+				<Text style={styles.dateText}>{formatDate(note?.createdAt)}</Text>
 				<TouchableOpacity
 					onPress={() => setModalVisible(true)}
 					style={styles.iconBtn}
@@ -170,7 +172,12 @@ export default function NoteDetailScreen() {
 							colors={[COLORS.primary, COLORS.primaryEnd]}
 							style={styles.fabGradient}
 						>
-							<Text style={styles.fabIcon}>✏️</Text>
+							<Icon
+								name="edit-2"
+								size={16}
+								style={styles.fabIcon}
+								color={COLORS.white}
+							/>
 							<Text style={styles.fabText}>Edit Note</Text>
 						</LinearGradient>
 					</TouchableOpacity>
@@ -310,7 +317,7 @@ const styles = StyleSheet.create({
 		elevation: 8,
 		gap: 8,
 	},
-	fabIcon: { fontSize: 16 },
+	fabIcon: { fontSize: 16, color: COLORS.white },
 	fabText: { color: COLORS.white, fontSize: 15, fontWeight: "700" },
 	actualImage: {
 		width: "100%",

@@ -83,7 +83,7 @@ describe("DashboardScreen - Màn hình chính", () => {
 
 		await waitFor(() => {
 			// 1. Kiểm tra Greeting lấy tên từ Redux
-			expect(getByText("Hello, John Doe 👋")).toBeTruthy();
+			expect(getByText("Hello, John Doe")).toBeTruthy();
 
 			// 2. Gọi API đủ
 			expect(noteApi.getNotes).toHaveBeenCalledWith({ limit: 10 });
@@ -202,7 +202,7 @@ describe("DashboardScreen - Màn hình chính", () => {
 
 		await waitFor(() => {
 			// Vẫn hiển thị giao diện cơ bản chứ không sập app
-			expect(getByText("Hello, John Doe 👋")).toBeTruthy();
+			expect(getByText("Hello, John Doe")).toBeTruthy();
 		});
 	});
 	it("hiển thị Initials khi user có tên nhưng không có avatarUrl", async () => {

@@ -19,6 +19,7 @@ import { noteApi } from "../../src/api/noteApi";
 import { folderApi } from "../../src/api/folderApi";
 import { Folder } from "../../src/types/api.types";
 import { FolderSelectModal } from "../../src/components/common/FolderSelectModal";
+import { Icon, getIconName } from "../../src/components/common/Icon";
 
 export default function NewNoteScreen() {
 	const router = useRouter();
@@ -34,7 +35,7 @@ export default function NewNoteScreen() {
 	const [selectedFolder, setSelectedFolder] = useState({
 		id: params.folderId || "",
 		name: params.folderName || "Uncategorized",
-		icon: "📁",
+		icon: "folder",
 	});
 
 	const handleSave = async () => {
@@ -64,10 +65,10 @@ export default function NewNoteScreen() {
 			setSelectedFolder({
 				id: folder.id,
 				name: folder.name,
-				icon: folder.icon || "📁",
+				icon: folder.icon || "folder",
 			});
 		} else {
-			setSelectedFolder({ id: "", name: "Uncategorized", icon: "📁" });
+			setSelectedFolder({ id: "", name: "Uncategorized", icon: "folder" });
 		}
 		setIsFolderModalVisible(false);
 	};
@@ -120,7 +121,12 @@ export default function NewNoteScreen() {
 						style={styles.folderBadge}
 						onPress={() => setIsFolderModalVisible(true)}
 					>
-						<Text style={styles.folderBadgeIcon}>{selectedFolder.icon}</Text>
+						<Icon
+							name={getIconName(selectedFolder.icon) || "folder"}
+							size={16}
+							color={COLORS.slate800}
+							style={{ marginRight: 6 }}
+						/>
 						<Text style={styles.folderBadgeText}>{selectedFolder.name}</Text>
 					</TouchableOpacity>
 

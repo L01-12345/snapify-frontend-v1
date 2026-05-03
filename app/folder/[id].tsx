@@ -21,6 +21,7 @@ import { noteApi } from "../../src/api/noteApi";
 
 import { NoteActionSheet } from "../../src/components/common/NoteActionSheet";
 import { FolderSelectModal } from "../../src/components/common/FolderSelectModal";
+import { Icon } from "../../src/components/common/Icon";
 
 export default function FolderDetailScreen() {
 	const router = useRouter();
@@ -174,7 +175,7 @@ export default function FolderDetailScreen() {
 					<Feather name="arrow-left" size={24} color={COLORS.slate800} />
 				</TouchableOpacity>
 				<View style={styles.headerCenter}>
-					<Text style={styles.headerIcon}>📚</Text>
+					<Icon name="folder" size={20} color={COLORS.slate900} />
 					<Text style={styles.headerTitle}>{folder.name}</Text>
 				</View>
 				<TouchableOpacity
@@ -190,7 +191,7 @@ export default function FolderDetailScreen() {
 				// GIAO DIỆN EMPTY (Mang từ empty.tsx qua)
 				<View style={styles.emptyContent}>
 					<View style={styles.circleBg}>
-						<Text style={styles.emoji}>🗂️</Text>
+						<Icon name="folder-open" size={60} color={COLORS.slate400} />
 					</View>
 					<Text style={styles.emptyTitle}>This folder is empty</Text>
 					<Text style={styles.emptySubtitle}>

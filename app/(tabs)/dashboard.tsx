@@ -157,7 +157,7 @@ export default function DashboardScreen() {
 				<View style={styles.header}>
 					<View>
 						<Text style={styles.logoText}>Snapify</Text>
-						<Text style={styles.greeting}>Hello, {user?.displayName} 👋</Text>
+						<Text style={styles.greeting}>Hello, {user?.displayName}</Text>
 					</View>
 					<View style={styles.avatar}>
 						<TouchableOpacity style={styles.avatarBox}>
