@@ -7,8 +7,10 @@ import {
 	SafeAreaView,
 	TouchableOpacity,
 	StatusBar,
+	Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { COLORS } from "../src/constants/theme";
 import { CameraView, useCameraPermissions } from "expo-camera";
@@ -47,7 +49,6 @@ export default function SnapToNoteScreen() {
 		);
 	}
 
-	// ĐÂY LÀ HÀM BẠN CẦN THÊM VÀO
 	const takePicture = async () => {
 		if (cameraRef.current && !isTakingPhoto) {
 			setIsTakingPhoto(true);
@@ -70,6 +71,35 @@ export default function SnapToNoteScreen() {
 			} finally {
 				setIsTakingPhoto(false);
 			}
+		}
+	};
+	const pickImage = async () => {
+		try {
+			// Yêu cầu quyền truy cập thư viện (tùy chọn nhưng an toàn trên iOS)
+			const permissionResult =
+				await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+			if (permissionResult.granted === false) {
+				Alert.alert("Permission to access camera roll is required!");
+				return;
+			}
+
+			// Mở trình chọn ảnh
+			const result = await ImagePicker.launchImageLibraryAsync({
+				mediaTypes: ImagePicker.MediaTypeOptions.Images, // Chỉ cho phép chọn ảnh
+				quality: 0.7, // Giữ nguyên chuẩn nén giống lúc chụp bằng camera
+			});
+
+			if (!result.canceled && result.assets && result.assets.length > 0) {
+				// Truyền URI ảnh được chọn sang màn hình OCR Processing
+				router.push({
+					pathname: "/ocr-processing",
+					params: { imageUri: result.assets[0].uri },
+				});
+			}
+		} catch (error) {
+			console.log("Lỗi chọn ảnh từ thư viện:", error);
+			Alert.alert("Lỗi", "Không thể mở thư viện ảnh.");
 		}
 	};
 
@@ -131,7 +161,11 @@ export default function SnapToNoteScreen() {
 				</TouchableOpacity>
 
 				{/* Gallery Button */}
-				<TouchableOpacity style={styles.sideBtn}>
+				<TouchableOpacity
+					style={styles.sideBtn}
+					onPress={pickImage}
+					testID="gallery-btn"
+				>
 					<View style={styles.iconCircle}>
 						<Ionicons name="image-outline" size={20} color="#34D399" />
 					</View>

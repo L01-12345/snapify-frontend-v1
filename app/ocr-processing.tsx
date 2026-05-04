@@ -52,7 +52,6 @@ export default function OcrProcessingScreen() {
 				);
 
 				// OCR thành công, điều hướng sang trang Edit (hoặc xem chi tiết) kèm theo ID của Note mới tạo
-				console.log(newNote);
 				router.replace(`/note/${newNote.id}`);
 			} catch (error: any) {
 				console.log("OCR Error:", error);

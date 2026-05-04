@@ -7,9 +7,10 @@ import { AuthWrapper } from "../src/components/AuthWrapper";
 import * as Sentry from "@sentry/react-native";
 
 Sentry.init({
-	dsn: "https://e5071411037cbb8b9045c8efe3f9f3ef@o4511302997114880.ingest.us.sentry.io/4511303003406336",
-	debug: true, // Hiển thị log của Sentry ở Terminal Local (Nhớ tắt khi build ra APK thật)
-	tracesSampleRate: 1.0, // Ghi nhận 100% các chỉ số hiệu năng (Performance metrics)
+	dsn: "https://3ae3aaaeac8618f4bb1c87d9a0c37324@o4511302997114880.ingest.us.sentry.io/4511303004651520",
+	debug: true,
+	tracesSampleRate: 1.0,
+	enabled: !__DEV__,
 });
 
 export default function RootLayout() {

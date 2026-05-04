@@ -2,7 +2,8 @@ import React from "react";
 import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import { useRouter } from "expo-router";
 import { useCameraPermissions } from "expo-camera";
-
+import * as ImagePicker from "expo-image-picker";
+import { Alert } from "react-native";
 // Import component màn hình của bạn
 import SnapToNoteScreen from "../../app/snap";
 
@@ -40,6 +41,14 @@ jest.mock("@expo/vector-icons", () => ({
 	Feather: "Feather",
 	Ionicons: "Ionicons",
 }));
+
+jest.mock("expo-image-picker", () => ({
+	requestMediaLibraryPermissionsAsync: jest.fn(),
+	launchImageLibraryAsync: jest.fn(),
+	MediaTypeOptions: { Images: "Images" },
+}));
+
+jest.spyOn(Alert, "alert");
 
 describe("SnapToNoteScreen - Giao diện chụp ảnh", () => {
 	const mockPush = jest.fn();
@@ -157,5 +166,91 @@ describe("SnapToNoteScreen - Giao diện chụp ảnh", () => {
 
 		fireEvent.press(getByTestId("back-btn"));
 		expect(mockBack).toHaveBeenCalled();
+	});
+	// --- KỊCH BẢN 6: CHỌN ẢNH TỪ GALLERY THÀNH CÔNG ---
+	it("chọn ảnh từ thư viện và chuyển sang màn hình ocr-processing thành công", async () => {
+		(useCameraPermissions as jest.Mock).mockReturnValue([
+			{ granted: true },
+			mockRequestPermission,
+		]);
+
+		// Giả lập người dùng cấp quyền thư viện ảnh
+		(
+			ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock
+		).mockResolvedValue({ granted: true });
+		// Giả lập người dùng chọn 1 bức ảnh
+		(ImagePicker.launchImageLibraryAsync as jest.Mock).mockResolvedValue({
+			canceled: false,
+			assets: [{ uri: "file://gallery-image.jpg" }],
+		});
+
+		const { getByTestId } = render(<SnapToNoteScreen />);
+
+		fireEvent.press(getByTestId("gallery-btn"));
+
+		await waitFor(() => {
+			expect(
+				ImagePicker.requestMediaLibraryPermissionsAsync,
+			).toHaveBeenCalled();
+			expect(ImagePicker.launchImageLibraryAsync).toHaveBeenCalledWith({
+				mediaTypes: ImagePicker.MediaTypeOptions.Images,
+				quality: 0.7,
+			});
+			expect(mockPush).toHaveBeenCalledWith({
+				pathname: "/ocr-processing",
+				params: { imageUri: "file://gallery-image.jpg" },
+			});
+		});
+	});
+
+	// --- KỊCH BẢN 7: TỪ CHỐI QUYỀN TRUY CẬP GALLERY ---
+	it("hiển thị cảnh báo nếu người dùng từ chối quyền truy cập thư viện", async () => {
+		(useCameraPermissions as jest.Mock).mockReturnValue([
+			{ granted: true },
+			mockRequestPermission,
+		]);
+
+		// Giả lập từ chối quyền
+		(
+			ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock
+		).mockResolvedValue({ granted: false });
+
+		const { getByTestId } = render(<SnapToNoteScreen />);
+
+		fireEvent.press(getByTestId("gallery-btn"));
+
+		await waitFor(() => {
+			expect(Alert.alert).toHaveBeenCalledWith(
+				"Permission to access camera roll is required!",
+			);
+			expect(ImagePicker.launchImageLibraryAsync).not.toHaveBeenCalled();
+			expect(mockPush).not.toHaveBeenCalled();
+		});
+	});
+
+	// --- KỊCH BẢN 8: HỦY CHỌN ẢNH (CANCELED) ---
+	it("không chuyển trang nếu người dùng mở thư viện nhưng lại bấm nút Hủy", async () => {
+		(useCameraPermissions as jest.Mock).mockReturnValue([
+			{ granted: true },
+			mockRequestPermission,
+		]);
+
+		(
+			ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock
+		).mockResolvedValue({ granted: true });
+		// Giả lập người dùng vuốt xuống thoát chọn ảnh
+		(ImagePicker.launchImageLibraryAsync as jest.Mock).mockResolvedValue({
+			canceled: true,
+			assets: null,
+		});
+
+		const { getByTestId } = render(<SnapToNoteScreen />);
+
+		fireEvent.press(getByTestId("gallery-btn"));
+
+		await waitFor(() => {
+			expect(ImagePicker.launchImageLibraryAsync).toHaveBeenCalled();
+			expect(mockPush).not.toHaveBeenCalled();
+		});
 	});
 });

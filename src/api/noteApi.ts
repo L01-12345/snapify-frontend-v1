@@ -50,31 +50,37 @@ class NoteApi {
 		fileName: string,
 		mimeType: string,
 	): Promise<Note> {
-		// Bước 1: Upload ảnh và lấy kết quả Note (đã OCR)
-		const snapRes = await this.snapToNote(imageUri, fileName, mimeType);
-		const newNote = snapRes.data;
+		return await Sentry.startSpan(
+			{ name: "OCR_and_Auto_Categorize", op: "ai.processing" },
+			async (span) => {
+				try {
+					// Bước 1: Upload ảnh và lấy kết quả
+					const snapRes = await this.snapToNote(imageUri, fileName, mimeType);
+					const newNote = snapRes.data;
 
-		if (!newNote || !newNote.id) {
-			throw new Error("Unable to create a note from the image.");
-		}
+					if (!newNote || !newNote.id) {
+						throw new Error("Unable to create a note from the image.");
+					}
 
-		// Bước 2: Gọi AI tự động phân loại dựa trên ID vừa tạo
-		try {
-			const categoryRes = await this.autoCategorize(newNote.id);
+					// Bước 2: Gọi AI phân loại
+					const categoryRes = await this.autoCategorize(newNote.id);
 
-			Sentry.captureMessage("User utilized Smart OCR successfully", {
-				level: "info",
-				tags: { feature: "ocr_scanner", status: "success" },
-			});
-			// Trả về Note đã được gắn folderId
-			return categoryRes.data || newNote;
-		} catch (err) {
-			console.warn(
-				"Auto categorize failed, returning uncategorized note:",
-				err,
-			);
-			return newNote;
-		}
+					Sentry.captureMessage("User utilized Smart OCR successfully", {
+						level: "info",
+						tags: { feature: "ocr_scanner", status: "success" },
+					}); //
+
+					// Ghi nhận thành công
+					span?.setStatus({ code: 1 });
+					return categoryRes.data || newNote;
+				} catch (err) {
+					// Ghi nhận hiệu suất bị lỗi nếu có
+					span?.setStatus({ code: 2, message: "Auto categorize failed" });
+					console.warn("Auto categorize failed:", err);
+					throw err;
+				}
+			},
+		);
 	}
 
 	// GET /notes/{id}/actions
