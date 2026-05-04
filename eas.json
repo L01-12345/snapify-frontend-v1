@@ -10,6 +10,10 @@
 		"preview": {
 			"android": {
 				"buildType": "apk"
+			},
+			"env": {
+				"SENTRY_ORG": "snapify-frontend-sentry",
+				"SENTRY_PROJECT": "snapify-frontend"
 			}
 		},
 		"production": {}
