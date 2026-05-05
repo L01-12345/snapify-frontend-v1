@@ -279,4 +279,33 @@ describe("EditNoteScreen - Chỉnh sửa ghi chú", () => {
 			expect(queryByTestId("mock-folder-modal")).toBeNull();
 		});
 	});
+	// --- KỊCH BẢN 10: TÍNH NĂNG TOGGLE PREVIEW/EDIT MARKDOWN ---
+	it("chuyển đổi qua lại giữa chế độ Edit và Preview Markdown", async () => {
+		(noteApi.getNoteById as jest.Mock).mockResolvedValue({
+			data: { id: "note-1", title: "Title", content: "## Hello" },
+		});
+
+		const { getByText, queryByTestId } = render(<EditNoteScreen />);
+
+		// Đợi dữ liệu load xong và UI hiện Extracted Text (Chế độ Edit mặc định)
+		await waitFor(() => expect(getByText("Extracted Text")).toBeTruthy());
+
+		// 1. Nhấn nút Preview
+		fireEvent.press(getByText(/^\s*Preview\s*$/i));
+
+		// Giao diện đổi sang Preview Mode
+		await waitFor(() => {
+			expect(getByText("Preview Mode")).toBeTruthy();
+			// Khung Text Input (testID="content-input") phải biến mất vì đang xem Markdown
+			expect(queryByTestId("content-input")).toBeNull();
+		});
+
+		// 2. Nhấn nút Edit để quay lại
+		fireEvent.press(getByText(/^\s*Edit\s*$/i));
+
+		await waitFor(() => {
+			expect(getByText("Extracted Text")).toBeTruthy();
+			expect(queryByTestId("content-input")).toBeTruthy();
+		});
+	});
 });

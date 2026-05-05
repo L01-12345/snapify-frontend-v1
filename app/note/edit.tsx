@@ -146,31 +146,13 @@ export default function EditNoteScreen() {
 					{/* --- ORIGINAL IMAGE --- */}
 					{imageUrl && (
 						<>
-							{/* <View style={styles.sectionHeader}>
+							<View style={styles.sectionHeader}>
 								<Text style={styles.sectionTitle}>Original Image</Text>
 								<TouchableOpacity>
 									<Text style={styles.linkText}>Retake</Text>
 								</TouchableOpacity>
-							</View> */}
-							<View style={styles.sectionHeader}>
-								<Text style={[styles.sectionTitle, { marginBottom: 8 }]}>
-									{isPreview ? "Preview Mode" : "Extracted Text"}
-								</Text>
-								{/* Nút chuyển đổi giữa Edit và Preview */}
-								<TouchableOpacity
-									style={styles.previewToggleBtn}
-									onPress={() => setIsPreview(!isPreview)}
-								>
-									<Feather
-										name={isPreview ? "edit-2" : "eye"}
-										size={14}
-										color={COLORS.primary}
-									/>
-									<Text style={styles.linkText}>
-										{isPreview ? " Edit" : " Preview"}
-									</Text>
-								</TouchableOpacity>
 							</View>
+
 							{/* Nhấn vào khung ảnh để phóng to */}
 							<TouchableOpacity
 								style={[styles.imageBox, { marginBottom: 24 }]}
@@ -213,9 +195,25 @@ export default function EditNoteScreen() {
 					</View>
 
 					{/* --- EXTRACTED TEXT --- */}
-					<Text style={[styles.sectionTitle, { marginBottom: 8 }]}>
-						{isPreview ? "Preview Text" : "Extracted Text"}
-					</Text>
+					<View style={styles.sectionHeader}>
+						<Text style={[styles.sectionTitle, { marginBottom: 8 }]}>
+							{isPreview ? "Preview Mode" : "Extracted Text"}
+						</Text>
+						{/* Nút chuyển đổi giữa Edit và Preview */}
+						<TouchableOpacity
+							style={styles.previewToggleBtn}
+							onPress={() => setIsPreview(!isPreview)}
+						>
+							<Feather
+								name={isPreview ? "edit-2" : "eye"}
+								size={14}
+								color={COLORS.primary}
+							/>
+							<Text style={styles.linkText}>
+								{isPreview ? " Edit" : " Preview"}
+							</Text>
+						</TouchableOpacity>
+					</View>
 					{isPreview ? (
 						// Chế độ XEM ĐẸP (Markdown)
 						<View

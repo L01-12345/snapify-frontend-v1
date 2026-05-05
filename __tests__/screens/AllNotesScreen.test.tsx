@@ -29,6 +29,7 @@ jest.mock("../../src/api/noteApi", () => ({
 	noteApi: {
 		getNotes: jest.fn(),
 		deleteNote: jest.fn(),
+		searchNotes: jest.fn(),
 	},
 }));
 
@@ -208,5 +209,90 @@ describe("AllNotesScreen - Màn hình tất cả ghi chú", () => {
 
 		fireEvent.press(getByTestId("back-btn"));
 		expect(mockBack).toHaveBeenCalled();
+	});
+	// --- KỊCH BẢN 7: TÌM KIẾM (SEARCH VỚI DEBOUNCE) ---
+	it("gọi API searchNotes khi người dùng gõ vào ô tìm kiếm sau 500ms", async () => {
+		jest.useFakeTimers();
+		(noteApi.searchNotes as jest.Mock).mockResolvedValue({
+			data: [{ id: "search-1", title: "Keyword Match", content: "Result" }],
+		});
+
+		const { getByPlaceholderText, getByTestId } = render(<AllNotesScreen />);
+
+		await act(async () => {
+			jest.runAllTimers();
+		});
+
+		const searchInput = getByPlaceholderText("Search notes...");
+
+		await act(async () => {
+			fireEvent.changeText(searchInput, "Keyword");
+		});
+
+		await act(async () => {
+			jest.advanceTimersByTime(500);
+		});
+
+		jest.useRealTimers();
+
+		await waitFor(() => {
+			expect(noteApi.searchNotes).toHaveBeenCalledWith("Keyword");
+			expect(getByTestId("card-search-1")).toBeTruthy();
+		});
+	});
+	// --- KỊCH BẢN 8: BỘ LỌC SORT ---
+	it("hiển thị Alert chọn Sort và thay đổi thứ tự sắp xếp", async () => {
+		const { getByText } = render(<AllNotesScreen />);
+
+		// Tìm và bấm nút Dropdown đang hiển thị mặc định "Newest First"
+		await waitFor(() => expect(getByText("Newest First")).toBeTruthy());
+		fireEvent.press(getByText("Newest First"));
+
+		expect(Alert.alert).toHaveBeenCalledWith(
+			"Sort By",
+			"Choose how documents are ordered",
+			expect.any(Array),
+		);
+
+		// Trích xuất danh sách các nút bấm trong Alert và gọi sự kiện onPress của nút "Oldest First"
+		const alertButtons = (Alert.alert as jest.Mock).mock.calls[0][2];
+		const oldestBtn = alertButtons.find(
+			(btn: any) => btn.text === "Oldest First",
+		);
+
+		act(() => {
+			oldestBtn.onPress();
+		});
+
+		// UI phải cập nhật text thành Oldest First
+		await waitFor(() => expect(getByText("Oldest First")).toBeTruthy());
+	});
+
+	// --- KỊCH BẢN 9: BỘ LỌC DATE ---
+	it("hiển thị Alert chọn Date và cập nhật UI", async () => {
+		// Mock hàm Alert để reset gọi trước đó
+		(Alert.alert as jest.Mock).mockClear();
+
+		const { getByText } = render(<AllNotesScreen />);
+
+		await waitFor(() => expect(getByText("Any Date")).toBeTruthy());
+		fireEvent.press(getByText("Any Date"));
+
+		expect(Alert.alert).toHaveBeenCalledWith(
+			"Filter by Date",
+			"Show documents created within:",
+			expect.any(Array),
+		);
+
+		// Lấy nút "Today" và bấm
+		const alertButtons = (Alert.alert as jest.Mock).mock.calls[0][2];
+		const todayBtn = alertButtons.find((btn: any) => btn.text === "Today");
+
+		act(() => {
+			todayBtn.onPress();
+		});
+
+		// UI phải cập nhật thành Today
+		await waitFor(() => expect(getByText("Today")).toBeTruthy());
 	});
 });

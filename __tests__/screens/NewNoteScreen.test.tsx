@@ -170,4 +170,34 @@ describe("NewNoteScreen - Tạo ghi chú mới", () => {
 			expect(getByText("Uncategorized")).toBeTruthy(); // Quay về mặc định
 		});
 	});
+	// --- KỊCH BẢN: NHẬN ẢNH TỪ LỖI OCR & PHÓNG TO ---
+	it("hiển thị ảnh ban đầu nếu có imageUri từ params và cho phép phóng to", async () => {
+		// Giả lập params có chứa imageUri
+		const { useLocalSearchParams } = require("expo-router");
+		useLocalSearchParams.mockReturnValue({ imageUri: "file://error-doc.jpg" });
+
+		const { getByText, getByTestId, queryByTestId } = render(<NewNoteScreen />);
+
+		// 1. Đảm bảo UI hiển thị thẻ Original Image
+		await waitFor(() => {
+			expect(getByText("Original Image")).toBeTruthy();
+		});
+
+		// Nút đóng Zoom ban đầu chưa có vì Modal đang tắt
+		expect(queryByTestId("zoom-close-btn")).toBeNull();
+
+		// 2. Bấm vào khung ảnh để phóng to
+		fireEvent.press(getByTestId("new-image-thumbnail"));
+
+		// 3. Modal Zoom hiện lên
+		await waitFor(() => {
+			expect(getByTestId("zoom-close-btn")).toBeTruthy();
+		});
+
+		// 4. Bấm nút tắt Zoom
+		fireEvent.press(getByTestId("zoom-close-btn"));
+		await waitFor(() => {
+			expect(queryByTestId("zoom-close-btn")).toBeNull();
+		});
+	});
 });

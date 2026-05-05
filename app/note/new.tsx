@@ -115,6 +115,7 @@ export default function NewNoteScreen() {
 								style={styles.imageBox}
 								onPress={() => setIsImageZoomVisible(true)}
 								activeOpacity={0.9}
+								testID="new-image-thumbnail"
 							>
 								<Image
 									source={{ uri: params.imageUri }}
@@ -200,6 +201,7 @@ export default function NewNoteScreen() {
 						<TouchableOpacity
 							style={styles.zoomCloseBtn}
 							onPress={() => setIsImageZoomVisible(false)}
+							testID="zoom-close-btn"
 						>
 							<Feather name="x" size={28} color="white" />
 						</TouchableOpacity>
