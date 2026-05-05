@@ -148,6 +148,7 @@ const styles = StyleSheet.create({
 		flexWrap: "wrap",
 		gap: 16,
 		padding: 24,
+		paddingBottom: 40,
 	},
 	pageCard: {
 		width: "47%",
@@ -193,7 +194,7 @@ const styles = StyleSheet.create({
 		backgroundColor: "#EEF2FF",
 		borderRadius: 16,
 		borderWidth: 2,
-		borderStyle: "dashed",
+		borderStyle: "solid",
 		borderColor: "#C7D2FE",
 		alignItems: "center",
 		justifyContent: "center",

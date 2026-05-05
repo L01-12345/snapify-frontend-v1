@@ -1,12 +1,13 @@
 import React from "react";
 import { render, fireEvent } from "@testing-library/react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 
 import OcrErrorScreen from "../../app/ocr-error";
 
 // --- MOCK MODULES ---
 jest.mock("expo-router", () => ({
 	useRouter: jest.fn(),
+	useLocalSearchParams: jest.fn(),
 }));
 
 jest.mock("@expo/vector-icons", () => {
@@ -23,6 +24,9 @@ describe("OcrErrorScreen - Lỗi nhận diện chữ", () => {
 		(useRouter as jest.Mock).mockReturnValue({
 			back: mockBack,
 			push: mockPush,
+		});
+		(useLocalSearchParams as jest.Mock).mockReturnValue({
+			imageUri: "file://test-document.jpg",
 		});
 	});
 
@@ -54,10 +58,13 @@ describe("OcrErrorScreen - Lỗi nhận diện chữ", () => {
 		expect(mockPush).toHaveBeenCalledWith("/snap");
 	});
 
-	it("điều hướng sang màn hình Edit Note khi chọn Enter Manually", () => {
+	it("điều hướng sang màn hình New Note kèm theo ảnh khi chọn Enter Manually", () => {
 		const { getByText } = render(<OcrErrorScreen />);
-
 		fireEvent.press(getByText("Enter Manually"));
-		expect(mockPush).toHaveBeenCalledWith("/note/edit");
+
+		expect(mockPush).toHaveBeenCalledWith({
+			pathname: "/note/new",
+			params: { imageUri: "file://test-document.jpg" },
+		});
 	});
 });

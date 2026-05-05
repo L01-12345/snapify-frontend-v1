@@ -21,6 +21,14 @@ export default function OcrProcessingScreen() {
 
 	const { imageUri } = useLocalSearchParams<{ imageUri: string }>();
 	const [noteId, setNoteId] = useState<String>("");
+	const [statusText, setStatusText] = useState("Uploading document...");
+	const [isPolling, setIsPolling] = useState(false);
+
+	// Lưu ID của note đang xử lý
+	const draftNoteIdRef = useRef<string | null>(null);
+	// Lưu ID của interval để dọn dẹp
+	const intervalIdRef = useRef<ReturnType<typeof setInterval> | null>(null);
+	const isPollingRef = useRef(false);
 
 	useEffect(() => {
 		// Animation giữ nguyên
@@ -39,34 +47,109 @@ export default function OcrProcessingScreen() {
 			]),
 		).start();
 
-		// THAY THẾ SETTIMEOUT BẰNG LOGIC GỌI API THỰC TẾ
-		const processImage = async () => {
+		// const processImage = async () => {
+		// 	if (!imageUri) return;
+
+		// 	try {
+		// 		// Gọi API gửi ảnh lên Backend để OCR và Phân loại
+		// 		const newNote = await noteApi.snapAndAutoCategorize(
+		// 			imageUri,
+		// 			"scanned_document.jpg",
+		// 			"image/jpeg",
+		// 		);
+
+		// 		// OCR thành công, điều hướng sang trang Edit (hoặc xem chi tiết) kèm theo ID của Note mới tạo
+		// 		router.replace(`/note/${newNote.id}`);
+		// 	} catch (error: any) {
+		// 		console.log("OCR Error:", error);
+		// 		Alert.alert(
+		// 			"Processing Error",
+		// 			"Unable to extract text from the image.",
+		// 		);
+		// 		// Hoặc router.replace("/ocr-error");
+		// 		// router.back();
+		// 		router.replace("ocr-error");
+		// 	}
+		// };
+		const startProcess = async () => {
 			if (!imageUri) return;
 
 			try {
-				// Gọi API gửi ảnh lên Backend để OCR và Phân loại
-				const newNote = await noteApi.snapAndAutoCategorize(
+				const fileName = imageUri.split("/").pop() || "scanned_document.jpg";
+				const mimeType = "image/jpeg";
+
+				// 1. Gọi API Upload lấy "Vé giữ xe"
+				const draftNote = await noteApi.snapAndAutoCategorize(
 					imageUri,
-					"scanned_document.jpg",
-					"image/jpeg",
+					fileName,
+					mimeType,
 				);
 
-				// OCR thành công, điều hướng sang trang Edit (hoặc xem chi tiết) kèm theo ID của Note mới tạo
-				router.replace(`/note/${newNote.id}`);
+				// 2. Có vé rồi thì bắt đầu vòng lặp hỏi thăm
+				if (draftNote?.id) {
+					startPolling(draftNote.id);
+				}
 			} catch (error: any) {
-				console.log("OCR Error:", error);
-				Alert.alert(
-					"Processing Error",
-					"Unable to extract text from the image.",
-				);
-				// Hoặc router.replace("/ocr-error");
-				// router.back();
-				router.replace("ocr-error");
+				console.log("Upload Error:", error);
+				stopPolling();
+				router.replace({
+					pathname: "/ocr-error",
+					params: { imageUri: imageUri },
+				});
 			}
 		};
 
-		processImage();
+		startProcess();
+
+		// processImage();
+		return () => {
+			stopPolling();
+		};
 	}, [imageUri]); // Hook phụ thuộc vào imageUri
+
+	const startPolling = (id: string) => {
+		if (isPollingRef.current) return;
+		isPollingRef.current = true;
+
+		// Cứ 3 giây gọi API 1 lần
+		intervalIdRef.current = setInterval(async () => {
+			try {
+				console.log("Checking status for ID:", id);
+				const res = await noteApi.getNoteStatus(id);
+				const currentNote = res.data;
+
+				// Kiểm tra nếu currentNote undefined thì bỏ qua lượt này
+				if (!currentNote) return;
+
+				if (currentNote.status === "ACTIONED") {
+					// XONG: Dừng hỏi thăm và chuyển vào chi tiết note
+					stopPolling();
+					router.replace(`/note/${currentNote.id}`);
+				} else if (currentNote.status === "ARCHIVED") {
+					// LỖI AI: Dừng hỏi thăm và hiển thị Alert
+					stopPolling();
+					router.replace({
+						pathname: "/ocr-error",
+						params: { imageUri: imageUri },
+					});
+				}
+			} catch (error) {
+				console.log("Polling Error:", error);
+				router.replace({
+					pathname: "/ocr-error",
+					params: { imageUri: imageUri },
+				});
+			}
+		}, 3000);
+	};
+
+	const stopPolling = () => {
+		if (intervalIdRef.current) {
+			clearInterval(intervalIdRef.current);
+			intervalIdRef.current = null;
+		}
+		isPollingRef.current = false;
+	};
 
 	// useEffect(() => {
 	// 	// Tạo animation thanh quét chạy lên xuống

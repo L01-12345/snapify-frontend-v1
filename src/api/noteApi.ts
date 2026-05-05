@@ -45,6 +45,11 @@ class NoteApi {
 	}
 
 	// Hàm tiện ích: Thực hiện chuỗi hành động Chụp -> Trích xuất -> Phân loại
+	getNoteStatus(id: string): Promise<SuccessResponse<Note>> {
+		// API có thể trả về status: "PENDING", "ACTIONED", "ARCHIVED"
+		return axiosClient.get(`/notes/${id}`);
+	}
+
 	async snapAndAutoCategorize(
 		imageUri: string,
 		fileName: string,

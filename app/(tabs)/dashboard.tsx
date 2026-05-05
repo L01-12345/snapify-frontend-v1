@@ -25,6 +25,7 @@ import { useFocusEffect } from "expo-router";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../src/store";
 import { FolderSelectModal } from "../../src/components/common/FolderSelectModal";
+import { stripMarkdown } from "../../src/utils/strip-markdown";
 
 export default function DashboardScreen() {
 	const router = useRouter();
@@ -285,7 +286,7 @@ export default function DashboardScreen() {
 									</View>
 									<Text style={styles.noteSubtitle} numberOfLines={2}>
 										{isNote
-											? item.content
+											? stripMarkdown(item.content)
 											: `Scanned PDF • ${new Date(item.createdAt).toLocaleDateString()}`}
 									</Text>
 								</TouchableOpacity>
@@ -324,7 +325,7 @@ export default function DashboardScreen() {
 									<Text style={styles.noteTitle}>{item.title}</Text>
 									<Text style={styles.noteSubtitle} numberOfLines={1}>
 										{isNote
-											? item.content
+											? stripMarkdown(item.content)
 											: `Saved on ${new Date(item.createdAt).toLocaleDateString()}`}
 									</Text>
 								</View>

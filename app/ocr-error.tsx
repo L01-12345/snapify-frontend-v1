@@ -6,12 +6,13 @@ import {
 	SafeAreaView,
 	TouchableOpacity,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { COLORS } from "../src/constants/theme";
 
 export default function OcrErrorScreen() {
 	const router = useRouter();
+	const { imageUri } = useLocalSearchParams<{ imageUri: string }>();
 
 	return (
 		<SafeAreaView style={styles.safeArea}>
@@ -57,7 +58,12 @@ export default function OcrErrorScreen() {
 
 				<TouchableOpacity
 					style={styles.secondaryBtn}
-					onPress={() => router.push("/note/edit")}
+					onPress={() =>
+						router.push({
+							pathname: "/note/new",
+							params: { imageUri: imageUri },
+						})
+					}
 				>
 					<Text style={styles.secondaryBtnText}>Enter Manually</Text>
 				</TouchableOpacity>

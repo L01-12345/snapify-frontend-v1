@@ -13,6 +13,7 @@ import {
 	Image,
 	Modal, // Thêm Modal cho phần phóng to ảnh
 } from "react-native";
+import Markdown from "react-native-markdown-display";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { COLORS } from "../../src/constants/theme";
@@ -41,6 +42,8 @@ export default function EditNoteScreen() {
 
 	// --- STATE CHO PHÓNG TO ẢNH ---
 	const [isImageZoomVisible, setIsImageZoomVisible] = useState(false);
+	// State hiển thị preview cho markdown
+	const [isPreview, setIsPreview] = useState(false);
 
 	useEffect(() => {
 		const fetchNoteAndFolder = async () => {
@@ -143,10 +146,29 @@ export default function EditNoteScreen() {
 					{/* --- ORIGINAL IMAGE --- */}
 					{imageUrl && (
 						<>
-							<View style={styles.sectionHeader}>
+							{/* <View style={styles.sectionHeader}>
 								<Text style={styles.sectionTitle}>Original Image</Text>
 								<TouchableOpacity>
 									<Text style={styles.linkText}>Retake</Text>
+								</TouchableOpacity>
+							</View> */}
+							<View style={styles.sectionHeader}>
+								<Text style={[styles.sectionTitle, { marginBottom: 8 }]}>
+									{isPreview ? "Preview Mode" : "Extracted Text"}
+								</Text>
+								{/* Nút chuyển đổi giữa Edit và Preview */}
+								<TouchableOpacity
+									style={styles.previewToggleBtn}
+									onPress={() => setIsPreview(!isPreview)}
+								>
+									<Feather
+										name={isPreview ? "edit-2" : "eye"}
+										size={14}
+										color={COLORS.primary}
+									/>
+									<Text style={styles.linkText}>
+										{isPreview ? " Edit" : " Preview"}
+									</Text>
 								</TouchableOpacity>
 							</View>
 							{/* Nhấn vào khung ảnh để phóng to */}
@@ -192,16 +214,31 @@ export default function EditNoteScreen() {
 
 					{/* --- EXTRACTED TEXT --- */}
 					<Text style={[styles.sectionTitle, { marginBottom: 8 }]}>
-						Extracted Text
+						{isPreview ? "Preview Text" : "Extracted Text"}
 					</Text>
-					<TextInput
-						style={styles.textArea}
-						multiline
-						textAlignVertical="top"
-						value={content}
-						onChangeText={setContent}
-						testID="content-input"
-					/>
+					{isPreview ? (
+						// Chế độ XEM ĐẸP (Markdown)
+						<View
+							style={[
+								styles.textArea,
+								{ backgroundColor: COLORS.white, borderWidth: 0 },
+							]}
+						>
+							<Markdown style={markdownStyles}>
+								{content || "No content to preview."}
+							</Markdown>
+						</View>
+					) : (
+						// Chế độ CHỈNH SỬA (Raw Text)
+						<TextInput
+							style={styles.textArea}
+							multiline
+							textAlignVertical="top"
+							value={content}
+							onChangeText={setContent}
+							testID="content-input"
+						/>
+					)}
 				</ScrollView>
 			</KeyboardAvoidingView>
 
@@ -373,4 +410,41 @@ const styles = StyleSheet.create({
 		zIndex: 10,
 		padding: 8,
 	},
+	previewToggleBtn: {
+		flexDirection: "row",
+		alignItems: "center",
+		backgroundColor: "#EDE9FE",
+		paddingHorizontal: 12,
+		paddingVertical: 6,
+		borderRadius: 12,
+	},
+});
+const markdownStyles = StyleSheet.create({
+	heading1: {
+		fontSize: 24,
+		fontWeight: "800",
+		color: COLORS.slate900,
+		marginTop: 16,
+		marginBottom: 8,
+	},
+	heading2: {
+		fontSize: 20,
+		fontWeight: "800",
+		color: COLORS.slate900,
+		marginTop: 16,
+		marginBottom: 8,
+	},
+	heading3: {
+		fontSize: 18,
+		fontWeight: "800",
+		color: COLORS.slate900,
+		marginTop: 16,
+		marginBottom: 8,
+	},
+	strong: { fontWeight: "700", color: COLORS.slate900 },
+	em: { fontStyle: "italic", color: COLORS.slate700 },
+	hr: { backgroundColor: COLORS.slate200, height: 1, marginVertical: 16 },
+	bullet_list: { marginBottom: 16 },
+	list_item: { flexDirection: "row", marginBottom: 8 },
+	body: { fontSize: 15, lineHeight: 24, color: COLORS.slate700 },
 });

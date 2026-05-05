@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
 	View,
 	Text,
@@ -20,6 +20,8 @@ import { NoteActionSheet } from "../src/components/common/NoteActionSheet";
 
 import { batchApi } from "../src/api/batchApi";
 
+import { stripMarkdown } from "../src/utils/strip-markdown";
+
 export default function AllNotesScreen() {
 	const router = useRouter();
 	const [activeStatus, setActiveStatus] = useState("All");
@@ -30,13 +32,66 @@ export default function AllNotesScreen() {
 	const [selectedNoteForAction, setSelectedNoteForAction] = useState<
 		any | null
 	>(null);
+	const [searchQuery, setSearchQuery] = useState("");
+	const [sortBy, setSortBy] = useState<"newest" | "oldest">("newest");
+	const [dateRange, setDateRange] = useState<
+		"all" | "today" | "week" | "month"
+	>("all");
+	const [rawItems, setRawItems] = useState<any[]>([]);
 
 	// Lấy dữ liệu mỗi khi màn hình này được focus
+	useEffect(() => {
+		const delayDebounceFn = setTimeout(() => {
+			if (searchQuery.trim().length > 0) {
+				searchItems(searchQuery); // Nếu có nhập, gọi Search
+			} else {
+				fetchItems(activeStatus); // Nếu xóa trắng, load lại list hiện tại theo filter
+			}
+		}, 500); // 500ms debounce
+
+		return () => clearTimeout(delayDebounceFn);
+	}, [searchQuery, activeStatus]);
+
 	useFocusEffect(
 		useCallback(() => {
-			fetchItems(activeStatus);
+			if (searchQuery.trim().length === 0) {
+				fetchItems(activeStatus);
+			}
 		}, [activeStatus]),
 	);
+	// Xử lý filter
+	useEffect(() => {
+		let result = [...rawItems];
+
+		// Xử lý lọc theo khoảng thời gian (Date Filter)
+		if (dateRange !== "all") {
+			const now = new Date();
+			let startDate = new Date();
+
+			if (dateRange === "today") {
+				startDate.setHours(0, 0, 0, 0); // Đầu ngày hôm nay
+			} else if (dateRange === "week") {
+				startDate.setDate(now.getDate() - 7); // 7 ngày trước
+			} else if (dateRange === "month") {
+				startDate.setDate(now.getDate() - 30); // 30 ngày trước
+			}
+
+			result = result.filter((item) => {
+				const itemDate = new Date(item.createdAt || 0);
+				return itemDate >= startDate;
+			});
+		}
+
+		// Xử lý sắp xếp (Sort)
+		result.sort((a, b) => {
+			const timeA = new Date(a.createdAt || 0).getTime();
+			const timeB = new Date(b.createdAt || 0).getTime();
+			return sortBy === "newest" ? timeB - timeA : timeA - timeB;
+		});
+
+		// Render ra giao diện
+		setItems(result);
+	}, [rawItems, sortBy, dateRange]);
 
 	// const fetchNotes = async (statusFilter: string) => {
 	// 	try {
@@ -58,44 +113,103 @@ export default function AllNotesScreen() {
 	const fetchItems = async (statusFilter: string) => {
 		try {
 			setIsLoading(true);
-
 			let statusParam: NoteStatus | undefined = undefined;
 			if (statusFilter === "Processed") statusParam = "ACTIONED";
 			if (statusFilter === "Pending") statusParam = "PENDING";
 
-			// GỌI SONG SONG 2 API
 			const [notesRes, batchesRes] = await Promise.all([
 				noteApi.getNotes({ status: statusParam }),
 				batchApi.getBatches(),
 			]);
 
-			const fetchedNotes = notesRes.data?.notes || [];
-			const fetchedBatches = batchesRes.data || [];
-
-			// Trộn dữ liệu và gắn cờ itemType
 			let combined = [
-				...fetchedNotes.map((n: any) => ({ ...n, itemType: "note" })),
-				...fetchedBatches.map((b: any) => ({ ...b, itemType: "batch" })),
+				...(notesRes.data?.notes || []).map((n: any) => ({
+					...n,
+					itemType: "note",
+				})),
+				...(batchesRes.data || []).map((b: any) => ({
+					...b,
+					itemType: "batch",
+				})),
 			];
 
-			// Nếu user đang lọc "Pending", ta tạm ẩn các PDF vì PDF thường coi là đã xử lý xong
 			if (statusFilter === "Pending") {
 				combined = combined.filter((item) => item.itemType === "note");
 			}
-
-			// Sắp xếp mới nhất lên đầu
-			combined.sort(
-				(a, b) =>
-					new Date(b.createdAt || 0).getTime() -
-					new Date(a.createdAt || 0).getTime(),
-			);
-
-			setItems(combined);
+			setRawItems(combined); // <-- ĐỔI THÀNH setRawItems
 		} catch (error) {
 			console.log("Lỗi fetch items:", error);
 		} finally {
 			setIsLoading(false);
 		}
+	};
+
+	// Hàm gọi API search notes
+	const searchItems = async (keyword: string) => {
+		try {
+			setIsLoading(true);
+			const response = await noteApi.searchNotes(keyword);
+			const formattedResults = (response.data || []).map((n: any) => ({
+				...n,
+				itemType: "note",
+			}));
+			setRawItems(formattedResults);
+		} catch (error) {
+			console.log("Lỗi search items:", error);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const renderHighlightedText = (
+		text: string | undefined,
+		highlight: string,
+	) => {
+		if (!text) return null;
+		if (!highlight.trim()) return <Text>{text}</Text>;
+
+		// Tách chuỗi theo từ khóa, không phân biệt hoa thường
+		const regex = new RegExp(`(${highlight})`, "gi");
+		const parts = text.split(regex);
+
+		return (
+			<Text>
+				{parts.map((part, index) =>
+					part.toLowerCase() === highlight.toLowerCase() ? (
+						<Text
+							key={index}
+							style={{
+								backgroundColor: "#FEF08A",
+								color: "#854D0E",
+								fontWeight: "bold",
+							}}
+						>
+							{part}
+						</Text>
+					) : (
+						<Text key={index}>{part}</Text>
+					),
+				)}
+			</Text>
+		);
+	};
+	// Các hàm mở Dropdown filter
+	const handleSortPress = () => {
+		Alert.alert("Sort By", "Choose how documents are ordered", [
+			{ text: "Newest First", onPress: () => setSortBy("newest") },
+			{ text: "Oldest First", onPress: () => setSortBy("oldest") },
+			{ text: "Cancel", style: "cancel" },
+		]);
+	};
+
+	const handleDatePress = () => {
+		Alert.alert("Filter by Date", "Show documents created within:", [
+			{ text: "Any Date", onPress: () => setDateRange("all") },
+			{ text: "Today", onPress: () => setDateRange("today") },
+			{ text: "Past 7 Days", onPress: () => setDateRange("week") },
+			{ text: "Past 30 Days", onPress: () => setDateRange("month") },
+			{ text: "Cancel", style: "cancel" },
+		]);
 	};
 
 	// const mockNotes = [
@@ -206,19 +320,38 @@ export default function AllNotesScreen() {
 						style={styles.searchInput}
 						placeholder="Search notes..."
 						placeholderTextColor={COLORS.slate400}
+						value={searchQuery}
+						onChangeText={setSearchQuery}
 					/>
 				</View>
 
 				{/* Dropdown Filters */}
 				<View style={styles.dropdownRow}>
-					<TouchableOpacity style={styles.dropdownBtn}>
+					<TouchableOpacity
+						style={styles.dropdownBtn}
+						onPress={handleSortPress}
+					>
 						<Feather name="clock" size={16} color={COLORS.slate500} />
-						<Text style={styles.dropdownText}>Recently Used</Text>
+						<Text style={styles.dropdownText}>
+							{sortBy === "newest" ? "Newest First" : "Oldest First"}
+						</Text>
 						<Feather name="chevron-down" size={16} color={COLORS.slate400} />
 					</TouchableOpacity>
-					<TouchableOpacity style={styles.dropdownBtn}>
+
+					<TouchableOpacity
+						style={styles.dropdownBtn}
+						onPress={handleDatePress}
+					>
 						<Feather name="calendar" size={16} color={COLORS.slate500} />
-						<Text style={styles.dropdownText}>Any Date</Text>
+						<Text style={styles.dropdownText}>
+							{dateRange === "all"
+								? "Any Date"
+								: dateRange === "today"
+									? "Today"
+									: dateRange === "week"
+										? "Past 7 Days"
+										: "Past 30 Days"}
+						</Text>
 						<Feather name="chevron-down" size={16} color={COLORS.slate400} />
 					</TouchableOpacity>
 				</View>
@@ -289,7 +422,8 @@ export default function AllNotesScreen() {
 								>
 									<View style={styles.noteHeader}>
 										<Text style={styles.noteTitle} numberOfLines={1}>
-											{item.title}
+											{/* Highlight Title */}
+											{renderHighlightedText(item.title, searchQuery)}
 										</Text>
 										<View
 											style={[
@@ -307,9 +441,13 @@ export default function AllNotesScreen() {
 											</Text>
 										</View>
 									</View>
+
 									<Text style={styles.notePreview} numberOfLines={2}>
 										{isNote
-											? item.content
+											? renderHighlightedText(
+													stripMarkdown(item.content),
+													searchQuery,
+												)
 											: `Scanned PDF • Saved on ${new Date(item.createdAt).toLocaleDateString()}`}
 									</Text>
 								</TouchableOpacity>

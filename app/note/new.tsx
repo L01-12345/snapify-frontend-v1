@@ -10,6 +10,8 @@ import {
 	Platform,
 	Alert,
 	ActivityIndicator,
+	Image,
+	Modal,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Feather } from "@expo/vector-icons";
@@ -26,6 +28,7 @@ export default function NewNoteScreen() {
 	const params = useLocalSearchParams<{
 		folderId?: string;
 		folderName?: string;
+		imageUri?: string;
 	}>();
 
 	const [title, setTitle] = useState("");
@@ -38,6 +41,7 @@ export default function NewNoteScreen() {
 		icon: "folder",
 	});
 
+	const [isImageZoomVisible, setIsImageZoomVisible] = useState(false);
 	const handleSave = async () => {
 		if (!title.trim()) {
 			Alert.alert("Error", "Please enter a note title.");
@@ -104,6 +108,26 @@ export default function NewNoteScreen() {
 				style={styles.container}
 			>
 				<View style={styles.contentPad}>
+					{params.imageUri && (
+						<View style={{ marginBottom: 16 }}>
+							<Text style={styles.sectionTitle}>Original Image</Text>
+							<TouchableOpacity
+								style={styles.imageBox}
+								onPress={() => setIsImageZoomVisible(true)}
+								activeOpacity={0.9}
+							>
+								<Image
+									source={{ uri: params.imageUri }}
+									style={styles.actualImage}
+									resizeMode="cover"
+								/>
+								<View style={styles.zoomOverlayIcon}>
+									<Feather name="maximize-2" size={18} color="white" />
+								</View>
+							</TouchableOpacity>
+						</View>
+					)}
+
 					{/* Title Input Box */}
 					<View style={styles.titleBox}>
 						<TextInput
@@ -165,6 +189,34 @@ export default function NewNoteScreen() {
 				selectedId={selectedFolder.id}
 				onSelect={handleSelectFolder}
 			/>
+			{params.imageUri && (
+				<Modal
+					visible={isImageZoomVisible}
+					transparent={true}
+					animationType="fade"
+					onRequestClose={() => setIsImageZoomVisible(false)}
+				>
+					<View style={styles.zoomContainer}>
+						<TouchableOpacity
+							style={styles.zoomCloseBtn}
+							onPress={() => setIsImageZoomVisible(false)}
+						>
+							<Feather name="x" size={28} color="white" />
+						</TouchableOpacity>
+						<TouchableOpacity
+							activeOpacity={1}
+							style={styles.zoomBackdrop}
+							onPress={() => setIsImageZoomVisible(false)}
+						>
+							<Image
+								source={{ uri: params.imageUri }}
+								style={styles.fullImage}
+								resizeMode="contain"
+							/>
+						</TouchableOpacity>
+					</View>
+				</Modal>
+			)}
 		</SafeAreaView>
 	);
 }
@@ -249,5 +301,49 @@ const styles = StyleSheet.create({
 		fontWeight: "500",
 		color: COLORS.primary,
 		letterSpacing: -0.5,
+	},
+	// Bổ sung cho Khung phóng to Image
+	sectionTitle: {
+		fontSize: 14,
+		fontWeight: "700",
+		color: COLORS.slate900,
+		marginBottom: 8,
+	},
+	imageBox: {
+		height: 140,
+		backgroundColor: COLORS.slate50,
+		borderRadius: 16,
+		overflow: "hidden",
+		borderWidth: 1,
+		borderColor: COLORS.slate200,
+	},
+	actualImage: { width: "100%", height: "100%" },
+	zoomOverlayIcon: {
+		position: "absolute",
+		bottom: 10,
+		right: 10,
+		backgroundColor: "rgba(0,0,0,0.5)",
+		padding: 6,
+		borderRadius: 8,
+	},
+	zoomContainer: {
+		flex: 1,
+		backgroundColor: "rgba(15, 23, 42, 0.95)",
+		justifyContent: "center",
+		alignItems: "center",
+	},
+	zoomBackdrop: {
+		width: "100%",
+		height: "100%",
+		justifyContent: "center",
+		alignItems: "center",
+	},
+	fullImage: { width: "90%", height: "80%" },
+	zoomCloseBtn: {
+		position: "absolute",
+		top: Platform.OS === "ios" ? 60 : 30,
+		right: 24,
+		zIndex: 10,
+		padding: 8,
 	},
 });

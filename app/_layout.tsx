@@ -10,7 +10,7 @@ Sentry.init({
 	dsn: "https://3ae3aaaeac8618f4bb1c87d9a0c37324@o4511302997114880.ingest.us.sentry.io/4511303004651520",
 	debug: true,
 	tracesSampleRate: 1.0,
-	enabled: !__DEV__,
+	enabled: true,
 });
 
 export default function RootLayout() {
