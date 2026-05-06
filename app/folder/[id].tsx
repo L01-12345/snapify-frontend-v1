@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
 	View,
 	Text,
@@ -8,6 +8,7 @@ import {
 	ScrollView,
 	Alert,
 	ActivityIndicator,
+	TextInput,
 } from "react-native";
 import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { Feather } from "@expo/vector-icons";
@@ -35,6 +36,9 @@ export default function FolderDetailScreen() {
 
 	const [isFolderModalVisible, setIsFolderModalVisible] = useState(false);
 	const [itemToMove, setItemToMove] = useState<any | null>(null);
+
+	const [isRenaming, setIsRenaming] = useState(false);
+	const [newFolderName, setNewFolderName] = useState("");
 
 	const handleMove = () => {
 		setItemToMove(selectedItemForAction);
@@ -89,6 +93,10 @@ export default function FolderDetailScreen() {
 			if (id) fetchFolderDetail();
 		}, [id]),
 	);
+	// Cập nhật tên vào ô input mỗi khi folder được tải lên
+	useEffect(() => {
+		if (folder) setNewFolderName(folder.name);
+	}, [folder]);
 
 	const fetchFolderDetail = async () => {
 		try {
@@ -164,6 +172,28 @@ export default function FolderDetailScreen() {
 
 	const isEmpty = combinedItems.length === 0;
 
+	const handleRenameFolder = async () => {
+		if (!newFolderName.trim() || newFolderName === folder?.name) {
+			setIsRenaming(false);
+			setNewFolderName(folder?.name || ""); // Reset lại nếu không có gì thay đổi
+			return;
+		}
+
+		try {
+			await folderApi.updateFolder(id, { name: newFolderName });
+
+			// Cập nhật lại UI lập tức
+			setFolder((prev: any) =>
+				prev ? { ...prev, name: newFolderName } : prev,
+			);
+			setIsRenaming(false);
+		} catch (error) {
+			Alert.alert("Error", "Unable to rename folder.");
+			setNewFolderName(folder?.name || "");
+			setIsRenaming(false);
+		}
+	};
+
 	return (
 		<SafeAreaView style={styles.safeArea}>
 			<View style={styles.header}>
@@ -176,7 +206,33 @@ export default function FolderDetailScreen() {
 				</TouchableOpacity>
 				<View style={styles.headerCenter}>
 					<Icon name="folder" size={20} color={COLORS.slate900} />
-					<Text style={styles.headerTitle}>{folder.name}</Text>
+					{isRenaming ? (
+						<TextInput
+							style={[
+								styles.headerTitle,
+								{
+									borderBottomWidth: 1,
+									borderBottomColor: COLORS.primary,
+									minWidth: 120,
+									padding: 0,
+								},
+							]}
+							value={newFolderName}
+							onChangeText={setNewFolderName}
+							autoFocus
+							onSubmitEditing={handleRenameFolder}
+							onBlur={handleRenameFolder} // Click ra ngoài tự động lưu
+							returnKeyType="done"
+						/>
+					) : (
+						<TouchableOpacity
+							onPress={() => setIsRenaming(true)}
+							style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+						>
+							<Text style={styles.headerTitle}>{folder.name}</Text>
+							<Feather name="edit-2" size={14} color={COLORS.slate400} />
+						</TouchableOpacity>
+					)}
 				</View>
 				<TouchableOpacity
 					onPress={handleDeleteFolder}

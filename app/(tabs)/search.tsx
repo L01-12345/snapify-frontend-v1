@@ -10,6 +10,7 @@ import {
 	ScrollView,
 	Alert,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Feather } from "@expo/vector-icons";
 import { Icon } from "../../src/components/common/Icon";
 import { useRouter } from "expo-router";
@@ -17,7 +18,8 @@ import { COLORS } from "../../src/constants/theme";
 
 // Import API và Type
 import { noteApi } from "../../src/api/noteApi";
-import { Note } from "../../src/types/api.types";
+import { folderApi } from "../../src/api/folderApi";
+import { Note, Folder } from "../../src/types/api.types";
 
 // --- COMPONENT HIGHLIGHT TEXT ---
 const HighlightedText = ({
@@ -61,6 +63,9 @@ export default function SearchScreen() {
 	const [isLoading, setIsLoading] = useState(false);
 	const [results, setResults] = useState<Note[]>([]);
 
+	const [recentSearches, setRecentSearches] = useState<string[]>([]);
+	const [suggestedFolders, setSuggestedFolders] = useState<Folder[]>([]);
+
 	// Tích hợp API Fetching với Debounce
 	useEffect(() => {
 		if (query.trim().length === 0) {
@@ -73,12 +78,18 @@ export default function SearchScreen() {
 		// Đợi người dùng ngừng gõ 500ms rồi mới gọi API
 		const timeout = setTimeout(async () => {
 			try {
-				if (query.trim().length < 2) {
-					Alert.alert("Keyword must be at least 2 words");
+				const trimmedQuery = query.trim();
+				if (trimmedQuery.length < 2) {
+					// Bạn có thể giữ Alert hoặc ẩn đi để tránh làm phiền UX nếu gõ chưa xong
+					// Alert.alert("Keyword must be at least 2 words");
+					setIsLoading(false);
 					return;
 				}
-				const res = await noteApi.searchNotes(query.trim());
-				// API trả về mảng trong res.data
+
+				// Lưu vào lịch sử khi bắt đầu fetch API
+				saveRecentSearch(trimmedQuery);
+
+				const res = await noteApi.searchNotes(trimmedQuery);
 				setResults(res.data || []);
 			} catch (error) {
 				console.error("Lỗi tìm kiếm ghi chú:", error);
@@ -91,65 +102,125 @@ export default function SearchScreen() {
 		return () => clearTimeout(timeout);
 	}, [query]);
 
+	useEffect(() => {
+		loadInitialData();
+	}, []);
+
+	const loadInitialData = async () => {
+		try {
+			// Lấy lịch sử tìm kiếm cục bộ
+			const storedSearches = await AsyncStorage.getItem("recentSearches");
+			if (storedSearches) {
+				setRecentSearches(JSON.parse(storedSearches));
+			}
+
+			// Lấy danh sách Folder từ API và cắt lấy 3 thư mục đầu tiên
+			const folderRes = await folderApi.getFolders();
+			if (folderRes.data) {
+				setSuggestedFolders(folderRes.data.slice(0, 3));
+			}
+		} catch (error) {
+			console.error("Lỗi khi tải dữ liệu khởi tạo:", error);
+		}
+	};
+	// Lưu từ khóa tìm kiếm mới
+	const saveRecentSearch = async (searchTerm: string) => {
+		try {
+			// Xóa từ khóa nếu đã tồn tại để đẩy lên đầu
+			let updated = recentSearches.filter((item) => item !== searchTerm);
+			updated.unshift(searchTerm);
+
+			// Giữ tối đa 5 lịch sử
+			if (updated.length > 5) updated = updated.slice(0, 5);
+
+			setRecentSearches(updated);
+			await AsyncStorage.setItem("recentSearches", JSON.stringify(updated));
+		} catch (error) {
+			console.error("Lỗi khi lưu lịch sử tìm kiếm:", error);
+		}
+	};
+
+	// Xóa toàn bộ lịch sử
+	const clearRecentSearches = async () => {
+		setRecentSearches([]);
+		await AsyncStorage.removeItem("recentSearches");
+	};
+
 	// --- RENDER FUNCTIONS ---
 	const renderInitialState = () => (
 		<View style={styles.contentPad}>
-			<View style={styles.section}>
-				<View style={styles.sectionHeader}>
-					<Text style={styles.sectionTitle}>Recent Searches</Text>
-					<TouchableOpacity>
-						<Text style={styles.clearText}>Clear All</Text>
-					</TouchableOpacity>
+			{/* Chỉ hiển thị section khi có lịch sử tìm kiếm */}
+			{recentSearches.length > 0 && (
+				<View style={styles.section}>
+					<View style={styles.sectionHeader}>
+						<Text style={styles.sectionTitle}>Recent Searches</Text>
+						<TouchableOpacity onPress={clearRecentSearches}>
+							<Text style={styles.clearText}>Clear All</Text>
+						</TouchableOpacity>
+					</View>
+					<View style={styles.tagWrap}>
+						{recentSearches.map((term) => (
+							<TouchableOpacity
+								key={term}
+								style={styles.tag}
+								onPress={() => setQuery(term)}
+							>
+								<View style={styles.tagLabel}>
+									<Icon
+										name="clock"
+										size={14}
+										color={COLORS.primary}
+										style={styles.tagIcon}
+									/>
+									<Text style={styles.tagText}>{term}</Text>
+								</View>
+							</TouchableOpacity>
+						))}
+					</View>
 				</View>
-				<View style={styles.tagWrap}>
-					<TouchableOpacity
-						style={styles.tag}
-						onPress={() => setQuery("Calculus")}
-					>
-						<View style={styles.tagLabel}>
-							<Icon
-								name="clock"
-								size={14}
-								color={COLORS.primary}
-								style={styles.tagIcon}
-							/>
-							<Text style={styles.tagText}>Calculus</Text>
-						</View>
-					</TouchableOpacity>
-					<TouchableOpacity
-						style={styles.tag}
-						onPress={() => setQuery("Marketing")}
-					>
-						<View style={styles.tagLabel}>
-							<Icon
-								name="clock"
-								size={14}
-								color={COLORS.primary}
-								style={styles.tagIcon}
-							/>
-							<Text style={styles.tagText}>Marketing Q3</Text>
-						</View>
-					</TouchableOpacity>
-				</View>
-			</View>
+			)}
 
-			<View style={styles.section}>
-				<Text style={styles.sectionTitle}>Suggested Folders</Text>
-				<View style={styles.folderGrid}>
-					<TouchableOpacity style={styles.folderCard}>
-						<View style={[styles.folderIconBg, { backgroundColor: "#EEF2FF" }]}>
-							<Icon name="folder" size={20} color="#6366F1" />
-						</View>
-						<Text style={styles.folderText}>Study</Text>
-					</TouchableOpacity>
-					<TouchableOpacity style={styles.folderCard}>
-						<View style={[styles.folderIconBg, { backgroundColor: "#ECFDF5" }]}>
-							<Icon name="briefcase" size={20} color="#10B981" />
-						</View>
-						<Text style={styles.folderText}>Work</Text>
-					</TouchableOpacity>
+			{/* Chỉ hiển thị section khi có thư mục gợi ý */}
+			{suggestedFolders.length > 0 && (
+				<View style={styles.section}>
+					<Text style={styles.sectionTitle}>Suggested Folders</Text>
+					<ScrollView
+						horizontal
+						showsHorizontalScrollIndicator={false}
+						contentContainerStyle={styles.folderGrid}
+					>
+						{suggestedFolders.map((folder, index) => {
+							const bgColors = ["#EEF2FF", "#ECFDF5", "#FFFBEB"];
+							const iconColors = ["#6366F1", "#10B981", "#D97706"];
+							const colorIndex = index % 3;
+
+							return (
+								<TouchableOpacity
+									key={folder.id}
+									style={styles.folderCard}
+									onPress={() => router.push(`/folder/${folder.id}`)}
+								>
+									<View
+										style={[
+											styles.folderIconBg,
+											{ backgroundColor: bgColors[colorIndex] },
+										]}
+									>
+										<Icon
+											name="folder"
+											size={20}
+											color={iconColors[colorIndex]}
+										/>
+									</View>
+									<Text style={styles.folderText} numberOfLines={1}>
+										{folder.name}
+									</Text>
+								</TouchableOpacity>
+							);
+						})}
+					</ScrollView>
 				</View>
-			</View>
+			)}
 		</View>
 	);
 
@@ -224,8 +295,9 @@ export default function SearchScreen() {
 									style={styles.resultBadgeIcon}
 								/>
 								<Text style={styles.resultBadgeText}>
-									{/* Nếu có folder thì lấy folder.name, không thì để Uncategorized */}
-									{note.folder?.name || "Uncategorized"}
+									{/* Nếu API trả về folder nested, dùng nó, ngược lại có thể fallback */}
+									{note.folder?.name ??
+										(note.folderId ? "Categorized" : "Uncategorized")}
 								</Text>
 							</View>
 						</View>
@@ -379,9 +451,9 @@ const styles = StyleSheet.create({
 		gap: 6,
 	},
 	tagIcon: { marginRight: 4 },
-	folderGrid: { flexDirection: "row", gap: 12 },
+	folderGrid: { flexDirection: "row", gap: 12, paddingVertical: 4 },
 	folderCard: {
-		flex: 1,
+		// flex: 1,
 		flexDirection: "row",
 		alignItems: "center",
 		backgroundColor: COLORS.white,
@@ -390,6 +462,7 @@ const styles = StyleSheet.create({
 		borderWidth: 1,
 		borderColor: COLORS.slate200,
 		gap: 12,
+		minWidth: 150,
 	},
 	folderIconBg: {
 		width: 40,

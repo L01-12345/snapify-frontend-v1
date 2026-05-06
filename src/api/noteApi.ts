@@ -68,7 +68,7 @@ class NoteApi {
 					}
 
 					// Bước 2: Gọi AI phân loại
-					const categoryRes = await this.autoCategorize(newNote.id);
+					// const categoryRes = await this.autoCategorize(newNote.id);
 
 					Sentry.captureMessage("User utilized Smart OCR successfully", {
 						level: "info",
@@ -77,7 +77,8 @@ class NoteApi {
 
 					// Ghi nhận thành công
 					span?.setStatus({ code: 1 });
-					return categoryRes.data || newNote;
+					// return categoryRes.data || newNote;
+					return newNote;
 				} catch (err) {
 					// Ghi nhận hiệu suất bị lỗi nếu có
 					span?.setStatus({ code: 2, message: "Auto categorize failed" });

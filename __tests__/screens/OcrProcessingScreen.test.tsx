@@ -47,7 +47,7 @@ describe("OcrProcessingScreen - Màn hình xử lý ảnh", () => {
 	it("hiển thị giao diện Processing và bỏ qua gọi API nếu không có ảnh", async () => {
 		(useLocalSearchParams as jest.Mock).mockReturnValue({});
 		const { getByText } = render(<OcrProcessingScreen />);
-		expect(getByText("Processing...")).toBeTruthy();
+		expect(getByText("Uploading document...")).toBeTruthy();
 		await waitFor(() => {
 			expect(noteApi.snapAndAutoCategorize).not.toHaveBeenCalled();
 		});

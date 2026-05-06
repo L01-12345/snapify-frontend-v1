@@ -22,6 +22,7 @@ import { authApi } from "../../src/api/authApi";
 
 import { useDispatch } from "react-redux";
 import { setCredentials } from "../../src/store/slices/authSlice";
+import { Logo } from "../../src/components/common/Logo";
 
 import * as Sentry from "@sentry/react-native";
 
@@ -82,12 +83,13 @@ export default function LoginScreen() {
 					<View style={styles.content}>
 						{/* Header & Logo */}
 						<View style={styles.header}>
-							<LinearGradient
+							{/* <LinearGradient
 								colors={[COLORS.primary, COLORS.primaryEnd]}
 								style={styles.logoBox}
 							>
 								<Text style={styles.logoText}>S</Text>
-							</LinearGradient>
+							</LinearGradient> */}
+							<Logo width={64} height={64} />
 							<Text style={styles.title}>Welcome back</Text>
 							<Text style={styles.subtitle}>
 								Log in to your Snapify account

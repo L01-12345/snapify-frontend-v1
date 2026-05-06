@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
 	View,
 	Text,
@@ -7,6 +7,7 @@ import {
 	TouchableOpacity,
 	ScrollView,
 	Image,
+	Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
@@ -15,19 +16,49 @@ import { COLORS } from "../src/constants/theme";
 import { Icon } from "../src/components/common/Icon";
 import { useLocalSearchParams } from "expo-router";
 
-// import * as ImagePicker from "expo-image-picker";
-// import * as FileSystem from "expo-file-system";
-// import * as ImageManipulator from "expo-image-manipulator";
-import { batchApi } from "../src/api/batchApi";
-
 export default function BatchPreviewScreen() {
 	const router = useRouter();
 	const { images } = useLocalSearchParams();
-	const imageUris: string[] = images ? JSON.parse(images as string) : [];
+	const initialImages: string[] = images ? JSON.parse(images as string) : [];
+
+	// TẠO STATE ĐỂ QUẢN LÝ DANH SÁCH ẢNH (Phục vụ việc xóa)
+	const [localImages, setLocalImages] = useState<string[]>(initialImages);
+
+	const goBackToCamera = (imagesToReturn = localImages) => {
+		router.navigate({
+			pathname: "/camera-batch",
+			params: { updatedImages: JSON.stringify(imagesToReturn) },
+		});
+	};
+
+	const handleRemovePage = (indexToRemove: number) => {
+		Alert.alert(
+			"Remove Page",
+			"Are you sure to remove this page from the list?",
+			[
+				{ text: "Hủy", style: "cancel" },
+				{
+					text: "Xóa",
+					style: "destructive",
+					onPress: () => {
+						const newImages = localImages.filter(
+							(_, index) => index !== indexToRemove,
+						);
+						setLocalImages(newImages);
+
+						if (newImages.length === 0) {
+							goBackToCamera([]);
+						}
+					},
+				},
+			],
+		);
+	};
+
 	return (
 		<SafeAreaView style={styles.safeArea}>
 			<View style={styles.header}>
-				<TouchableOpacity onPress={() => router.back()}>
+				<TouchableOpacity onPress={() => goBackToCamera()} testID="back-btn">
 					<Feather name="arrow-left" size={24} color={COLORS.slate800} />
 				</TouchableOpacity>
 				<Text style={styles.headerTitle}>Batch Preview</Text>
@@ -36,28 +67,38 @@ export default function BatchPreviewScreen() {
 				</TouchableOpacity>
 			</View>
 
-			<ScrollView contentContainerStyle={styles.gridContainer}>
-				{imageUris.map((uri, index) => (
-					<View key={index} style={styles.pageCard}>
+			{/* THÊM style={{ flex: 1 }} ĐỂ FIX LỖI BỊ CẮT KHÚC DƯỚI */}
+			<ScrollView
+				style={{ flex: 1 }}
+				contentContainerStyle={styles.gridContainer}
+			>
+				{localImages.map((uri, index) => (
+					// ĐỔI TỪ View SANG TouchableOpacity ĐỂ BẮT SỰ KIỆN LONG PRESS
+					<TouchableOpacity
+						key={index}
+						style={styles.pageCard}
+						activeOpacity={0.8}
+						onLongPress={() => handleRemovePage(index)}
+						testID={`page-card-${index}`}
+					>
 						<LinearGradient
 							colors={[COLORS.primary, COLORS.primaryEnd]}
 							style={styles.pageNumber}
 						>
 							<Text style={styles.pageNumberText}>{index + 1}</Text>
 						</LinearGradient>
-						{/* Hiển thị ảnh thay vì Text giả */}
 						<Image
 							source={{ uri }}
 							style={{ width: "100%", height: "100%", borderRadius: 8 }}
 							resizeMode="cover"
 						/>
-					</View>
+					</TouchableOpacity>
 				))}
 
 				{/* Add Page Button */}
 				<TouchableOpacity
 					style={styles.addPageCard}
-					onPress={() => router.back()}
+					onPress={() => goBackToCamera()}
 				>
 					<Text style={styles.addPagePlus}>+</Text>
 					<Text style={styles.addPageText}>Add Page</Text>
@@ -84,7 +125,20 @@ export default function BatchPreviewScreen() {
 							<Text style={styles.secondaryBtnText}>Reorder</Text>
 						</View>
 					</TouchableOpacity>
-					<TouchableOpacity style={styles.dangerBtn}>
+					<TouchableOpacity
+						style={styles.dangerBtn}
+						// Xóa tất cả nếu nhấn nút Delete đỏ
+						onPress={() => {
+							Alert.alert("Delete All", "Xóa toàn bộ bản nháp?", [
+								{ text: "Hủy", style: "cancel" },
+								{
+									text: "Xóa",
+									style: "destructive",
+									onPress: () => router.back(),
+								},
+							]);
+						}}
+					>
 						<View
 							style={{
 								flexDirection: "row",
@@ -107,7 +161,7 @@ export default function BatchPreviewScreen() {
 					onPress={() =>
 						router.push({
 							pathname: "/pdf-preview",
-							params: { images: JSON.stringify(imageUris) },
+							params: { images: JSON.stringify(localImages) }, // Truyền mảng đã update đi tiếp
 						})
 					}
 				>
@@ -146,12 +200,13 @@ const styles = StyleSheet.create({
 	gridContainer: {
 		flexDirection: "row",
 		flexWrap: "wrap",
-		gap: 16,
+		justifyContent: "space-between",
 		padding: 24,
-		paddingBottom: 40,
+		paddingBottom: 80,
 	},
 	pageCard: {
 		width: "47%",
+		marginBottom: 16,
 		aspectRatio: 0.75,
 		backgroundColor: COLORS.white,
 		borderRadius: 16,
@@ -178,23 +233,14 @@ const styles = StyleSheet.create({
 		zIndex: 10,
 	},
 	pageNumberText: { color: COLORS.white, fontSize: 12, fontWeight: "bold" },
-	docTitle: {
-		fontSize: 14,
-		fontWeight: "700",
-		color: COLORS.slate900,
-		borderBottomWidth: 1,
-		borderBottomColor: COLORS.slate100,
-		paddingBottom: 4,
-		marginBottom: 8,
-	},
-	docPreview: { fontSize: 10, color: COLORS.slate600, lineHeight: 16 },
 	addPageCard: {
 		width: "47%",
+		marginBottom: 16,
 		aspectRatio: 0.75,
 		backgroundColor: "#EEF2FF",
 		borderRadius: 16,
 		borderWidth: 2,
-		borderStyle: "solid",
+		borderStyle: "dashed", // SỬA THÀNH DASHED (Nét đứt) SẼ ĐẸP HƠN
 		borderColor: "#C7D2FE",
 		alignItems: "center",
 		justifyContent: "center",

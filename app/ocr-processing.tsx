@@ -78,14 +78,12 @@ export default function OcrProcessingScreen() {
 				const fileName = imageUri.split("/").pop() || "scanned_document.jpg";
 				const mimeType = "image/jpeg";
 
-				// 1. Gọi API Upload lấy "Vé giữ xe"
 				const draftNote = await noteApi.snapAndAutoCategorize(
 					imageUri,
 					fileName,
 					mimeType,
 				);
 
-				// 2. Có vé rồi thì bắt đầu vòng lặp hỏi thăm
 				if (draftNote?.id) {
 					startPolling(draftNote.id);
 				}
@@ -122,11 +120,24 @@ export default function OcrProcessingScreen() {
 				if (!currentNote) return;
 
 				if (currentNote.status === "ACTIONED") {
-					// XONG: Dừng hỏi thăm và chuyển vào chi tiết note
 					stopPolling();
+					try {
+						setStatusText("Categorizing note...");
+
+						await noteApi.autoCategorize(currentNote.id);
+
+						import("@sentry/react-native").then((Sentry) => {
+							Sentry.captureMessage("User utilized Smart OCR successfully", {
+								level: "info",
+								tags: { feature: "ocr_scanner", status: "success" },
+							});
+						});
+					} catch (catErr) {
+						console.log("Auto categorize warning:", catErr);
+						// Dù phân loại lỗi (vd: AI timeout) thì vẫn cho người dùng vào xem Note bình thường
+					}
 					router.replace(`/note/${currentNote.id}`);
 				} else if (currentNote.status === "ARCHIVED") {
-					// LỖI AI: Dừng hỏi thăm và hiển thị Alert
 					stopPolling();
 					router.replace({
 						pathname: "/ocr-error",
@@ -205,7 +216,7 @@ export default function OcrProcessingScreen() {
 				</View>
 
 				<View style={styles.textContainer}>
-					<Text style={styles.processingText}>Processing...</Text>
+					<Text style={styles.processingText}>{statusText}</Text>
 					<ActivityIndicator
 						size="large"
 						color={COLORS.primaryEnd}

@@ -1,14 +1,25 @@
 import React from "react";
 import { render, fireEvent, waitFor, act } from "@testing-library/react-native";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Import component và API
 import SearchScreen from "../../app/(tabs)/search";
 import { noteApi } from "../../src/api/noteApi";
+import { folderApi } from "../../src/api/folderApi";
 
 // ---------------------------------------------------------
 // 1. MOCK CÁC MODULE BÊN NGOÀI
 // ---------------------------------------------------------
+jest.mock("@react-native-async-storage/async-storage", () =>
+	require("@react-native-async-storage/async-storage/jest/async-storage-mock"),
+);
+
+jest.mock("../../src/api/folderApi", () => ({
+	folderApi: {
+		getFolders: jest.fn(),
+	},
+}));
 
 jest.mock("expo-router", () => ({
 	useRouter: jest.fn(),
@@ -30,15 +41,22 @@ describe("SearchScreen - Tìm kiếm Ghi chú", () => {
 	beforeEach(() => {
 		jest.clearAllMocks();
 		(useRouter as jest.Mock).mockReturnValue({ push: mockPush });
+		(folderApi.getFolders as jest.Mock).mockResolvedValue({
+			data: [{ id: "folder-1", name: "Study" }],
+		});
+		(AsyncStorage.getItem as jest.Mock).mockResolvedValue(
+			JSON.stringify(["Calculus"]),
+		);
 	});
 
 	// --- KỊCH BẢN 1: GIAO DIỆN KHỞI TẠO (TRỐNG) ---
-	it("hiển thị gợi ý tìm kiếm gần đây khi chưa nhập từ khóa", () => {
+	it("hiển thị gợi ý tìm kiếm gần đây khi chưa nhập từ khóa", async () => {
 		const { getByText, getByTestId } = render(<SearchScreen />);
 
-		// UI khởi tạo phải có Recent Searches và Suggested Folders
-		expect(getByText("Recent Searches")).toBeTruthy();
-		expect(getByText("Suggested Folders")).toBeTruthy();
+		await waitFor(() => {
+			expect(getByText("Recent Searches")).toBeTruthy();
+			expect(getByText("Suggested Folders")).toBeTruthy();
+		});
 
 		// Input phải rỗng
 		expect(getByTestId("search-input").props.value).toBe("");
@@ -53,6 +71,8 @@ describe("SearchScreen - Tìm kiếm Ghi chú", () => {
 		(noteApi.searchNotes as jest.Mock).mockResolvedValue({ data: [] });
 
 		const { getByText, getByTestId } = render(<SearchScreen />);
+
+		await waitFor(() => expect(getByText("Calculus")).toBeTruthy());
 
 		// Bấm vào tag "Calculus"
 		fireEvent.press(getByText("Calculus"));

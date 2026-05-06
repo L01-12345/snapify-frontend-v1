@@ -1,7 +1,7 @@
 import React from "react";
 import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import { Alert, Animated } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { useCameraPermissions } from "expo-camera";
 import * as ImageManipulator from "expo-image-manipulator";
 
@@ -15,6 +15,7 @@ import CameraBatchScreen from "../../app/camera-batch";
 // Mock expo-router
 jest.mock("expo-router", () => ({
 	useRouter: jest.fn(),
+	useLocalSearchParams: jest.fn(),
 }));
 
 // Mock expo-image-manipulator
@@ -58,13 +59,16 @@ describe("CameraBatchScreen - Chụp và nén nhiều ảnh", () => {
 	const mockPush = jest.fn();
 	const mockBack = jest.fn();
 	const mockRequestPermission = jest.fn();
+	const mockReplace = jest.fn();
 
 	beforeEach(() => {
 		jest.clearAllMocks();
 		(useRouter as jest.Mock).mockReturnValue({
 			push: mockPush,
 			back: mockBack,
+			replace: mockReplace,
 		});
+		(useLocalSearchParams as jest.Mock).mockReturnValue({});
 	});
 
 	// --- KỊCH BẢN 1: CHƯA CẤP QUYỀN CAMERA ---
@@ -218,6 +222,6 @@ describe("CameraBatchScreen - Chụp và nén nhiều ảnh", () => {
 		const { getByTestId } = render(<CameraBatchScreen />);
 		fireEvent.press(getByTestId("back-btn"));
 
-		expect(mockBack).toHaveBeenCalled();
+		expect(mockReplace).toHaveBeenCalledWith("/dashboard");
 	});
 });

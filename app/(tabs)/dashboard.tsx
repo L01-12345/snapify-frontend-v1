@@ -239,99 +239,144 @@ export default function DashboardScreen() {
 				</View>
 
 				<View style={styles.notesList}>
-					{recentItems?.map((item, index) => {
-						const isNote = item.itemType === "note";
+					{loading ? (
+						<View style={{ gap: 12 }}>
+							{/* Khung mô phỏng thẻ Ghi chú to (Large Card) */}
+							<View style={styles.skeletonLargeCard}>
+								<View style={styles.skeletonTitle} />
+								<View style={styles.skeletonLine} />
+								<View style={[styles.skeletonLine, { width: "60%" }]} />
+							</View>
 
-						// Route chuyển hướng: Nếu là note thì vào /note/[id], nếu là batch thì mở link pdf hoặc màn batch
-						const handlePress = () => {
-							if (isNote) router.push(`/note/${item.id}`);
-							else {
-								// Alert.alert("PDF Document", `Viewing: ${item.pdfUrl}`);
-								router.push({
-									pathname: "/pdf-details",
-									params: {
-										pdfUrl: item.pdfUrl,
-										title: item.title,
-									},
-								});
+							{/* Khung mô phỏng 2 thẻ Ghi chú nhỏ (Small Card) */}
+							{[1, 2].map((i) => (
+								<View key={i} style={styles.skeletonSmallCard}>
+									<View style={styles.skeletonIcon} />
+									<View style={{ flex: 1 }}>
+										<View style={styles.skeletonTitleSmall} />
+										<View
+											style={[
+												styles.skeletonLine,
+												{ width: "80%", marginBottom: 0 },
+											]}
+										/>
+									</View>
+								</View>
+							))}
+						</View>
+					) : recentItems.length === 0 ? (
+						<View style={styles.emptyDashboardCard}>
+							<View style={styles.emptyIconWrapper}>
+								<Feather name="file-plus" size={32} color={COLORS.primary} />
+							</View>
+							<Text style={styles.emptyDashboardTitle}>
+								Welcome to Snapify!
+							</Text>
+							<Text style={styles.emptyDashboardText}>
+								Your workspace is ready.{"\n"}Tap the Camera button below to
+								create your first note.
+							</Text>
+
+							{/* Thêm mũi tên chỉ xuống */}
+							<View style={{ marginTop: 12, alignItems: "center" }}>
+								<Feather name="arrow-down" size={24} color={COLORS.primary} />
+							</View>
+						</View>
+					) : (
+						recentItems?.map((item, index) => {
+							const isNote = item.itemType === "note";
+
+							// Route chuyển hướng: Nếu là note thì vào /note/[id], nếu là batch thì mở link pdf hoặc màn batch
+							const handlePress = () => {
+								if (isNote) router.push(`/note/${item.id}`);
+								else {
+									// Alert.alert("PDF Document", `Viewing: ${item.pdfUrl}`);
+									router.push({
+										pathname: "/pdf-details",
+										params: {
+											pdfUrl: item.pdfUrl,
+											title: item.title,
+										},
+									});
+								}
+							};
+
+							// Ghi chú đầu tiên (index === 0) dùng style Large
+							if (index === 0) {
+								return (
+									<TouchableOpacity
+										key={item.id}
+										style={styles.noteCardLarge}
+										onPress={handlePress}
+										testID={`card-${item.id}`}
+									>
+										<View style={styles.noteHeaderLarge}>
+											<Text style={styles.noteTitleLarge}>{item.title}</Text>
+											<View
+												style={[
+													styles.badge,
+													!isNote && { backgroundColor: "#FEE2E2" },
+												]}
+											>
+												<Text
+													style={[
+														styles.badgeText,
+														!isNote && { color: "#B91C1C" },
+													]}
+												>
+													{isNote ? item.status : "PDF DOC"}
+												</Text>
+											</View>
+										</View>
+										<Text style={styles.noteSubtitle} numberOfLines={2}>
+											{isNote
+												? stripMarkdown(item.content)
+												: `Scanned PDF • ${new Date(item.createdAt).toLocaleDateString()}`}
+										</Text>
+									</TouchableOpacity>
+								);
 							}
-						};
 
-						// Ghi chú đầu tiên (index === 0) dùng style Large
-						if (index === 0) {
+							// Các ghi chú còn lại dùng style bình thường
 							return (
 								<TouchableOpacity
 									key={item.id}
-									style={styles.noteCardLarge}
+									style={styles.noteCard}
 									onPress={handlePress}
 									testID={`card-${item.id}`}
 								>
-									<View style={styles.noteHeaderLarge}>
-										<Text style={styles.noteTitleLarge}>{item.title}</Text>
-										<View
-											style={[
-												styles.badge,
-												!isNote && { backgroundColor: "#FEE2E2" },
-											]}
-										>
-											<Text
-												style={[
-													styles.badgeText,
-													!isNote && { color: "#B91C1C" },
-												]}
-											>
-												{isNote ? item.status : "PDF DOC"}
-											</Text>
-										</View>
+									<View
+										style={[
+											styles.noteIconBox,
+											!isNote && { backgroundColor: "#FEF2F2" },
+										]}
+									>
+										{isNote ? (
+											<Feather
+												name="file-text"
+												size={20}
+												color={COLORS.primary}
+											/>
+										) : (
+											<Ionicons
+												name="document-attach"
+												size={20}
+												color="#DC2626"
+											/>
+										)}
 									</View>
-									<Text style={styles.noteSubtitle} numberOfLines={2}>
-										{isNote
-											? stripMarkdown(item.content)
-											: `Scanned PDF • ${new Date(item.createdAt).toLocaleDateString()}`}
-									</Text>
+									<View style={styles.noteContent}>
+										<Text style={styles.noteTitle}>{item.title}</Text>
+										<Text style={styles.noteSubtitle} numberOfLines={1}>
+											{isNote
+												? stripMarkdown(item.content)
+												: `Saved on ${new Date(item.createdAt).toLocaleDateString()}`}
+										</Text>
+									</View>
 								</TouchableOpacity>
 							);
-						}
-
-						// Các ghi chú còn lại dùng style bình thường
-						return (
-							<TouchableOpacity
-								key={item.id}
-								style={styles.noteCard}
-								onPress={handlePress}
-								testID={`card-${item.id}`}
-							>
-								<View
-									style={[
-										styles.noteIconBox,
-										!isNote && { backgroundColor: "#FEF2F2" },
-									]}
-								>
-									{isNote ? (
-										<Feather
-											name="file-text"
-											size={20}
-											color={COLORS.primary}
-										/>
-									) : (
-										<Ionicons
-											name="document-attach"
-											size={20}
-											color="#DC2626"
-										/>
-									)}
-								</View>
-								<View style={styles.noteContent}>
-									<Text style={styles.noteTitle}>{item.title}</Text>
-									<Text style={styles.noteSubtitle} numberOfLines={1}>
-										{isNote
-											? stripMarkdown(item.content)
-											: `Saved on ${new Date(item.createdAt).toLocaleDateString()}`}
-									</Text>
-								</View>
-							</TouchableOpacity>
-						);
-					})}
+						})
+					)}
 				</View>
 
 				{/* Khoảng trống dưới cùng */}
@@ -661,4 +706,80 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 	},
 	avatarImage: { width: 70, height: 70, borderRadius: 48 },
+	emptyDashboardCard: {
+		backgroundColor: COLORS.white,
+		borderRadius: 24,
+		padding: 32,
+		alignItems: "center",
+		borderWidth: 2,
+		borderStyle: "dashed",
+		borderColor: COLORS.slate200,
+		marginTop: 8,
+	},
+	emptyIconWrapper: {
+		width: 64,
+		height: 64,
+		backgroundColor: "#EEF2FF",
+		borderRadius: 32,
+		alignItems: "center",
+		justifyContent: "center",
+		marginBottom: 16,
+	},
+	emptyDashboardTitle: {
+		fontSize: 18,
+		fontWeight: "800",
+		color: COLORS.slate900,
+		marginBottom: 8,
+	},
+	emptyDashboardText: {
+		fontSize: 14,
+		color: COLORS.slate500,
+		textAlign: "center",
+		lineHeight: 22,
+	},
+	// --- SKELETON LOADING STYLES ---
+	skeletonLargeCard: {
+		backgroundColor: COLORS.white,
+		borderRadius: 24,
+		padding: 20,
+		borderWidth: 1,
+		borderColor: COLORS.slate100,
+	},
+	skeletonSmallCard: {
+		flexDirection: "row",
+		alignItems: "center",
+		backgroundColor: COLORS.white,
+		borderRadius: 20,
+		padding: 16,
+		borderWidth: 1,
+		borderColor: COLORS.slate100,
+	},
+	skeletonIcon: {
+		width: 48,
+		height: 48,
+		backgroundColor: COLORS.slate100,
+		borderRadius: 12,
+		marginRight: 16,
+	},
+	skeletonTitle: {
+		width: "70%",
+		height: 20,
+		backgroundColor: COLORS.slate200,
+		borderRadius: 8,
+		marginBottom: 16,
+	},
+	skeletonTitleSmall: {
+		width: "50%",
+		height: 16,
+		backgroundColor: COLORS.slate200,
+		borderRadius: 6,
+		marginBottom: 8,
+	},
+	skeletonLine: {
+		width: "100%",
+		height: 12,
+		backgroundColor: COLORS.slate100,
+		borderRadius: 6,
+		marginBottom: 8,
+	},
 });

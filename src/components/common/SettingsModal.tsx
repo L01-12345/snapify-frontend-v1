@@ -11,6 +11,9 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { COLORS } from "../../constants/theme";
+import { logout } from "../../store/slices/authSlice";
+import * as SecureStore from "expo-secure-store";
+import { useDispatch } from "react-redux";
 
 interface SettingsModalProps {
 	visible: boolean;
@@ -19,11 +22,21 @@ interface SettingsModalProps {
 
 export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
 	const router = useRouter();
+	const dispatch = useDispatch();
 
-	const handleLogout = () => {
-		onClose();
-		// Ví dụ: Xóa token rồi đẩy về trang login
-		router.replace("/(auth)/login");
+	const handleLogout = async () => {
+		try {
+			await SecureStore.deleteItemAsync("access_token");
+
+			dispatch(logout());
+
+			onClose();
+			router.replace("/(auth)/login");
+		} catch (error) {
+			console.error("Lỗi khi đăng xuất:", error);
+			onClose();
+			router.replace("/(auth)/login");
+		}
 	};
 
 	return (

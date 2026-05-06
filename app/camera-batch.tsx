@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImageManipulator from "expo-image-manipulator";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { COLORS } from "../src/constants/theme";
 import { Icon } from "../src/components/common/Icon";
 
@@ -25,6 +25,18 @@ export default function CameraBatchScreen() {
 
 	// Animation cho tia quét Scanner
 	const scanAnim = useRef(new Animated.Value(0)).current;
+
+	const { updatedImages } = useLocalSearchParams();
+
+	useEffect(() => {
+		if (updatedImages) {
+			try {
+				setCapturedImages(JSON.parse(updatedImages as string));
+			} catch (e) {
+				console.error("Lỗi parse images:", e);
+			}
+		}
+	}, [updatedImages]);
 
 	useEffect(() => {
 		// Hiệu ứng tia sáng chạy lên xuống
@@ -117,7 +129,7 @@ export default function CameraBatchScreen() {
 					<View style={styles.topBar}>
 						<TouchableOpacity
 							style={styles.iconBtn}
-							onPress={() => router.back()}
+							onPress={() => router.replace("/dashboard")}
 							testID="back-btn"
 						>
 							<Icon name="x" size={24} color={COLORS.slate800} />

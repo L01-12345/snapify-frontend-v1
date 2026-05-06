@@ -55,6 +55,9 @@ export default function NewNoteScreen() {
 			if (selectedFolder.id) {
 				payload.folderId = selectedFolder.id;
 			}
+			if (params.imageUri) {
+				payload.imageUri = params.imageUri;
+			}
 
 			await noteApi.createNote(payload);
 			router.back();
