@@ -4,7 +4,6 @@ import {
 	View,
 	Text,
 	StyleSheet,
-	SafeAreaView,
 	TextInput,
 	TouchableOpacity,
 	ScrollView,
@@ -20,6 +19,15 @@ import { COLORS } from "../../src/constants/theme";
 import { noteApi } from "../../src/api/noteApi";
 import { folderApi } from "../../src/api/folderApi";
 import { Note, Folder } from "../../src/types/api.types";
+import { SafeAreaView } from "react-native-safe-area-context";
+import {
+	ResponsiveFontSize,
+	ResponsiveSpacing,
+	ResponsiveDimensions,
+	ResponsiveBorderRadius,
+	scale,
+	getResponsiveShadow,
+} from "../../src/utils/responsive";
 
 // --- COMPONENT HIGHLIGHT TEXT ---
 const HighlightedText = ({
@@ -403,7 +411,7 @@ const styles = StyleSheet.create({
 	searchIcon: { marginRight: 8 },
 	searchInput: {
 		flex: 1,
-		fontSize: 16,
+		fontSize: ResponsiveFontSize["lg"],
 		fontWeight: "500",
 		color: COLORS.slate900,
 	},
@@ -422,8 +430,16 @@ const styles = StyleSheet.create({
 		backgroundColor: COLORS.slate900,
 		borderColor: COLORS.slate900,
 	},
-	pillText: { fontSize: 12, fontWeight: "700", color: COLORS.slate600 },
-	pillTextActive: { fontSize: 12, fontWeight: "700", color: COLORS.white },
+	pillText: {
+		fontSize: ResponsiveFontSize["sm"],
+		fontWeight: "700",
+		color: COLORS.slate600,
+	},
+	pillTextActive: {
+		fontSize: ResponsiveFontSize["sm"],
+		fontWeight: "700",
+		color: COLORS.white,
+	},
 
 	contentPad: { padding: 24 },
 	section: { marginBottom: 32 },
@@ -433,8 +449,16 @@ const styles = StyleSheet.create({
 		alignItems: "flex-end",
 		marginBottom: 12,
 	},
-	sectionTitle: { fontSize: 16, fontWeight: "700", color: COLORS.slate900 },
-	clearText: { fontSize: 12, fontWeight: "700", color: COLORS.primary },
+	sectionTitle: {
+		fontSize: ResponsiveFontSize["lg"],
+		fontWeight: "700",
+		color: COLORS.slate900,
+	},
+	clearText: {
+		fontSize: ResponsiveFontSize["sm"],
+		fontWeight: "700",
+		color: COLORS.primary,
+	},
 	tagWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
 	tag: {
 		paddingHorizontal: 16,
@@ -444,7 +468,11 @@ const styles = StyleSheet.create({
 		borderColor: COLORS.slate200,
 		borderRadius: 12,
 	},
-	tagText: { fontSize: 14, fontWeight: "500", color: COLORS.slate600 },
+	tagText: {
+		fontSize: ResponsiveFontSize["base"],
+		fontWeight: "500",
+		color: COLORS.slate600,
+	},
 	tagLabel: {
 		flexDirection: "row",
 		alignItems: "center",
@@ -471,11 +499,15 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	folderText: { fontSize: 14, fontWeight: "700", color: COLORS.slate700 },
+	folderText: {
+		fontSize: ResponsiveFontSize["base"],
+		fontWeight: "700",
+		color: COLORS.slate700,
+	},
 
 	// Kết quả
 	resultCountText: {
-		fontSize: 12,
+		fontSize: ResponsiveFontSize["sm"],
 		fontWeight: "800",
 		color: COLORS.slate500,
 		textTransform: "uppercase",
@@ -497,15 +529,19 @@ const styles = StyleSheet.create({
 		marginBottom: 8,
 	},
 	resultTitle: {
-		fontSize: 18,
+		fontSize: ResponsiveFontSize["xl"],
 		fontWeight: "700",
 		color: COLORS.slate900,
 		flex: 1,
 		marginRight: 16,
 	},
-	resultDate: { fontSize: 12, fontWeight: "500", color: COLORS.slate400 },
+	resultDate: {
+		fontSize: ResponsiveFontSize["sm"],
+		fontWeight: "500",
+		color: COLORS.slate400,
+	},
 	resultText: {
-		fontSize: 12,
+		fontSize: ResponsiveFontSize["sm"],
 		fontWeight: "500",
 		color: COLORS.slate500,
 		lineHeight: 20,
@@ -530,7 +566,7 @@ const styles = StyleSheet.create({
 	},
 	resultBadgeIcon: { marginRight: 6 },
 	resultBadgeText: {
-		fontSize: 10,
+		fontSize: ResponsiveFontSize["xs"],
 		fontWeight: "800",
 		color: COLORS.primary,
 		textTransform: "uppercase",
@@ -579,9 +615,13 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	emptyTitle: { fontSize: 18, fontWeight: "700", color: COLORS.slate900 },
+	emptyTitle: {
+		fontSize: ResponsiveFontSize["xl"],
+		fontWeight: "700",
+		color: COLORS.slate900,
+	},
 	emptySubtitle: {
-		fontSize: 14,
+		fontSize: ResponsiveFontSize["base"],
 		fontWeight: "500",
 		color: COLORS.slate500,
 		textAlign: "center",
@@ -595,7 +635,11 @@ const styles = StyleSheet.create({
 		borderRadius: 12,
 		marginTop: 8,
 	},
-	clearBtnText: { fontSize: 14, fontWeight: "700", color: COLORS.slate700 },
+	clearBtnText: {
+		fontSize: ResponsiveFontSize["base"],
+		fontWeight: "700",
+		color: COLORS.slate700,
+	},
 
 	// Loading (Skeleton)
 	skeletonLine: {

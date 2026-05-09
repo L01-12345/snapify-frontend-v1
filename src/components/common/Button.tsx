@@ -8,6 +8,12 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "../../constants/theme";
+import {
+	ResponsiveFontSize,
+	ResponsiveSpacing,
+	ResponsiveBorderRadius,
+	scale,
+} from "../../utils/responsive";
 
 interface ButtonProps {
 	title?: string; // Đổi thành optional để khi loading có thể ẩn chữ
@@ -65,31 +71,31 @@ const styles = StyleSheet.create({
 	container: {
 		width: "100%",
 		shadowColor: COLORS.primary,
-		shadowOffset: { width: 0, height: 4 },
+		shadowOffset: { width: 0, height: scale(4) },
 		shadowOpacity: 0.3,
-		shadowRadius: 8,
+		shadowRadius: scale(8),
 		elevation: 5,
 	},
 	disabledContainer: {
-		opacity: 0.7, // Làm mờ nút một chút khi đang xử lý
-		shadowOpacity: 0, // Tắt bóng đổ khi disabled
+		opacity: 0.7,
+		shadowOpacity: 0,
 		elevation: 0,
 	},
 	primaryBg: {
-		paddingVertical: 16,
-		borderRadius: 16,
+		paddingVertical: ResponsiveSpacing.m,
+		borderRadius: ResponsiveBorderRadius.md,
 		alignItems: "center",
 		justifyContent: "center",
 	},
 	contentRow: {
-		flexDirection: "row", // Dàn hàng ngang cho Spinner và Text
+		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "center",
-		gap: 8, // Khoảng cách giữa Spinner và Text
+		gap: ResponsiveSpacing.m,
 	},
 	primaryText: {
 		color: COLORS.white,
-		fontSize: 16,
+		fontSize: ResponsiveFontSize.base,
 		fontWeight: "700",
 	},
 });

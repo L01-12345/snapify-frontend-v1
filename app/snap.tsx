@@ -4,7 +4,6 @@ import {
 	View,
 	Text,
 	StyleSheet,
-	SafeAreaView,
 	TouchableOpacity,
 	StatusBar,
 	Alert,
@@ -15,6 +14,15 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import { COLORS } from "../src/constants/theme";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { Button } from "../src/components/common/Button";
+import {
+	ResponsiveFontSize,
+	ResponsiveSpacing,
+	ResponsiveDimensions,
+	ResponsiveBorderRadius,
+	scale,
+	DeviceInfo,
+} from "../src/utils/responsive";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SnapToNoteScreen() {
 	const router = useRouter();
@@ -31,15 +39,15 @@ export default function SnapToNoteScreen() {
 					backgroundColor: "#0B0F19",
 					justifyContent: "center",
 					alignItems: "center",
-					padding: 24,
+					padding: ResponsiveSpacing.l,
 				}}
 			>
 				<Text
 					style={{
 						color: "white",
-						fontSize: 18,
+						fontSize: ResponsiveFontSize.lg,
 						textAlign: "center",
-						marginBottom: 20,
+						marginBottom: ResponsiveSpacing.xl,
 					}}
 				>
 					Snapify needs camera access to scan documents.
@@ -177,90 +185,103 @@ export default function SnapToNoteScreen() {
 }
 
 const styles = StyleSheet.create({
-	safeArea: { flex: 1, backgroundColor: "#0B0F19" }, // Màu xanh đen đậm chuẩn hình
+	safeArea: { flex: 1, backgroundColor: "#0B0F19" },
 	header: {
 		flexDirection: "row",
 		justifyContent: "space-between",
-		paddingHorizontal: 24,
-		paddingTop: 16,
+		paddingHorizontal: ResponsiveSpacing.l,
+		paddingTop: ResponsiveSpacing.m,
 	},
-	iconBtn: { padding: 8 },
+	iconBtn: {
+		padding: ResponsiveSpacing.m,
+	},
 	viewfinder: {
 		flex: 1,
 		alignItems: "center",
 		justifyContent: "center",
 		position: "relative",
-		marginHorizontal: 32,
-		marginVertical: 60,
+		marginHorizontal: scale(32),
+		marginVertical: scale(60),
 	},
 	corner: {
 		position: "absolute",
-		width: 40,
-		height: 40,
+		width: scale(40),
+		height: scale(40),
 		borderColor: COLORS.white,
 	},
 	topLeft: {
 		top: 0,
 		left: 0,
-		borderTopWidth: 3,
-		borderLeftWidth: 3,
-		borderTopLeftRadius: 16,
+		borderTopWidth: scale(3),
+		borderLeftWidth: scale(3),
+		borderTopLeftRadius: ResponsiveBorderRadius.lg,
 	},
 	topRight: {
 		top: 0,
 		right: 0,
-		borderTopWidth: 3,
-		borderRightWidth: 3,
-		borderTopRightRadius: 16,
+		borderTopWidth: scale(3),
+		borderRightWidth: scale(3),
+		borderTopRightRadius: ResponsiveBorderRadius.lg,
 	},
 	bottomLeft: {
 		bottom: 0,
 		left: 0,
-		borderBottomWidth: 3,
-		borderLeftWidth: 3,
-		borderBottomLeftRadius: 16,
+		borderBottomWidth: scale(3),
+		borderLeftWidth: scale(3),
+		borderBottomLeftRadius: ResponsiveBorderRadius.lg,
 	},
 	bottomRight: {
 		bottom: 0,
 		right: 0,
-		borderBottomWidth: 3,
-		borderRightWidth: 3,
-		borderBottomRightRadius: 16,
+		borderBottomWidth: scale(3),
+		borderRightWidth: scale(3),
+		borderBottomRightRadius: ResponsiveBorderRadius.lg,
 	},
 	focusTitle: {
 		color: COLORS.white,
-		fontSize: 20,
+		fontSize: ResponsiveFontSize["2xl"],
 		fontWeight: "700",
-		marginBottom: 8,
+		marginBottom: ResponsiveSpacing.m,
 	},
-	focusSubtitle: { color: COLORS.slate300, fontSize: 14, fontWeight: "400" },
+	focusSubtitle: {
+		color: COLORS.slate300,
+		fontSize: ResponsiveFontSize.base,
+		fontWeight: "400",
+	},
 	bottomBar: {
-		height: 140,
+		height: ResponsiveDimensions.shutterButtonSize * 1.75,
 		flexDirection: "row",
 		justifyContent: "space-around",
 		alignItems: "center",
 		borderTopWidth: 1,
 		borderTopColor: "rgba(255,255,255,0.2)",
-		paddingHorizontal: 20,
+		paddingHorizontal: ResponsiveSpacing.m,
 	},
-	sideBtn: { alignItems: "center", gap: 8 },
+	sideBtn: {
+		alignItems: "center",
+		gap: ResponsiveSpacing.m,
+	},
 	iconCircle: {
-		width: 50,
-		height: 50,
-		borderRadius: 16,
+		width: scale(50),
+		height: scale(50),
+		borderRadius: ResponsiveBorderRadius.md,
 		borderWidth: 1,
 		borderColor: "rgba(255,255,255,0.3)",
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	sideBtnText: { color: COLORS.slate400, fontSize: 12, fontWeight: "600" },
+	sideBtnText: {
+		color: COLORS.slate400,
+		fontSize: ResponsiveFontSize.xs,
+		fontWeight: "600",
+	},
 	shutterBtn: {
-		width: 80,
-		height: 80,
-		borderRadius: 40,
-		borderWidth: 6,
+		width: ResponsiveDimensions.shutterButtonSize,
+		height: ResponsiveDimensions.shutterButtonSize,
+		borderRadius: ResponsiveDimensions.shutterButtonSize / 2,
+		borderWidth: scale(6),
 		borderColor: COLORS.white,
-		padding: 4,
+		padding: ResponsiveSpacing.s,
 		alignItems: "center",
 		justifyContent: "center",
 	},
@@ -268,6 +289,6 @@ const styles = StyleSheet.create({
 		width: "100%",
 		height: "100%",
 		backgroundColor: COLORS.white,
-		borderRadius: 40,
+		borderRadius: ResponsiveDimensions.shutterButtonSize / 2,
 	},
 });

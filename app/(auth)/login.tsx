@@ -4,17 +4,26 @@ import {
 	Text,
 	StyleSheet,
 	TouchableOpacity,
-	SafeAreaView,
+	// SafeAreaView,
 	KeyboardAvoidingView,
 	Platform,
 	TouchableWithoutFeedback,
 	Keyboard,
+	ScrollView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "../../src/constants/theme";
 import { Input } from "../../src/components/common/Input";
 import { Button } from "../../src/components/common/Button";
+import {
+	ResponsiveFontSize,
+	ResponsiveSpacing,
+	ResponsiveDimensions,
+	ResponsiveBorderRadius,
+	scale,
+} from "../../src/utils/responsive";
 
 import { Alert, ActivityIndicator } from "react-native";
 import * as SecureStore from "expo-secure-store";
@@ -80,7 +89,7 @@ export default function LoginScreen() {
 				style={styles.container}
 			>
 				<TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-					<View style={styles.content}>
+					<ScrollView contentContainerStyle={styles.content}>
 						{/* Header & Logo */}
 						<View style={styles.header}>
 							{/* <LinearGradient
@@ -151,7 +160,7 @@ export default function LoginScreen() {
 								<Text style={styles.footerLink}>Sign up</Text>
 							</TouchableOpacity>
 						</View>
-					</View>
+					</ScrollView>
 				</TouchableWithoutFeedback>
 			</KeyboardAvoidingView>
 		</SafeAreaView>
@@ -161,7 +170,12 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
 	safeArea: { flex: 1, backgroundColor: COLORS.white },
 	container: { flex: 1 },
-	content: { flex: 1, paddingHorizontal: 24, justifyContent: "center" },
+	content: {
+		flexGrow: 1,
+		justifyContent: "center",
+		paddingHorizontal: ResponsiveSpacing.l,
+		paddingVertical: ResponsiveSpacing.xl,
+	},
 	header: { alignItems: "center", marginBottom: 40 },
 	logoBox: {
 		width: 64,
@@ -171,16 +185,28 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		marginBottom: 24,
 	},
-	logoText: { color: COLORS.white, fontSize: 32, fontWeight: "bold" },
-	title: { fontSize: 28, fontWeight: "800", color: COLORS.slate900 },
+	logoText: {
+		color: COLORS.white,
+		fontSize: ResponsiveFontSize["5xl"],
+		fontWeight: "bold",
+	},
+	title: {
+		fontSize: ResponsiveFontSize["4xl"],
+		fontWeight: "800",
+		color: COLORS.slate900,
+	},
 	subtitle: {
-		fontSize: 14,
+		fontSize: ResponsiveFontSize["base"],
 		color: COLORS.slate500,
 		marginTop: 8,
 		fontWeight: "500",
 	},
 	forgotPass: { alignItems: "flex-end", marginBottom: 24, marginTop: 4 },
-	forgotPassText: { fontSize: 12, fontWeight: "700", color: COLORS.primary },
+	forgotPassText: {
+		fontSize: ResponsiveFontSize["sm"],
+		fontWeight: "700",
+		color: COLORS.primary,
+	},
 	dividerContainer: {
 		flexDirection: "row",
 		alignItems: "center",
@@ -188,7 +214,7 @@ const styles = StyleSheet.create({
 	},
 	dividerLine: { flex: 1, height: 1, backgroundColor: COLORS.slate200 },
 	dividerText: {
-		fontSize: 12,
+		fontSize: ResponsiveFontSize["sm"],
 		fontWeight: "600",
 		color: COLORS.slate400,
 		paddingHorizontal: 12,
@@ -206,9 +232,21 @@ const styles = StyleSheet.create({
 		borderRadius: 16,
 		gap: 8,
 	},
-	socialIcon: { fontSize: 18 },
-	socialText: { fontSize: 14, fontWeight: "700", color: COLORS.slate700 },
+	socialIcon: { fontSize: ResponsiveFontSize["xl"] },
+	socialText: {
+		fontSize: ResponsiveFontSize["base"],
+		fontWeight: "700",
+		color: COLORS.slate700,
+	},
 	footer: { flexDirection: "row", justifyContent: "center", marginTop: 40 },
-	footerText: { fontSize: 14, color: COLORS.slate500, fontWeight: "500" },
-	footerLink: { fontSize: 14, color: COLORS.primary, fontWeight: "700" },
+	footerText: {
+		fontSize: ResponsiveFontSize["base"],
+		color: COLORS.slate500,
+		fontWeight: "500",
+	},
+	footerLink: {
+		fontSize: ResponsiveFontSize["base"],
+		color: COLORS.primary,
+		fontWeight: "700",
+	},
 });

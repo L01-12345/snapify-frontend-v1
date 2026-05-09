@@ -8,6 +8,13 @@ import {
 	TextInputProps,
 } from "react-native";
 import { COLORS } from "../../constants/theme";
+import {
+	ResponsiveFontSize,
+	ResponsiveSpacing,
+	ResponsiveBorderRadius,
+	ResponsiveDimensions,
+	scale,
+} from "../../utils/responsive";
 
 interface InputProps extends TextInputProps {
 	label: string;
@@ -53,12 +60,12 @@ export const Input = ({ label, error, isPassword, ...props }: InputProps) => {
 };
 
 const styles = StyleSheet.create({
-	container: { marginBottom: 16 },
+	container: { marginBottom: ResponsiveSpacing.m },
 	label: {
-		fontSize: 14,
+		fontSize: ResponsiveFontSize.base,
 		fontWeight: "600",
 		color: COLORS.slate700,
-		marginBottom: 6,
+		marginBottom: ResponsiveSpacing.s,
 	},
 	labelError: { color: COLORS.error },
 	inputContainer: {
@@ -67,23 +74,28 @@ const styles = StyleSheet.create({
 		backgroundColor: COLORS.slate50,
 		borderWidth: 2,
 		borderColor: COLORS.slate200,
-		borderRadius: 16,
-		paddingHorizontal: 20,
-		height: 54,
+		borderRadius: ResponsiveBorderRadius.md,
+		paddingHorizontal: ResponsiveSpacing.l,
+		height: ResponsiveDimensions.inputHeight,
 	},
 	inputFocused: { borderColor: COLORS.primary },
 	inputErrorBg: {
 		backgroundColor: COLORS.errorLight,
 		borderColor: COLORS.error,
 	},
-	input: { flex: 1, fontSize: 15, color: COLORS.slate900, fontWeight: "500" },
+	input: {
+		flex: 1,
+		fontSize: ResponsiveFontSize.base,
+		color: COLORS.slate900,
+		fontWeight: "500",
+	},
 	inputTextError: { color: COLORS.errorDark },
-	eyeIcon: { paddingLeft: 10 },
+	eyeIcon: { paddingLeft: ResponsiveSpacing.m },
 	errorText: {
-		fontSize: 12,
+		fontSize: ResponsiveFontSize.xs,
 		fontWeight: "600",
 		color: COLORS.error,
-		marginTop: 4,
-		paddingLeft: 4,
+		marginTop: ResponsiveSpacing.s,
+		paddingLeft: ResponsiveSpacing.s,
 	},
 });

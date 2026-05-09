@@ -3,7 +3,6 @@ import {
 	View,
 	Text,
 	StyleSheet,
-	SafeAreaView,
 	TouchableOpacity,
 	ScrollView,
 	Alert,
@@ -16,6 +15,15 @@ import { COLORS } from "../../src/constants/theme";
 import { folderApi } from "../../src/api/folderApi";
 import { Folder } from "../../src/types/api.types";
 import { Icon, type IconName } from "../../src/components/common/Icon";
+import { SafeAreaView } from "react-native-safe-area-context";
+import {
+	ResponsiveFontSize,
+	ResponsiveSpacing,
+	ResponsiveDimensions,
+	ResponsiveBorderRadius,
+	scale,
+	getResponsiveShadow,
+} from "../../src/utils/responsive";
 
 // Bộ màu và icon tĩnh để gắn cho các folder (do API không lưu màu)
 const FOLDER_STYLES: { icon: IconName; bgColor: string; iconColor: string }[] =
@@ -217,7 +225,11 @@ const styles = StyleSheet.create({
 		borderBottomColor: COLORS.slate100,
 		backgroundColor: COLORS.white,
 	},
-	headerTitle: { fontSize: 32, fontWeight: "800", color: COLORS.slate900 },
+	headerTitle: {
+		fontSize: ResponsiveFontSize["5xl"],
+		fontWeight: "800",
+		color: COLORS.slate900,
+	},
 	addButton: {
 		width: 40,
 		height: 40,
@@ -227,7 +239,7 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 	},
 	addButtonText: {
-		fontSize: 24,
+		fontSize: ResponsiveFontSize["3xl"],
 		color: COLORS.slate600,
 		fontWeight: "600",
 		marginTop: -4,
@@ -261,17 +273,33 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	iconText: { fontSize: 24 },
+	iconText: { fontSize: ResponsiveFontSize["3xl"] },
 	iconSvg: {
 		width: 24,
 		height: 24,
 	},
 	cardInfo: { gap: 4 },
-	cardTitle: { fontSize: 18, fontWeight: "700", color: COLORS.slate900 },
-	cardSubtitle: { fontSize: 12, fontWeight: "500", color: COLORS.slate500 },
+	cardTitle: {
+		fontSize: ResponsiveFontSize["xl"],
+		fontWeight: "700",
+		color: COLORS.slate900,
+	},
+	cardSubtitle: {
+		fontSize: ResponsiveFontSize["sm"],
+		fontWeight: "500",
+		color: COLORS.slate500,
+	},
 	emptyState: { alignItems: "center", marginTop: 60 },
-	emptyText: { fontSize: 18, fontWeight: "700", color: COLORS.slate700 },
-	emptySubText: { fontSize: 14, color: COLORS.slate500, marginTop: 8 },
+	emptyText: {
+		fontSize: ResponsiveFontSize["xl"],
+		fontWeight: "700",
+		color: COLORS.slate700,
+	},
+	emptySubText: {
+		fontSize: ResponsiveFontSize["base"],
+		color: COLORS.slate500,
+		marginTop: 8,
+	},
 	modalOverlay: {
 		flex: 1,
 		backgroundColor: "rgba(0,0,0,0.5)",
@@ -284,13 +312,17 @@ const styles = StyleSheet.create({
 		padding: 24,
 		gap: 16,
 	},
-	modalTitle: { fontSize: 20, fontWeight: "800", color: COLORS.slate900 },
+	modalTitle: {
+		fontSize: ResponsiveFontSize["2xl"],
+		fontWeight: "800",
+		color: COLORS.slate900,
+	},
 	input: {
 		borderWidth: 1,
 		borderColor: COLORS.slate200,
 		borderRadius: 12,
 		padding: 16,
-		fontSize: 16,
+		fontSize: ResponsiveFontSize["lg"],
 	},
 	modalActions: { flexDirection: "row", gap: 12, marginTop: 12 },
 	cancelBtn: { flex: 1, padding: 16, alignItems: "center" },

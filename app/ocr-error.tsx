@@ -1,14 +1,9 @@
 import React from "react";
-import {
-	View,
-	Text,
-	StyleSheet,
-	SafeAreaView,
-	TouchableOpacity,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { COLORS } from "../src/constants/theme";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function OcrErrorScreen() {
 	const router = useRouter();

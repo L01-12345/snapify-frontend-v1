@@ -4,7 +4,6 @@ import {
 	View,
 	Text,
 	StyleSheet,
-	SafeAreaView,
 	TouchableOpacity,
 	FlatList,
 	Dimensions,
@@ -16,6 +15,12 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
 import { Icon } from "../src/components/common/Icon";
 import { COLORS } from "../src/constants/theme";
+import {
+	SafeAreaView,
+	useSafeAreaInsets,
+} from "react-native-safe-area-context";
+import { ResponsiveFontSize } from "../src/utils/responsive";
+import { Logo } from "../src/components/common/Logo";
 
 const { width, height } = Dimensions.get("window");
 
@@ -52,6 +57,7 @@ export default function OnboardingScreen() {
 	const [currentIndex, setCurrentIndex] = useState(0);
 	const scrollX = useRef(new Animated.Value(0)).current;
 	const slidesRef = useRef<FlatList>(null);
+	const insets = useSafeAreaInsets();
 
 	const handleNext = () => {
 		if (currentIndex < SLIDES.length - 1) {
@@ -207,16 +213,18 @@ export default function OnboardingScreen() {
 			return (
 				<LinearGradient
 					colors={["#4f46e5", "#8b5cf6"]}
-					style={styles.slideFull}
+					style={[
+						styles.slideFull,
+						{
+							paddingTop: insets.top + 50,
+							paddingBottom: insets.bottom + 30,
+							justifyContent: "center",
+						},
+					]}
 				>
 					<View style={styles.s4Content}>
 						<View style={styles.s4LogoBox}>
-							<LinearGradient
-								colors={["#4f46e5", "#8b5cf6"]}
-								style={styles.s4LogoInner}
-							>
-								<Text style={styles.s4LogoText}>S</Text>
-							</LinearGradient>
+							<Logo width={64} height={64} />
 						</View>
 						<Text style={styles.s4Title}>{item.title}</Text>
 						<Text style={styles.s4Subtitle}>{item.subtitle}</Text>
@@ -234,7 +242,18 @@ export default function OnboardingScreen() {
 						))}
 					</View>
 
-					<TouchableOpacity style={styles.getStartedBtn} onPress={handleNext}>
+					<TouchableOpacity
+						style={[
+							styles.getStartedBtn,
+							{
+								// Chuyển sang vị trí tương đối để nút tuân thủ paddingBottom của cha
+								position: "relative",
+								bottom: 0,
+								marginTop: 20,
+							},
+						]}
+						onPress={handleNext}
+					>
 						<Text style={styles.getStartedText}>Get Started</Text>
 					</TouchableOpacity>
 				</LinearGradient>
@@ -243,7 +262,7 @@ export default function OnboardingScreen() {
 
 		// TRANG 1, 2, 3: CHIA HAI NỬA (GRAPHIC + BOTTOM CARD)
 		return (
-			<View style={styles.slide}>
+			<SafeAreaView style={styles.slide}>
 				{/* Top Graphic */}
 				<View style={{ flex: 1 }}>
 					{index === 0 && <GraphicSlide1 />}
@@ -276,12 +295,12 @@ export default function OnboardingScreen() {
 						</TouchableOpacity>
 					</View>
 				</View>
-			</View>
+			</SafeAreaView>
 		);
 	};
 
 	return (
-		<View style={styles.container}>
+		<SafeAreaView style={styles.container}>
 			{/* Skip Button (chỉ hiện ở trang 1, 2, 3) */}
 			{currentIndex < 3 && (
 				<TouchableOpacity style={styles.skipBtn} onPress={handleSkip}>
@@ -308,7 +327,7 @@ export default function OnboardingScreen() {
 				}}
 				ref={slidesRef}
 			/>
-		</View>
+		</SafeAreaView>
 	);
 }
 
@@ -351,14 +370,14 @@ const styles = StyleSheet.create({
 		elevation: 10,
 	},
 	title: {
-		fontSize: 24,
+		fontSize: ResponsiveFontSize["4xl"],
 		fontWeight: "800",
 		color: "#0f172a",
 		lineHeight: 32,
 		marginBottom: 16,
 	},
 	subtitle: {
-		fontSize: 14,
+		fontSize: ResponsiveFontSize.base,
 		fontWeight: "500",
 		color: "#64748b",
 		lineHeight: 22,
@@ -407,6 +426,7 @@ const styles = StyleSheet.create({
 		shadowOpacity: 0.3,
 		shadowRadius: 20,
 		elevation: 10,
+		marginBottom: 20,
 	},
 	getStartedText: { color: "#4338ca", fontSize: 18, fontWeight: "800" },
 
@@ -590,7 +610,7 @@ const styles = StyleSheet.create({
 	},
 	s4LogoText: { fontSize: 40, fontWeight: "800", color: "white" },
 	s4Title: {
-		fontSize: 36,
+		fontSize: ResponsiveFontSize["6xl"],
 		fontWeight: "800",
 		color: "white",
 		textAlign: "center",
@@ -598,7 +618,7 @@ const styles = StyleSheet.create({
 		marginBottom: 16,
 	},
 	s4Subtitle: {
-		fontSize: 16,
+		fontSize: ResponsiveFontSize.lg,
 		fontWeight: "600",
 		color: "#e0e7ff",
 		textAlign: "center",

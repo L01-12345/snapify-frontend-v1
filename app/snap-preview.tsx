@@ -1,15 +1,10 @@
 // app/snap-preview.tsx
 import React from "react";
-import {
-	View,
-	Text,
-	StyleSheet,
-	SafeAreaView,
-	TouchableOpacity,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "../src/constants/theme";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SnapPreviewScreen() {
 	const router = useRouter();

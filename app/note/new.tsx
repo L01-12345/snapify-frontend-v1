@@ -3,7 +3,6 @@ import {
 	View,
 	Text,
 	StyleSheet,
-	SafeAreaView,
 	TouchableOpacity,
 	TextInput,
 	KeyboardAvoidingView,
@@ -22,6 +21,7 @@ import { folderApi } from "../../src/api/folderApi";
 import { Folder } from "../../src/types/api.types";
 import { FolderSelectModal } from "../../src/components/common/FolderSelectModal";
 import { Icon, getIconName } from "../../src/components/common/Icon";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function NewNoteScreen() {
 	const router = useRouter();

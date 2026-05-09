@@ -120,12 +120,14 @@ export const FolderSelectModal = ({
 													{folder.icon || "📂"}
 												</Text>
 											</View>
-											<View>
+											<View style={{ flex: 1 }}>
 												<Text
 													style={[
 														styles.folderName,
 														isSelected && { color: COLORS.slate900 },
 													]}
+													numberOfLines={1}
+													ellipsizeMode="tail"
 												>
 													{folder.name}
 												</Text>
@@ -221,7 +223,7 @@ const styles = StyleSheet.create({
 		borderRadius: 20,
 	},
 	itemCardSelected: { backgroundColor: "#EEF2FF", borderColor: COLORS.primary },
-	itemLeft: { flexDirection: "row", alignItems: "center", gap: 16 },
+	itemLeft: { flexDirection: "row", alignItems: "center", gap: 16, flex: 1 },
 	iconBox: {
 		width: 48,
 		height: 48,
@@ -231,7 +233,11 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 	},
 	iconText: { fontSize: 20 },
-	folderName: { fontSize: 16, fontWeight: "700", color: COLORS.slate700 },
+	folderName: {
+		fontSize: 16,
+		fontWeight: "700",
+		color: COLORS.slate700,
+	},
 	selectedLabel: {
 		fontSize: 10,
 		fontWeight: "800",

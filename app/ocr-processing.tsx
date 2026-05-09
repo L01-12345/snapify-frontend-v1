@@ -4,7 +4,6 @@ import {
 	View,
 	Text,
 	StyleSheet,
-	SafeAreaView,
 	TouchableOpacity,
 	Animated,
 	ActivityIndicator,
@@ -12,8 +11,16 @@ import {
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { COLORS } from "../src/constants/theme";
+import {
+	ResponsiveFontSize,
+	ResponsiveSpacing,
+	ResponsiveBorderRadius,
+	scale,
+	getResponsiveShadow,
+} from "../src/utils/responsive";
 import { noteApi } from "../src/api/noteApi";
 import { Note, NoteStatus } from "../src/types/api.types";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function OcrProcessingScreen() {
 	const router = useRouter();
@@ -241,36 +248,48 @@ export default function OcrProcessingScreen() {
 
 const styles = StyleSheet.create({
 	safeArea: { flex: 1, backgroundColor: COLORS.slate50 },
-	header: { height: 60, justifyContent: "center", alignItems: "center" },
-	headerTitle: { fontSize: 18, fontWeight: "700", color: COLORS.slate900 },
+	header: {
+		height: scale(60),
+		justifyContent: "center",
+		alignItems: "center",
+	},
+	headerTitle: {
+		fontSize: ResponsiveFontSize.lg,
+		fontWeight: "700",
+		color: COLORS.slate900,
+	},
 	content: {
 		flex: 1,
 		alignItems: "center",
 		justifyContent: "center",
-		paddingHorizontal: 32,
+		paddingHorizontal: ResponsiveSpacing.xxxl,
 	},
 	docBox: {
-		width: 200,
-		height: 260,
+		width: scale(200),
+		height: scale(260),
 		backgroundColor: COLORS.slate800,
-		borderRadius: 24,
-		borderWidth: 4,
+		borderRadius: ResponsiveBorderRadius.lg,
+		borderWidth: scale(4),
 		borderColor: COLORS.white,
 		overflow: "hidden",
 		shadowColor: COLORS.primaryEnd,
-		shadowOffset: { width: 0, height: 10 },
+		shadowOffset: { width: 0, height: scale(10) },
 		shadowOpacity: 0.3,
-		shadowRadius: 20,
+		shadowRadius: scale(20),
 		elevation: 10,
-		marginBottom: 40,
+		marginBottom: ResponsiveSpacing.xxxl,
 	},
 	linesContainer: {
 		...StyleSheet.absoluteFillObject,
-		padding: 20,
-		gap: 12,
+		padding: ResponsiveSpacing.l,
+		gap: ResponsiveSpacing.m,
 		opacity: 0.5,
 	},
-	line: { height: 8, backgroundColor: COLORS.slate500, borderRadius: 4 },
+	line: {
+		height: scale(8),
+		backgroundColor: COLORS.slate500,
+		borderRadius: ResponsiveBorderRadius.sm,
+	},
 	overlayColor: {
 		...StyleSheet.absoluteFillObject,
 		backgroundColor: "rgba(124, 58, 237, 0.1)",
@@ -280,22 +299,38 @@ const styles = StyleSheet.create({
 		top: 0,
 		left: 0,
 		right: 0,
-		height: 4,
+		height: scale(4),
 		backgroundColor: "#A78BFA",
 		shadowColor: "#8B5CF6",
 		shadowOffset: { width: 0, height: 0 },
 		shadowOpacity: 1,
-		shadowRadius: 10,
+		shadowRadius: scale(10),
 	},
 	textContainer: { alignItems: "center" },
-	processingText: { fontSize: 24, fontWeight: "800", color: COLORS.slate900 },
-	subText: { fontSize: 14, fontWeight: "500", color: COLORS.slate500 },
+	processingText: {
+		fontSize: ResponsiveFontSize["5xl"],
+		fontWeight: "800",
+		color: COLORS.slate900,
+	},
+	subText: {
+		fontSize: ResponsiveFontSize.base,
+		fontWeight: "500",
+		color: COLORS.slate500,
+	},
 	footer: {
-		padding: 24,
+		padding: ResponsiveSpacing.l,
 		borderTopWidth: 1,
 		borderTopColor: COLORS.slate100,
 		backgroundColor: COLORS.white,
 	},
-	cancelBtn: { paddingVertical: 16, alignItems: "center", borderRadius: 16 },
-	cancelBtnText: { color: COLORS.primary, fontSize: 16, fontWeight: "600" },
+	cancelBtn: {
+		paddingVertical: ResponsiveSpacing.m,
+		alignItems: "center",
+		borderRadius: ResponsiveBorderRadius.md,
+	},
+	cancelBtnText: {
+		color: COLORS.primary,
+		fontSize: ResponsiveFontSize.base,
+		fontWeight: "600",
+	},
 });

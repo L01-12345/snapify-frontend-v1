@@ -13,10 +13,15 @@
 			},
 			"env": {
 				"SENTRY_ORG": "snapify-frontend-sentry",
-				"SENTRY_PROJECT": "snapify-frontend"
+				"SENTRY_PROJECT": "snapify-frontend",
+				"EXPO_PUBLIC_API_URL": "https://snapify-api-tdn8.onrender.com/api"
 			}
 		},
-		"production": {}
+		"production": {
+			"env": {
+				"EXPO_PUBLIC_API_URL": "https://snapify-api-tdn8.onrender.com/api"
+			}
+		}
 	},
 	"submit": {
 		"production": {}

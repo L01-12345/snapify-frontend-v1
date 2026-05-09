@@ -4,7 +4,6 @@ import {
 	View,
 	Text,
 	StyleSheet,
-	SafeAreaView,
 	ScrollView,
 	TouchableOpacity,
 	ActivityIndicator,
@@ -24,6 +23,16 @@ import { folderApi } from "../../src/api/folderApi";
 
 import { Icon } from "../../src/components/common/Icon";
 import { formatDate } from "../../src/utils/formatters";
+import { SafeAreaView } from "react-native-safe-area-context";
+import {
+	ResponsiveFontSize,
+	ResponsiveSpacing,
+	ResponsiveDimensions,
+	ResponsiveBorderRadius,
+	scale,
+	getResponsiveShadow,
+} from "../../src/utils/responsive";
+
 export default function NoteDetailScreen() {
 	const router = useRouter();
 	const { id } = useLocalSearchParams<{ id: string }>();
@@ -221,7 +230,7 @@ const styles = StyleSheet.create({
 		borderRadius: 20,
 	},
 	dateText: {
-		fontSize: 12,
+		fontSize: ResponsiveFontSize["sm"],
 		fontWeight: "800",
 		color: COLORS.slate400,
 		letterSpacing: 1,
@@ -234,8 +243,12 @@ const styles = StyleSheet.create({
 		overflow: "hidden",
 		position: "relative",
 	},
-	cameraIcon: { fontSize: 32, marginBottom: 8 },
-	viewImageText: { fontSize: 12, fontWeight: "700", color: COLORS.slate400 },
+	cameraIcon: { fontSize: ResponsiveFontSize["5xl"], marginBottom: 8 },
+	viewImageText: {
+		fontSize: ResponsiveFontSize["sm"],
+		fontWeight: "700",
+		color: COLORS.slate400,
+	},
 	badgeRow: { flexDirection: "row", gap: 8, marginBottom: 16 },
 	folderBadge: {
 		backgroundColor: "#EEF2FF",
@@ -262,7 +275,7 @@ const styles = StyleSheet.create({
 		letterSpacing: 0.5,
 	},
 	title: {
-		fontSize: 28,
+		fontSize: ResponsiveFontSize["4xl"],
 		fontWeight: "800",
 		color: COLORS.slate900,
 		lineHeight: 36,
@@ -271,14 +284,14 @@ const styles = StyleSheet.create({
 	divider: { height: 1, backgroundColor: COLORS.slate100, marginBottom: 24 },
 	bodyContent: { gap: 16 },
 	paragraph: {
-		fontSize: 14,
+		fontSize: ResponsiveFontSize["base"],
 		fontWeight: "500",
 		color: COLORS.slate700,
 		lineHeight: 24,
 	},
 	bulletList: { paddingLeft: 8, gap: 8 },
 	bulletItem: {
-		fontSize: 14,
+		fontSize: ResponsiveFontSize["base"],
 		fontWeight: "500",
 		color: COLORS.slate600,
 		lineHeight: 22,
@@ -293,13 +306,13 @@ const styles = StyleSheet.create({
 	},
 	codeText: {
 		fontFamily: "monospace",
-		fontSize: 12,
+		fontSize: ResponsiveFontSize["sm"],
 		color: COLORS.primaryEnd,
 		fontWeight: "600",
 	},
 	fabContainer: {
 		position: "absolute",
-		bottom: 32,
+		bottom: 48,
 		left: 0,
 		right: 0,
 		alignItems: "center",
@@ -317,8 +330,12 @@ const styles = StyleSheet.create({
 		elevation: 8,
 		gap: 8,
 	},
-	fabIcon: { fontSize: 16, color: COLORS.white },
-	fabText: { color: COLORS.white, fontSize: 15, fontWeight: "700" },
+	fabIcon: { fontSize: ResponsiveFontSize["lg"], color: COLORS.white },
+	fabText: {
+		color: COLORS.white,
+		fontSize: ResponsiveFontSize["base"],
+		fontWeight: "700",
+	},
 	actualImage: {
 		width: "100%",
 		height: "100%",

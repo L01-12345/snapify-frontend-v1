@@ -3,7 +3,6 @@ import {
 	View,
 	Text,
 	StyleSheet,
-	SafeAreaView,
 	TouchableOpacity,
 	ScrollView,
 	Alert,
@@ -23,6 +22,15 @@ import { noteApi } from "../../src/api/noteApi";
 import { NoteActionSheet } from "../../src/components/common/NoteActionSheet";
 import { FolderSelectModal } from "../../src/components/common/FolderSelectModal";
 import { Icon } from "../../src/components/common/Icon";
+import { SafeAreaView } from "react-native-safe-area-context";
+import {
+	ResponsiveFontSize,
+	ResponsiveSpacing,
+	ResponsiveDimensions,
+	ResponsiveBorderRadius,
+	scale,
+	getResponsiveShadow,
+} from "../../src/utils/responsive";
 
 export default function FolderDetailScreen() {
 	const router = useRouter();
@@ -215,6 +223,7 @@ export default function FolderDetailScreen() {
 									borderBottomColor: COLORS.primary,
 									minWidth: 120,
 									padding: 0,
+									flex: 1,
 								},
 							]}
 							value={newFolderName}
@@ -227,9 +236,20 @@ export default function FolderDetailScreen() {
 					) : (
 						<TouchableOpacity
 							onPress={() => setIsRenaming(true)}
-							style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+							style={{
+								flexDirection: "row",
+								alignItems: "center",
+								gap: 8,
+								flex: 1,
+							}}
 						>
-							<Text style={styles.headerTitle}>{folder.name}</Text>
+							<Text
+								style={styles.headerTitle}
+								numberOfLines={1}
+								ellipsizeMode="tail"
+							>
+								{folder.name}
+							</Text>
 							<Feather name="edit-2" size={14} color={COLORS.slate400} />
 						</TouchableOpacity>
 					)}
@@ -385,12 +405,23 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		borderRadius: 20,
 	},
-	headerCenter: { flexDirection: "row", alignItems: "center", gap: 8 },
-	headerIcon: { fontSize: 20 },
-	headerTitle: { fontSize: 18, fontWeight: "700", color: COLORS.slate900 },
+	headerCenter: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 8,
+		flex: 1,
+		marginHorizontal: 12,
+	},
+	headerIcon: { fontSize: ResponsiveFontSize["2xl"] },
+	headerTitle: {
+		fontSize: ResponsiveFontSize["xl"],
+		fontWeight: "700",
+		color: COLORS.slate900,
+		flex: 1,
+	},
 	listContainer: { padding: 24, gap: 16 },
 	listSubtitle: {
-		fontSize: 12,
+		fontSize: ResponsiveFontSize.sm,
 		fontWeight: "500",
 		color: COLORS.slate500,
 		marginBottom: 8,
@@ -414,7 +445,7 @@ const styles = StyleSheet.create({
 		marginBottom: 12,
 	},
 	noteTitle: {
-		fontSize: 18,
+		fontSize: ResponsiveFontSize.xl,
 		fontWeight: "700",
 		color: COLORS.slate900,
 		flex: 1,
@@ -438,7 +469,11 @@ const styles = StyleSheet.create({
 		borderTopColor: COLORS.slate50,
 		paddingTop: 12,
 	},
-	noteDate: { fontSize: 12, fontWeight: "500", color: COLORS.slate400 },
+	noteDate: {
+		fontSize: ResponsiveFontSize.sm,
+		fontWeight: "500",
+		color: COLORS.slate400,
+	},
 	fab: {
 		position: "absolute",
 		bottom: 40,
@@ -473,13 +508,13 @@ const styles = StyleSheet.create({
 	},
 	emoji: { fontSize: 60 },
 	emptyTitle: {
-		fontSize: 22,
+		fontSize: ResponsiveFontSize["2xl"],
 		fontWeight: "800",
 		color: COLORS.slate900,
 		marginBottom: 12,
 	},
 	emptySubtitle: {
-		fontSize: 14,
+		fontSize: ResponsiveFontSize["base"],
 		fontWeight: "500",
 		color: COLORS.slate500,
 		textAlign: "center",
@@ -494,5 +529,9 @@ const styles = StyleSheet.create({
 		borderColor: COLORS.slate200,
 		alignItems: "center",
 	},
-	addBtnText: { fontSize: 15, fontWeight: "700", color: COLORS.slate800 },
+	addBtnText: {
+		fontSize: ResponsiveFontSize["lg"],
+		fontWeight: "700",
+		color: COLORS.slate800,
+	},
 });

@@ -4,7 +4,6 @@ import {
 	View,
 	Text,
 	StyleSheet,
-	SafeAreaView,
 	TouchableOpacity,
 	ActivityIndicator,
 	Platform,
@@ -13,6 +12,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { WebView } from "react-native-webview";
 import { COLORS } from "../src/constants/theme";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function PdfDetailsScreen() {
 	const router = useRouter();

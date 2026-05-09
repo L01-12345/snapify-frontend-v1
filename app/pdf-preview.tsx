@@ -4,7 +4,6 @@ import {
 	View,
 	Text,
 	StyleSheet,
-	SafeAreaView,
 	TouchableOpacity,
 	TextInput,
 	ScrollView,
@@ -15,6 +14,7 @@ import {
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { COLORS } from "../src/constants/theme";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // Import API
 import { batchApi } from "../src/api/batchApi";

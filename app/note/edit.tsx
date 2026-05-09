@@ -3,7 +3,6 @@ import {
 	View,
 	Text,
 	StyleSheet,
-	SafeAreaView,
 	TouchableOpacity,
 	TextInput,
 	ScrollView,
@@ -21,6 +20,15 @@ import { noteApi } from "../../src/api/noteApi";
 import { folderApi } from "../../src/api/folderApi";
 // Import FolderSelectModal
 import { FolderSelectModal } from "../../src/components/common/FolderSelectModal";
+import { SafeAreaView } from "react-native-safe-area-context";
+import {
+	ResponsiveFontSize,
+	ResponsiveSpacing,
+	ResponsiveDimensions,
+	ResponsiveBorderRadius,
+	scale,
+	getResponsiveShadow,
+} from "../../src/utils/responsive";
 
 export default function EditNoteScreen() {
 	const router = useRouter();
@@ -174,14 +182,18 @@ export default function EditNoteScreen() {
 
 					{/* --- AI SUGGESTED FOLDER CARD --- */}
 					<View style={styles.aiCard}>
-						<View style={styles.aiInfo}>
+						<View style={[styles.aiInfo, { flex: 1, marginRight: 12 }]}>
 							<View style={styles.aiTagRow}>
 								{/* Ẩn icon lấp lánh và đổi chữ thành "FOLDER" nếu người dùng tự chọn bằng tay */}
 								<Text style={[styles.aiTagText, { color: COLORS.slate500 }]}>
 									FOLDER
 								</Text>
 							</View>
-							<Text style={styles.aiFolderName}>
+							<Text
+								style={styles.aiFolderName}
+								numberOfLines={1}
+								ellipsizeMode="tail"
+							>
 								{selectedFolder.icon} {selectedFolder.name}
 							</Text>
 						</View>
@@ -299,10 +311,22 @@ const styles = StyleSheet.create({
 		alignItems: "flex-start",
 		justifyContent: "center",
 	},
-	headerTitle: { fontSize: 18, fontWeight: "700", color: COLORS.slate900 },
-	saveBtn: { fontSize: 14, fontWeight: "700", color: COLORS.primary },
+	headerTitle: {
+		fontSize: ResponsiveFontSize["xl"],
+		fontWeight: "700",
+		color: COLORS.slate900,
+	},
+	saveBtn: {
+		fontSize: ResponsiveFontSize["base"],
+		fontWeight: "700",
+		color: COLORS.primary,
+	},
 	content: { padding: 24, gap: 24 },
-	titleInput: { fontSize: 24, fontWeight: "800", color: COLORS.slate900 },
+	titleInput: {
+		fontSize: ResponsiveFontSize["3xl"],
+		fontWeight: "800",
+		color: COLORS.slate900,
+	},
 	aiCard: {
 		backgroundColor: "#F5F3FF",
 		borderWidth: 1,
@@ -324,16 +348,17 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 	},
 	aiTagText: {
-		fontSize: 10,
+		fontSize: ResponsiveFontSize["xs"],
 		fontWeight: "700",
 		color: "#7C3AED",
 		letterSpacing: 1,
 	},
 	aiFolderName: {
-		fontSize: 16,
+		fontSize: ResponsiveFontSize["lg"],
 		fontWeight: "700",
 		color: COLORS.slate900,
 		marginTop: 4,
+		flex: 1,
 	},
 	changeBtn: {
 		backgroundColor: COLORS.white,
@@ -342,15 +367,28 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 16,
 		paddingVertical: 8,
 		borderRadius: 12,
+		flexShrink: 0,
 	},
-	changeBtnText: { fontSize: 12, fontWeight: "700", color: "#7C3AED" },
+	changeBtnText: {
+		fontSize: ResponsiveFontSize["sm"],
+		fontWeight: "700",
+		color: "#7C3AED",
+	},
 	sectionHeader: {
 		flexDirection: "row",
 		justifyContent: "space-between",
 		alignItems: "center",
 	},
-	sectionTitle: { fontSize: 14, fontWeight: "700", color: COLORS.slate900 },
-	linkText: { fontSize: 12, fontWeight: "600", color: COLORS.primary },
+	sectionTitle: {
+		fontSize: ResponsiveFontSize["base"],
+		fontWeight: "700",
+		color: COLORS.slate900,
+	},
+	linkText: {
+		fontSize: ResponsiveFontSize["sm"],
+		fontWeight: "600",
+		color: COLORS.primary,
+	},
 	textArea: {
 		flex: 1,
 		minHeight: 250,
@@ -359,7 +397,7 @@ const styles = StyleSheet.create({
 		borderColor: COLORS.slate200,
 		borderRadius: 24,
 		padding: 20,
-		fontSize: 14,
+		fontSize: ResponsiveFontSize["base"],
 		color: COLORS.slate700,
 		fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
 	},
@@ -419,21 +457,21 @@ const styles = StyleSheet.create({
 });
 const markdownStyles = StyleSheet.create({
 	heading1: {
-		fontSize: 24,
+		fontSize: ResponsiveFontSize["3xl"],
 		fontWeight: "800",
 		color: COLORS.slate900,
 		marginTop: 16,
 		marginBottom: 8,
 	},
 	heading2: {
-		fontSize: 20,
+		fontSize: ResponsiveFontSize["2xl"],
 		fontWeight: "800",
 		color: COLORS.slate900,
 		marginTop: 16,
 		marginBottom: 8,
 	},
 	heading3: {
-		fontSize: 18,
+		fontSize: ResponsiveFontSize["xl"],
 		fontWeight: "800",
 		color: COLORS.slate900,
 		marginTop: 16,

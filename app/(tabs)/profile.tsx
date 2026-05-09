@@ -4,7 +4,6 @@ import {
 	View,
 	Text,
 	StyleSheet,
-	SafeAreaView,
 	ScrollView,
 	TouchableOpacity,
 	KeyboardAvoidingView,
@@ -27,6 +26,15 @@ import { userApi } from "../../src/api/userApi";
 import { authApi } from "../../src/api/authApi";
 import { updateUserInfo } from "../../src/store/slices/authSlice";
 import * as ImagePicker from "expo-image-picker";
+import { SafeAreaView } from "react-native-safe-area-context";
+import {
+	ResponsiveFontSize,
+	ResponsiveSpacing,
+	ResponsiveDimensions,
+	ResponsiveBorderRadius,
+	scale,
+	getResponsiveShadow,
+} from "../../src/utils/responsive";
 
 export default function ProfileScreen() {
 	const router = useRouter();
@@ -333,7 +341,11 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	headerTitle: { fontSize: 18, fontWeight: "700", color: COLORS.slate900 },
+	headerTitle: {
+		fontSize: ResponsiveFontSize["xl"],
+		fontWeight: "700",
+		color: COLORS.slate900,
+	},
 	scrollContent: { paddingHorizontal: 24, paddingTop: 32, paddingBottom: 20 },
 	avatarContainer: { alignItems: "center", marginBottom: 32 },
 	avatarBox: {
@@ -345,7 +357,11 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 	},
 	avatarImage: { width: 96, height: 96, borderRadius: 48 },
-	avatarText: { fontSize: 32, fontWeight: "bold", color: COLORS.primary },
+	avatarText: {
+		fontSize: ResponsiveFontSize["5xl"],
+		fontWeight: "bold",
+		color: COLORS.primary,
+	},
 	editBadge: {
 		position: "absolute",
 		bottom: 0,
@@ -361,8 +377,16 @@ const styles = StyleSheet.create({
 	},
 	formSection: { gap: 12 },
 	divider: { height: 1, backgroundColor: COLORS.slate200, marginVertical: 24 },
-	sectionTitle: { fontSize: 16, fontWeight: "700", color: COLORS.slate900 },
-	hintText: { fontSize: 12, color: COLORS.slate400, marginTop: 4 },
+	sectionTitle: {
+		fontSize: ResponsiveFontSize["lg"],
+		fontWeight: "700",
+		color: COLORS.slate900,
+	},
+	hintText: {
+		fontSize: ResponsiveFontSize["sm"],
+		color: COLORS.slate400,
+		marginTop: 4,
+	},
 	footer: {
 		padding: 24,
 		borderTopWidth: 1,
@@ -381,8 +405,12 @@ const styles = StyleSheet.create({
 		padding: 24,
 		gap: 16,
 	},
-	modalTitle: { fontSize: 20, fontWeight: "800", color: COLORS.slate900 },
-	modalDesc: { fontSize: 14, color: COLORS.slate500 },
+	modalTitle: {
+		fontSize: ResponsiveFontSize["2xl"],
+		fontWeight: "800",
+		color: COLORS.slate900,
+	},
+	modalDesc: { fontSize: ResponsiveFontSize["base"], color: COLORS.slate500 },
 	modalActions: { flexDirection: "row", gap: 12, marginTop: 8 },
 	cancelBtn: { flex: 1, padding: 16, alignItems: "center" },
 	cancelBtnText: { color: COLORS.slate400, fontWeight: "700" },
@@ -407,7 +435,7 @@ const styles = StyleSheet.create({
 	},
 	changePasswordBtnText: {
 		color: COLORS.primary,
-		fontSize: 14,
+		fontSize: ResponsiveFontSize["base"],
 		fontWeight: "700",
 	},
 });

@@ -3,13 +3,13 @@ import {
 	View,
 	Text,
 	StyleSheet,
-	SafeAreaView,
 	TouchableOpacity,
 	TextInput,
 	ScrollView,
 	ActivityIndicator,
 	Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { COLORS } from "../src/constants/theme";
@@ -21,6 +21,14 @@ import { NoteActionSheet } from "../src/components/common/NoteActionSheet";
 import { batchApi } from "../src/api/batchApi";
 
 import { stripMarkdown } from "../src/utils/strip-markdown";
+import {
+	ResponsiveFontSize,
+	ResponsiveSpacing,
+	ResponsiveDimensions,
+	ResponsiveBorderRadius,
+	scale,
+	getResponsiveShadow,
+} from "../src/utils/responsive";
 
 export default function AllNotesScreen() {
 	const router = useRouter();
@@ -492,7 +500,11 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 24,
 	},
 	iconBtn: { width: 40, height: 40, justifyContent: "center" },
-	headerTitle: { fontSize: 18, fontWeight: "800", color: COLORS.slate900 },
+	headerTitle: {
+		fontSize: ResponsiveFontSize["xl"],
+		fontWeight: "800",
+		color: COLORS.slate900,
+	},
 	scrollContent: { padding: 24, paddingBottom: 100 },
 
 	searchContainer: {
@@ -509,7 +521,7 @@ const styles = StyleSheet.create({
 	searchIcon: { marginRight: 12 },
 	searchInput: {
 		flex: 1,
-		fontSize: 16,
+		fontSize: ResponsiveFontSize["lg"],
 		color: COLORS.slate900,
 		fontWeight: "500",
 	},
@@ -528,7 +540,7 @@ const styles = StyleSheet.create({
 		paddingVertical: 12,
 	},
 	dropdownText: {
-		fontSize: 13,
+		fontSize: ResponsiveFontSize["base"],
 		fontWeight: "700",
 		color: COLORS.slate700,
 		flex: 1,
@@ -537,7 +549,7 @@ const styles = StyleSheet.create({
 
 	statusRow: { flexDirection: "row", alignItems: "center", marginBottom: 24 },
 	statusLabel: {
-		fontSize: 12,
+		fontSize: ResponsiveFontSize["sm"],
 		fontWeight: "800",
 		color: COLORS.slate400,
 		letterSpacing: 1,
@@ -556,7 +568,11 @@ const styles = StyleSheet.create({
 		backgroundColor: COLORS.slate900,
 		borderColor: COLORS.slate900,
 	},
-	statusPillText: { fontSize: 13, fontWeight: "700", color: COLORS.slate600 },
+	statusPillText: {
+		fontSize: ResponsiveFontSize["base"],
+		fontWeight: "700",
+		color: COLORS.slate600,
+	},
 	statusPillTextActive: { color: COLORS.white },
 
 	listContainer: { gap: 16 },
@@ -579,7 +595,7 @@ const styles = StyleSheet.create({
 		marginBottom: 12,
 	},
 	noteTitle: {
-		fontSize: 18,
+		fontSize: ResponsiveFontSize["xl"],
 		fontWeight: "800",
 		color: COLORS.slate900,
 		flex: 1,
@@ -591,9 +607,13 @@ const styles = StyleSheet.create({
 		paddingVertical: 4,
 		borderRadius: 6,
 	},
-	badgeText: { fontSize: 10, fontWeight: "800", color: "#065F46" },
+	badgeText: {
+		fontSize: ResponsiveFontSize.xs,
+		fontWeight: "800",
+		color: "#065F46",
+	},
 	notePreview: {
-		fontSize: 14,
+		fontSize: ResponsiveFontSize["base"],
 		color: COLORS.slate500,
 		lineHeight: 22,
 		marginBottom: 20,
@@ -606,8 +626,16 @@ const styles = StyleSheet.create({
 		borderTopColor: COLORS.slate50,
 		paddingTop: 16,
 	},
-	noteMeta: { fontSize: 12, fontWeight: "600", color: COLORS.slate400 },
-	noteMetaBold: { fontSize: 12, fontWeight: "800", color: COLORS.slate400 },
+	noteMeta: {
+		fontSize: ResponsiveFontSize["sm"],
+		fontWeight: "600",
+		color: COLORS.slate400,
+	},
+	noteMetaBold: {
+		fontSize: ResponsiveFontSize["sm"],
+		fontWeight: "800",
+		color: COLORS.slate400,
+	},
 
 	fab: {
 		position: "absolute",

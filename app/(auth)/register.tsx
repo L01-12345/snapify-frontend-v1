@@ -4,17 +4,22 @@ import {
 	Text,
 	StyleSheet,
 	TouchableOpacity,
-	SafeAreaView,
 	KeyboardAvoidingView,
 	Platform,
 	ScrollView,
 	TouchableWithoutFeedback,
 	Keyboard,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { COLORS } from "../../src/constants/theme";
 import { Input } from "../../src/components/common/Input";
 import { Button } from "../../src/components/common/Button";
+import {
+	ResponsiveFontSize,
+	ResponsiveSpacing,
+	scale,
+} from "../../src/utils/responsive";
 
 import { Alert, ActivityIndicator } from "react-native";
 import * as SecureStore from "expo-secure-store";

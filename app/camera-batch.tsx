@@ -6,14 +6,22 @@ import {
 	StyleSheet,
 	TouchableOpacity,
 	Animated,
-	SafeAreaView,
 	Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImageManipulator from "expo-image-manipulator";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { COLORS } from "../src/constants/theme";
 import { Icon } from "../src/components/common/Icon";
+import {
+	ResponsiveFontSize,
+	ResponsiveSpacing,
+	ResponsiveDimensions,
+	ResponsiveBorderRadius,
+	scale,
+	getResponsiveShadow,
+} from "../src/utils/responsive";
 
 export default function CameraBatchScreen() {
 	const router = useRouter();
@@ -229,7 +237,7 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	iconText: { color: "white", fontSize: 18 },
+	iconText: { color: "white", fontSize: ResponsiveFontSize["xl"] },
 	flashBtn: {
 		width: 40,
 		height: 40,
@@ -240,7 +248,7 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	flashText: { color: "#fbbf24", fontSize: 18 },
+	flashText: { color: "#fbbf24", fontSize: ResponsiveFontSize["xl"] },
 
 	scannerWrapper: {
 		flex: 1,
@@ -296,7 +304,7 @@ const styles = StyleSheet.create({
 	mathText: {
 		color: "rgba(255,255,255,0.4)",
 		fontWeight: "600",
-		fontSize: 18,
+		fontSize: ResponsiveFontSize["xl"],
 		transform: [{ rotate: "-2deg" }],
 	},
 	scanLine: {
@@ -345,7 +353,11 @@ const styles = StyleSheet.create({
 		borderWidth: 3,
 		borderColor: "#0f172a",
 	},
-	badgeText: { color: "white", fontSize: 12, fontWeight: "bold" },
+	badgeText: {
+		color: "white",
+		fontSize: ResponsiveFontSize["sm"],
+		fontWeight: "bold",
+	},
 	captureOuter: {
 		width: 80,
 		height: 80,
@@ -374,5 +386,9 @@ const styles = StyleSheet.create({
 		shadowOpacity: 0.4,
 		shadowRadius: 10,
 	},
-	doneBtnText: { color: "white", fontSize: 24, fontWeight: "bold" },
+	doneBtnText: {
+		color: "white",
+		fontSize: ResponsiveFontSize["3xl"],
+		fontWeight: "bold",
+	},
 });

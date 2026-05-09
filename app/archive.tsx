@@ -4,18 +4,26 @@ import {
 	View,
 	Text,
 	StyleSheet,
-	SafeAreaView,
 	TouchableOpacity,
 	ScrollView,
 	Alert,
 	ActivityIndicator,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { COLORS } from "../src/constants/theme";
 import { archiveApi } from "../src/api/archiveApi";
 import { Note } from "../src/types/api.types"; // Import type Note của bạn
 import { Icon } from "../src/components/common/Icon";
+import {
+	ResponsiveFontSize,
+	ResponsiveSpacing,
+	ResponsiveDimensions,
+	ResponsiveBorderRadius,
+	scale,
+	getResponsiveShadow,
+} from "../src/utils/responsive";
 
 export default function ArchiveScreen() {
 	const router = useRouter();
@@ -264,7 +272,9 @@ export default function ArchiveScreen() {
 								</View>
 							) : (
 								<View style={styles.noteIconBox}>
-									<Text style={{ fontSize: 20 }}>🗃️</Text>
+									<Text style={{ fontSize: ResponsiveFontSize["2xl"] }}>
+										🗃️
+									</Text>
 								</View>
 							)}
 
@@ -342,9 +352,21 @@ const styles = StyleSheet.create({
 		borderBottomColor: COLORS.slate100,
 	},
 	iconBtn: { width: 40, height: 40, justifyContent: "center" },
-	headerTitle: { fontSize: 18, fontWeight: "700", color: COLORS.slate900 },
-	selectBtnText: { fontSize: 14, fontWeight: "600", color: COLORS.primary },
-	cancelBtnText: { fontSize: 14, fontWeight: "600", color: COLORS.slate600 },
+	headerTitle: {
+		fontSize: ResponsiveFontSize["xl"],
+		fontWeight: "700",
+		color: COLORS.slate900,
+	},
+	selectBtnText: {
+		fontSize: ResponsiveFontSize["base"],
+		fontWeight: "600",
+		color: COLORS.primary,
+	},
+	cancelBtnText: {
+		fontSize: ResponsiveFontSize["base"],
+		fontWeight: "600",
+		color: COLORS.slate600,
+	},
 
 	emptyContainer: {
 		flex: 1,
@@ -369,13 +391,13 @@ const styles = StyleSheet.create({
 		transform: [{ scale: 1.1 }],
 	},
 	emptyTitle: {
-		fontSize: 20,
+		fontSize: ResponsiveFontSize["2xl"],
 		fontWeight: "700",
 		color: COLORS.slate900,
 		marginBottom: 8,
 	},
 	emptySubtitle: {
-		fontSize: 14,
+		fontSize: ResponsiveFontSize["base"],
 		color: COLORS.slate500,
 		fontWeight: "500",
 		textAlign: "center",
@@ -384,7 +406,7 @@ const styles = StyleSheet.create({
 
 	scrollContent: { padding: 24, gap: 16 },
 	sectionHeader: {
-		fontSize: 12,
+		fontSize: ResponsiveFontSize["sm"],
 		fontWeight: "500",
 		color: COLORS.slate500,
 		marginBottom: 8,
@@ -427,13 +449,17 @@ const styles = StyleSheet.create({
 		borderColor: COLORS.primary,
 	},
 	noteInfo: { flex: 1 },
-	noteTitle: { fontSize: 16, fontWeight: "700", color: COLORS.slate900 },
+	noteTitle: {
+		fontSize: ResponsiveFontSize["lg"],
+		fontWeight: "700",
+		color: COLORS.slate900,
+	},
 	noteTitleArchived: {
 		textDecorationLine: "line-through",
 		color: COLORS.slate500,
 	},
 	noteContentPreview: {
-		fontSize: 12,
+		fontSize: ResponsiveFontSize["sm"],
 		fontWeight: "500",
 		color: COLORS.slate400,
 		marginTop: 4,
@@ -465,9 +491,13 @@ const styles = StyleSheet.create({
 		marginBottom: 16,
 	},
 	sheetHeader: { alignItems: "center", marginBottom: 24 },
-	sheetTitle: { fontSize: 18, fontWeight: "700", color: COLORS.slate900 },
+	sheetTitle: {
+		fontSize: ResponsiveFontSize["xl"],
+		fontWeight: "700",
+		color: COLORS.slate900,
+	},
 	sheetSubtitle: {
-		fontSize: 14,
+		fontSize: ResponsiveFontSize["base"],
 		fontWeight: "500",
 		color: COLORS.slate500,
 		marginTop: 4,
@@ -482,7 +512,11 @@ const styles = StyleSheet.create({
 		borderRadius: 16,
 		alignItems: "center",
 	},
-	restoreBtnText: { fontSize: 16, fontWeight: "600", color: COLORS.slate800 },
+	restoreBtnText: {
+		fontSize: ResponsiveFontSize["lg"],
+		fontWeight: "600",
+		color: COLORS.slate800,
+	},
 	deleteBtn: {
 		flex: 1,
 		backgroundColor: "#EF4444",
@@ -494,5 +528,9 @@ const styles = StyleSheet.create({
 		shadowOpacity: 0.8,
 		shadowRadius: 10,
 	},
-	deleteBtnText: { fontSize: 16, fontWeight: "600", color: COLORS.white },
+	deleteBtnText: {
+		fontSize: ResponsiveFontSize["lg"],
+		fontWeight: "600",
+		color: COLORS.white,
+	},
 });
