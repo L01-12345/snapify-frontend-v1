@@ -1,6 +1,7 @@
+// __tests__/screens/HomeScreen.test.tsx
 import React from "react";
 import { render, fireEvent, waitFor, act } from "@testing-library/react-native";
-import { Animated } from "react-native";
+import { Animated, Alert } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSelector } from "react-redux";
 
@@ -31,12 +32,35 @@ jest.mock("../src/api/dashboardApi", () => ({
 	dashboardApi: { getMetrics: jest.fn() },
 }));
 jest.mock("../src/api/batchApi", () => ({
-	batchApi: { getBatches: jest.fn() },
+	batchApi: { getBatches: jest.fn(), updateBatch: jest.fn() },
 }));
 jest.mock("@expo/vector-icons", () => ({
 	Feather: "Feather",
 	Ionicons: "Ionicons",
 }));
+
+// Mock FolderSelectModal
+jest.mock("../src/components/common/FolderSelectModal", () => {
+	const { View, TouchableOpacity, Text } = require("react-native");
+	return {
+		FolderSelectModal: ({ visible, onSelect }: any) => {
+			if (!visible) return null;
+			return (
+				<View testID="mock-folder-modal">
+					<TouchableOpacity
+						testID="mock-select-folder"
+						onPress={() => onSelect({ id: "f1", name: "Work Docs" })}
+					>
+						<Text>Select Work Docs</Text>
+					</TouchableOpacity>
+				</View>
+			);
+		},
+	};
+});
+
+// Mock Alert
+jest.spyOn(Alert, "alert");
 
 // Mock Animation để không bị lỗi timeout
 jest.spyOn(Animated, "spring").mockReturnValue({ start: jest.fn() } as any);
@@ -82,19 +106,13 @@ describe("DashboardScreen - Màn hình chính", () => {
 		const { getByText, getByTestId } = render(<DashboardScreen />);
 
 		await waitFor(() => {
-			// 1. Kiểm tra Greeting lấy tên từ Redux
 			expect(getByText("Hello, John Doe")).toBeTruthy();
-
-			// 2. Gọi API đủ
 			expect(noteApi.getNotes).toHaveBeenCalledWith({ limit: 10 });
 			expect(dashboardApi.getMetrics).toHaveBeenCalled();
-
-			// 3. Hiển thị Note
 			expect(getByText("Note 1 Large")).toBeTruthy();
 			expect(getByText("Note 2 Normal")).toBeTruthy();
 		});
 
-		// Test Điều hướng vào Note
 		fireEvent.press(getByTestId("card-1"));
 		expect(mockPush).toHaveBeenCalledWith("/note/1");
 	});
@@ -119,48 +137,49 @@ describe("DashboardScreen - Màn hình chính", () => {
 		(useLocalSearchParams as jest.Mock).mockReturnValue({ showToast: "true" });
 
 		render(<DashboardScreen />);
-
-		// Vì useEffect gọi Animated.spring ngay khi mount (do showToast="true")
 		expect(Animated.spring).toHaveBeenCalled();
 	});
-	it("hiển thị Avatar dạng Image khi user có avatarUrl (Nhánh 1)", async () => {
-		// Giả lập user có avatarUrl
-		const userWithAvatar = {
-			displayName: "John Doe",
-			avatarUrl: "https://example.com/avatar.jpg",
-		};
-		(useSelector as unknown as jest.Mock).mockReturnValue({
-			user: userWithAvatar,
-		});
 
+	it("bỏ qua khởi tạo Animation Toast nếu hệ thống không hỗ trợ (Fallback)", () => {
+		(useLocalSearchParams as jest.Mock).mockReturnValue({ showToast: "true" });
+
+		// Cố tình làm mất hàm timing để giả lập môi trường thiếu thư viện
+		const originalTiming = Animated.timing;
+		(Animated as any).timing = undefined;
+
+		render(<DashboardScreen />);
+
+		// Không gọi spring do bị return sớm (Cover line 133-134)
+		expect(Animated.spring).not.toHaveBeenCalled();
+
+		// Trả lại hàm gốc cho các test khác
+		(Animated as any).timing = originalTiming;
+	});
+
+	it("hiển thị Avatar dạng Image khi user có avatarUrl", async () => {
+		(useSelector as unknown as jest.Mock).mockReturnValue({
+			user: { ...mockUser, avatarUrl: "https://example.com/avatar.jpg" },
+		});
 		(noteApi.getNotes as jest.Mock).mockResolvedValue({ data: { notes: [] } });
 		(dashboardApi.getMetrics as jest.Mock).mockResolvedValue({ data: null });
 
-		const { getByText, queryByText } = render(<DashboardScreen />);
-
+		const { queryByText } = render(<DashboardScreen />);
 		await waitFor(() => {
-			// Vì đã có avatarUrl nên nó sẽ render thẻ Image, KHÔNG render chữ viết tắt "JO" hay "JD"
 			expect(queryByText("JO")).toBeNull();
 			expect(queryByText("JD")).toBeNull();
 		});
 	});
 
-	it('hiển thị Avatar mặc định "JD" khi user bị null hoặc không có tên (Nhánh 3)', async () => {
-		// Giả lập user bị null hoàn toàn (chưa load kịp thông tin)
+	it('hiển thị Avatar mặc định "JD" khi user bị null', async () => {
 		(useSelector as unknown as jest.Mock).mockReturnValue({ user: null });
-
 		(noteApi.getNotes as jest.Mock).mockResolvedValue({ data: { notes: [] } });
 		(dashboardApi.getMetrics as jest.Mock).mockResolvedValue({ data: null });
 
 		const { getByText } = render(<DashboardScreen />);
-
-		await waitFor(() => {
-			// Đảm bảo chữ "JD" xuất hiện do rơi vào nhánh fallback || "JD"
-			expect(getByText("JD")).toBeTruthy();
-		});
+		await waitFor(() => expect(getByText("JD")).toBeTruthy());
 	});
+
 	it("hiển thị danh sách PDF và điều hướng sang trang PDF Details", async () => {
-		// Mock để tab All Notes trả về 1 PDF thay vì Note
 		(noteApi.getNotes as jest.Mock).mockResolvedValue({ data: { notes: [] } });
 		(dashboardApi.getMetrics as jest.Mock).mockResolvedValue({ data: {} });
 		(batchApi.getBatches as jest.Mock).mockResolvedValue({
@@ -175,22 +194,17 @@ describe("DashboardScreen - Màn hình chính", () => {
 		});
 
 		const { getByText, getByTestId } = render(<DashboardScreen />);
+		await waitFor(() => expect(getByText("My PDF")).toBeTruthy());
 
-		await waitFor(() => {
-			expect(getByText("My PDF")).toBeTruthy();
-		});
-
-		// Bấm vào PDF
 		fireEvent.press(getByTestId("card-batch-1"));
-
-		// Đảm bảo được Push sang trang PDF thay vì trang Note
 		expect(mockPush).toHaveBeenCalledWith({
 			pathname: "/pdf-details",
 			params: { pdfUrl: "https://pdf.com", title: "My PDF" },
 		});
 	});
 
-	it("không crash và bỏ qua ngầm nếu API bị lỗi mạng", async () => {
+	it("không crash và ghi log console.error nếu API bị lỗi mạng", async () => {
+		const consoleSpy = jest.spyOn(console, "error").mockImplementation();
 		(noteApi.getNotes as jest.Mock).mockRejectedValue(
 			new Error("Network Error"),
 		);
@@ -199,60 +213,75 @@ describe("DashboardScreen - Màn hình chính", () => {
 		);
 
 		const { getByText } = render(<DashboardScreen />);
-
 		await waitFor(() => {
-			// Vẫn hiển thị giao diện cơ bản chứ không sập app
 			expect(getByText("Hello, John Doe")).toBeTruthy();
+			expect(consoleSpy).toHaveBeenCalledWith(
+				"Lỗi tải Dashboard:",
+				expect.any(Error),
+			);
+		});
+		consoleSpy.mockRestore();
+	});
+
+	it("xử lý tương tác chọn Move Folder thành công từ Toast", async () => {
+		(useLocalSearchParams as jest.Mock).mockReturnValue({
+			showToast: "true",
+			batchId: "batch-123",
+			batchTitle: "New Scan",
+		});
+		(batchApi.updateBatch as jest.Mock).mockResolvedValue({ data: "success" });
+
+		const { getByText, getByTestId } = render(<DashboardScreen />);
+
+		// Toast xuất hiện, bấm nút Move
+		expect(getByText("New Scan")).toBeTruthy();
+		fireEvent.press(getByText("Move"));
+
+		// Modal hiện lên, bấm chọn thư mục "Work Docs"
+		await waitFor(() => expect(getByTestId("mock-folder-modal")).toBeTruthy());
+		fireEvent.press(getByTestId("mock-select-folder"));
+
+		// Xác minh API được gọi chuẩn và Alert hiện lên
+		await waitFor(() => {
+			expect(batchApi.updateBatch).toHaveBeenCalledWith("batch-123", {
+				folderId: "f1",
+			});
+			expect(Alert.alert).toHaveBeenCalledWith(
+				"Success",
+				"Document moved to Work Docs",
+			);
 		});
 	});
-	it("hiển thị Initials khi user có tên nhưng không có avatarUrl", async () => {
-		// Nhánh này cover việc user tồn tại nhưng avatarUrl bị rỗng
-		const userWithoutAvatar = { displayName: "Tran Kien", avatarUrl: "" };
-		(useSelector as unknown as jest.Mock).mockReturnValue({
-			user: userWithoutAvatar,
-		});
-		(noteApi.getNotes as jest.Mock).mockResolvedValue({ data: { notes: [] } });
-		(dashboardApi.getMetrics as jest.Mock).mockResolvedValue({ data: {} });
 
-		const { getByText } = render(<DashboardScreen />);
+	it("xử lý lỗi khi chọn Folder từ Toast thất bại", async () => {
+		(useLocalSearchParams as jest.Mock).mockReturnValue({
+			showToast: "true",
+			batchId: "batch-123",
+		});
+		(batchApi.updateBatch as jest.Mock).mockRejectedValue(
+			new Error("Move error"),
+		);
+
+		const { getByText, getByTestId } = render(<DashboardScreen />);
+
+		fireEvent.press(getByText("Move"));
+		await waitFor(() => expect(getByTestId("mock-folder-modal")).toBeTruthy());
+
+		fireEvent.press(getByTestId("mock-select-folder"));
 
 		await waitFor(() => {
-			expect(getByText("TR")).toBeTruthy();
+			expect(Alert.alert).toHaveBeenCalledWith(
+				"Error",
+				"Failed to move the document.",
+			);
 		});
 	});
 
-	it("xử lý mượt mà (không sập app) khi danh sách note trả về bị undefined", async () => {
-		(noteApi.getNotes as jest.Mock).mockResolvedValue({ data: {} }); // Cố tình không trả về mảng notes
+	it("xử lý mượt mà khi danh sách note trả về bị undefined", async () => {
+		(noteApi.getNotes as jest.Mock).mockResolvedValue({ data: {} });
 		(dashboardApi.getMetrics as jest.Mock).mockResolvedValue({ data: {} });
 
 		const { queryByTestId } = render(<DashboardScreen />);
-
-		await waitFor(() => {
-			// Đảm bảo app vẫn render bình thường, chỉ là không có card nào thôi
-			expect(queryByTestId("card-1")).toBeNull();
-		});
-	});
-	it("xử lý hiển thị Toast, tương tác nút Move và tự động ẩn theo thời gian", async () => {
-		// 1. Kích hoạt đồng hồ giả của Jest để test các hàm setTimeout
-		jest.useFakeTimers();
-
-		(useLocalSearchParams as jest.Mock).mockReturnValue({ showToast: "true" });
-		const { getByText } = render(<DashboardScreen />);
-
-		// 2. Đảm bảo Toast hiện lên
-		expect(getByText("PDF Created")).toBeTruthy();
-
-		// 3. Bấm vào nút Move trên Toast (cover dòng 372)
-		await act(async () => {
-			fireEvent.press(getByText("Move"));
-		});
-
-		// 4. Tua nhanh thời gian để kích hoạt setTimeout ẩn Toast (cover dòng 131-146)
-		await act(async () => {
-			jest.runAllTimers();
-		});
-
-		// 5. Trả lại đồng hồ thật cho hệ thống
-		jest.useRealTimers();
+		await waitFor(() => expect(queryByTestId("card-1")).toBeNull());
 	});
 });

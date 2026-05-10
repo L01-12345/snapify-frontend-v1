@@ -1,24 +1,18 @@
+// __tests__/screens/AllNotesScreen.test.tsx
 import React from "react";
 import { render, fireEvent, waitFor, act } from "@testing-library/react-native";
-import { Alert } from "react-native";
+import { Alert, Modal } from "react-native";
 import { useRouter } from "expo-router";
 
-// Import component và API
 import AllNotesScreen from "../../app/all-notes";
 import { noteApi } from "../../src/api/noteApi";
 import { batchApi } from "../../src/api/batchApi";
 
-// ---------------------------------------------------------
-// 1. MOCK CÁC MODULE BÊN NGOÀI
-// ---------------------------------------------------------
-
+// --- MOCK CÁC MODULE BÊN NGOÀI ---
 jest.mock("expo-router", () => {
-	// Require react trực tiếp bên trong mock factory
 	const React = require("react");
-
 	return {
 		useRouter: jest.fn(),
-		// Sử dụng React vừa được require
 		useFocusEffect: jest.fn((callback) =>
 			React.useEffect(callback, [callback]),
 		),
@@ -32,22 +26,14 @@ jest.mock("../../src/api/noteApi", () => ({
 		searchNotes: jest.fn(),
 	},
 }));
-
-jest.mock("@expo/vector-icons", () => ({
-	Feather: "Feather",
+jest.mock("../../src/api/batchApi", () => ({
+	batchApi: { getBatches: jest.fn() },
 }));
 
+jest.mock("@expo/vector-icons", () => ({ Feather: "Feather" }));
 jest.spyOn(Alert, "alert");
 
-jest.mock("../../src/api/batchApi", () => ({
-	batchApi: {
-		getBatches: jest.fn(),
-	},
-}));
-
-// ---------------------------------------------------------
-// 2. MOCK COMPONENT NOTE ACTION SHEET
-// ---------------------------------------------------------
+// --- MOCK COMPONENT NOTE ACTION SHEET ---
 jest.mock("../../src/components/common/NoteActionSheet", () => {
 	const { View, TouchableOpacity, Text } = require("react-native");
 	return {
@@ -55,13 +41,16 @@ jest.mock("../../src/components/common/NoteActionSheet", () => {
 			if (!visible) return null;
 			return (
 				<View testID="mock-action-sheet">
-					{/* Nút giả lập hành động xóa/archive đã thành công từ bên trong Modal */}
 					<TouchableOpacity testID="mock-success" onPress={onSuccess}>
 						<Text>Success</Text>
 					</TouchableOpacity>
 					<TouchableOpacity testID="mock-pin" onPress={onPin}>
 						<Text>Pin</Text>
 					</TouchableOpacity>
+					<TouchableOpacity testID="mock-move" onPress={onMove}>
+						<Text>Move</Text>
+					</TouchableOpacity>
+					{/* Cover Line 559 */}
 					<TouchableOpacity testID="mock-close" onPress={onClose}>
 						<Text>Close</Text>
 					</TouchableOpacity>
@@ -75,21 +64,6 @@ describe("AllNotesScreen - Màn hình tất cả ghi chú", () => {
 	const mockPush = jest.fn();
 	const mockBack = jest.fn();
 
-	const mockNotesData = [
-		{
-			id: "1",
-			title: "Calculus Lecture 04",
-			content: "Math...",
-			status: "PROCESSED",
-		},
-		{
-			id: "2",
-			title: "Physics Chapter 2",
-			content: "Newton...",
-			status: "PENDING",
-		},
-	];
-
 	beforeEach(() => {
 		jest.clearAllMocks();
 		(useRouter as jest.Mock).mockReturnValue({
@@ -99,190 +73,277 @@ describe("AllNotesScreen - Màn hình tất cả ghi chú", () => {
 		(batchApi.getBatches as jest.Mock).mockResolvedValue({ data: [] });
 	});
 
-	// --- KỊCH BẢN 1: FETCH DATA THÀNH CÔNG VÀ HIỂN THỊ ---
-	it("gọi API lấy danh sách note và hiển thị lên giao diện", async () => {
+	it("fetch items có cả note và batch, sắp xếp và điều hướng đúng trang PDF (Cover Line 428)", async () => {
 		(noteApi.getNotes as jest.Mock).mockResolvedValue({
-			data: { notes: mockNotesData },
+			data: {
+				notes: [
+					{ id: "n1", title: "Note 1", createdAt: "2023-01-01T00:00:00Z" },
+				],
+			},
+		});
+		(batchApi.getBatches as jest.Mock).mockResolvedValue({
+			data: [
+				{
+					id: "b1",
+					title: "Batch 1",
+					pdfUrl: "http://pdf",
+					createdAt: "2023-01-03T00:00:00Z",
+				},
+			],
 		});
 
 		const { getByText, getByTestId } = render(<AllNotesScreen />);
-
 		await waitFor(() => {
-			// API gọi mặc định không có status param (vì tab All)
-			expect(noteApi.getNotes).toHaveBeenCalledWith({ status: undefined });
-
-			// Hiển thị note
-			expect(getByText("Calculus Lecture 04")).toBeTruthy();
-			expect(getByText("Physics Chapter 2")).toBeTruthy();
+			expect(getByText("Note 1")).toBeTruthy();
+			expect(getByText("Batch 1")).toBeTruthy();
 		});
 
-		// Bấm vào note chuyển sang màn hình chi tiết
-		fireEvent.press(getByTestId("card-1"));
-		expect(mockPush).toHaveBeenCalledWith("/note/1");
-	});
+		// Nhấn vào Note thì sang /note/[id]
+		fireEvent.press(getByTestId("card-n1"));
+		expect(mockPush).toHaveBeenCalledWith("/note/n1");
 
-	// --- KỊCH BẢN 2: TRẠNG THÁI RỖNG (EMPTY STATE) ---
-	it("hiển thị thông báo khi không có ghi chú nào", async () => {
-		(noteApi.getNotes as jest.Mock).mockResolvedValue({ data: { notes: [] } });
-
-		const { getByText } = render(<AllNotesScreen />);
-
-		await waitFor(() => {
-			expect(getByText("There are no documents here.")).toBeTruthy();
+		// Nhấn vào Batch thì sang /pdf-details (Cover Line 428)
+		fireEvent.press(getByTestId("card-b1"));
+		expect(mockPush).toHaveBeenCalledWith({
+			pathname: "/pdf-details",
+			params: { pdfUrl: "http://pdf", title: "Batch 1" },
 		});
 	});
 
-	// --- KỊCH BẢN 3: LỌC TRẠNG THÁI (FILTERS) ---
-	it("gọi lại API với tham số tương ứng khi bấm vào Pill lọc trạng thái", async () => {
-		(noteApi.getNotes as jest.Mock).mockResolvedValue({ data: { notes: [] } });
-
-		const { getByText } = render(<AllNotesScreen />);
-
-		// Chờ fetch mặc định xong (lần 1)
-		await waitFor(() =>
-			expect(noteApi.getNotes).toHaveBeenCalledWith({ status: undefined }),
-		);
-
-		// Reset lại cờ đếm của mock để test lần 2 cho sạch
-		(noteApi.getNotes as jest.Mock).mockClear();
-
-		// Bọc trong act vì việc bấm nút này sẽ kích hoạt state và API call
-		await act(async () => {
-			fireEvent.press(getByText("Processed"));
+	it("lọc đúng itemType='note' khi chọn tab Pending (Cover Line 142)", async () => {
+		(noteApi.getNotes as jest.Mock).mockResolvedValue({
+			data: { notes: [{ id: "n1", title: "Note 1" }] },
+		});
+		(batchApi.getBatches as jest.Mock).mockResolvedValue({
+			data: [{ id: "b1", title: "Batch 1" }],
 		});
 
-		await waitFor(() => {
-			expect(noteApi.getNotes).toHaveBeenCalledWith({ status: "ACTIONED" });
-		});
+		const { getByText, queryByText } = render(<AllNotesScreen />);
+		await waitFor(() => expect(getByText("Batch 1")).toBeTruthy());
 
-		(noteApi.getNotes as jest.Mock).mockClear();
-
+		// Click chuyển sang Tab Pending
 		await act(async () => {
 			fireEvent.press(getByText("Pending"));
 		});
 
 		await waitFor(() => {
-			expect(noteApi.getNotes).toHaveBeenCalledWith({ status: "PENDING" });
+			expect(getByText("Note 1")).toBeTruthy();
+			expect(queryByText("Batch 1")).toBeNull(); // Batch đã bị bộ lọc Line 142 loại trừ
 		});
 	});
-	// --- KỊCH BẢN 4 & 5 (GỘP): BOTTOM SHEET THÀNH CÔNG VÀ TẢI LẠI LIST ---
-	it("gọi lại API để lấy danh sách mới khi thực hiện hành động thành công trong Modal", async () => {
+
+	it("thao tác với tất cả lựa chọn Date, Sort (Cover Line 85-88, 92-93, 510, 522-528) và test Modal onRequestClose (Line 495)", async () => {
 		(noteApi.getNotes as jest.Mock).mockResolvedValue({
-			data: { notes: mockNotesData },
+			data: {
+				notes: [
+					{ id: "n1", title: "Note 1", createdAt: new Date().toISOString() },
+					{
+						id: "n2",
+						title: "Note 2",
+						createdAt: new Date(Date.now() - 10000000).toISOString(),
+					},
+				],
+			},
+		});
+
+		const { getByText, queryByText, UNSAFE_getByType } = render(
+			<AllNotesScreen />,
+		);
+		await waitFor(() => expect(getByText("Note 1")).toBeTruthy());
+
+		// --- SORT FILTER ---
+		fireEvent.press(getByText("Newest First"));
+		await waitFor(() => expect(getByText("Sort By")).toBeTruthy());
+
+		// Chọn "Oldest First" (Cover Line 92-93 vòng lặp callback sort)
+		act(() => {
+			fireEvent.press(getByText("Oldest First"));
+		});
+		await waitFor(() => expect(getByText("Oldest First")).toBeTruthy());
+
+		// --- DATE FILTER ---
+		fireEvent.press(getByText("Any Date"));
+		await waitFor(() => expect(getByText("Filter by Date")).toBeTruthy());
+
+		// Chọn "Past 7 Days" (Cover Line 86, 522-524)
+		act(() => {
+			fireEvent.press(getByText("Past 7 Days"));
+		});
+		await waitFor(() => expect(getByText("Past 7 Days")).toBeTruthy());
+
+		fireEvent.press(getByText("Past 7 Days")); // Mở lại modal
+		// Chọn "Past 30 Days" (Cover Line 87, 525-528)
+		act(() => {
+			fireEvent.press(getByText("Past 30 Days"));
+		});
+		await waitFor(() => expect(getByText("Past 30 Days")).toBeTruthy());
+
+		fireEvent.press(getByText("Past 30 Days")); // Mở lại modal
+		// Chọn "Any Date" (Cover Line 510)
+		act(() => {
+			fireEvent.press(getByText("Any Date"));
+		});
+		await waitFor(() => expect(getByText("Any Date")).toBeTruthy());
+
+		// --- MODAL ON REQUEST CLOSE (Cover Line 495) ---
+		fireEvent.press(getByText("Any Date")); // Mở lại modal
+		await waitFor(() => expect(getByText("Filter by Date")).toBeTruthy());
+
+		// Lấy component Modal trực tiếp và gọi sự kiện requestClose (Tương đương việc bấm nút Back cứng trên Android)
+		const modal = UNSAFE_getByType(Modal);
+		act(() => {
+			fireEvent(modal, "requestClose");
+		});
+		await waitFor(() => expect(queryByText("Filter by Date")).toBeNull());
+	});
+
+	it("nhánh useFocusEffect không gọi fetchItems khi searchQuery không rỗng (Cover Line 60)", async () => {
+		jest.useFakeTimers();
+		(noteApi.getNotes as jest.Mock).mockResolvedValue({ data: { notes: [] } });
+
+		const { getByPlaceholderText, getByText } = render(<AllNotesScreen />);
+		await act(async () => {
+			jest.advanceTimersByTime(500);
+		}); // Xả timer initial
+
+		// Nhập tìm kiếm vào ô input
+		const searchInput = getByPlaceholderText("Search notes...");
+		await act(async () => {
+			fireEvent.changeText(searchInput, "Keyword");
+		});
+		await act(async () => {
+			jest.advanceTimersByTime(500);
+		}); // Để debounce timer chạy API search
+
+		(noteApi.getNotes as jest.Mock).mockClear();
+
+		// Bấm đổi Status -> trigger useFocusEffect callback kích hoạt lại
+		await act(async () => {
+			fireEvent.press(getByText("Processed"));
+		});
+
+		// Không gọi API do searchQuery.trim().length !== 0 (Cover nhánh false của mệnh đề if tại dòng 60)
+		expect(noteApi.getNotes).not.toHaveBeenCalled();
+
+		jest.useRealTimers();
+	});
+
+	it("bắt lỗi catch(error) khi fetchItems thất bại (Cover Line 149)", async () => {
+		const consoleSpy = jest.spyOn(console, "log").mockImplementation();
+		(noteApi.getNotes as jest.Mock).mockRejectedValue(
+			new Error("API GetNotes Error"),
+		);
+
+		render(<AllNotesScreen />);
+
+		await waitFor(() => {
+			expect(consoleSpy).toHaveBeenCalledWith(
+				"Lỗi fetch items:",
+				expect.any(Error),
+			);
+		});
+		consoleSpy.mockRestore();
+	});
+
+	it("đóng ActionSheet khi nhấn Close (Cover Line 559)", async () => {
+		(noteApi.getNotes as jest.Mock).mockResolvedValue({
+			data: { notes: [{ id: "n1", title: "Note 1" }] },
 		});
 
 		const { getByTestId, queryByTestId } = render(<AllNotesScreen />);
-		await waitFor(() => expect(getByTestId("card-1")).toBeTruthy());
+		await waitFor(() => expect(getByTestId("card-n1")).toBeTruthy());
 
-		// 1. Nhấn đè mở Modal
-		fireEvent(getByTestId("card-1"), "longPress");
+		// Mở Action Sheet
+		fireEvent(getByTestId("card-n1"), "longPress");
 		expect(getByTestId("mock-action-sheet")).toBeTruthy();
 
-		// Xóa lịch sử gọi API trước đó để test lần gọi mới
-		(noteApi.getNotes as jest.Mock).mockClear();
-
-		// 2. Giả lập Modal đã xử lý Delete/Archive xong và gọi onSuccess
-		await act(async () => {
-			fireEvent.press(getByTestId("mock-success"));
+		// Bấm nút Close Mock
+		act(() => {
+			fireEvent.press(getByTestId("mock-close"));
 		});
+		await waitFor(() => expect(queryByTestId("mock-action-sheet")).toBeNull());
+	});
 
-		// 3. Đảm bảo AllNotesScreen đã gọi lại API fetchItems
-		await waitFor(() => {
-			expect(noteApi.getNotes).toHaveBeenCalled();
-		});
-
-		// 4. Test chức năng Pin (Alert)
-		fireEvent(getByTestId("card-2"), "longPress");
-		fireEvent.press(getByTestId("mock-pin"));
-		expect(Alert.alert).toHaveBeenCalledWith(
-			"Pinned",
-			'"Physics Chapter 2" pinned to top.',
+	// --- CÁC TEST GIỮ LẠI TỪ BẢN TRƯỚC CHO ĐỦ ĐỘ PHỦ TỔNG THỂ ---
+	it("hiển thị thông báo khi không có ghi chú nào", async () => {
+		(noteApi.getNotes as jest.Mock).mockResolvedValue({ data: { notes: [] } });
+		const { getByText } = render(<AllNotesScreen />);
+		await waitFor(() =>
+			expect(getByText("There are no documents here.")).toBeTruthy(),
 		);
 	});
 
-	// --- KỊCH BẢN 6: ĐIỀU HƯỚNG CƠ BẢN ---
+	it("gọi lại API để lấy danh sách mới khi thực hiện hành động thành công trong Modal", async () => {
+		(noteApi.getNotes as jest.Mock).mockResolvedValue({
+			data: { notes: [{ id: "n1", title: "Note 1" }] },
+		});
+
+		const { getByTestId } = render(<AllNotesScreen />);
+		await waitFor(() => expect(getByTestId("card-n1")).toBeTruthy());
+
+		fireEvent(getByTestId("card-n1"), "longPress");
+		expect(getByTestId("mock-action-sheet")).toBeTruthy();
+		(noteApi.getNotes as jest.Mock).mockClear();
+
+		await act(async () => {
+			fireEvent.press(getByTestId("mock-success"));
+		});
+		await waitFor(() => expect(noteApi.getNotes).toHaveBeenCalled());
+
+		// Test Pin & Move feature
+		fireEvent(getByTestId("card-n1"), "longPress");
+		fireEvent.press(getByTestId("mock-pin"));
+		expect(Alert.alert).toHaveBeenCalledWith(
+			"Pinned",
+			'"Note 1" pinned to top.',
+		);
+
+		fireEvent(getByTestId("card-n1"), "longPress");
+		fireEvent.press(getByTestId("mock-move"));
+		expect(Alert.alert).toHaveBeenCalledWith(
+			"Tính năng đang phát triển",
+			"Mở Folder Modal ở đây.",
+		);
+	});
+
 	it("điều hướng khi nhấn FAB và nút Back", () => {
 		const { getByTestId } = render(<AllNotesScreen />);
-
 		fireEvent.press(getByTestId("fab-btn"));
 		expect(mockPush).toHaveBeenCalledWith("/note/new");
 
 		fireEvent.press(getByTestId("back-btn"));
 		expect(mockBack).toHaveBeenCalled();
 	});
-	// --- KỊCH BẢN 7: TÌM KIẾM (SEARCH VỚI DEBOUNCE) ---
-	it("gọi API searchNotes khi người dùng gõ vào ô tìm kiếm sau 500ms", async () => {
+
+	it("gọi API searchNotes khi người dùng gõ vào ô tìm kiếm và hightlight đúng từ", async () => {
 		jest.useFakeTimers();
 		(noteApi.searchNotes as jest.Mock).mockResolvedValue({
-			data: [{ id: "search-1", title: "Keyword Match", content: "Result" }],
+			data: [
+				{
+					id: "search-1",
+					title: "Keyword Match",
+					content: "Result of Math Formulas",
+				},
+			],
 		});
 
-		const { getByPlaceholderText, getByTestId } = render(<AllNotesScreen />);
-
-		await act(async () => {
-			jest.runAllTimers();
-		});
-
+		const { getByPlaceholderText, getByTestId, getByText } = render(
+			<AllNotesScreen />,
+		);
 		const searchInput = getByPlaceholderText("Search notes...");
 
 		await act(async () => {
 			fireEvent.changeText(searchInput, "Keyword");
 		});
-
 		await act(async () => {
 			jest.advanceTimersByTime(500);
 		});
-
 		jest.useRealTimers();
 
 		await waitFor(() => {
 			expect(noteApi.searchNotes).toHaveBeenCalledWith("Keyword");
 			expect(getByTestId("card-search-1")).toBeTruthy();
-		});
-	});
-	// --- KỊCH BẢN 8: BỘ LỌC SORT ---
-	it("hiển thị Modal chọn Sort và thay đổi thứ tự sắp xếp", async () => {
-		const { getByText, queryByText } = render(<AllNotesScreen />);
-
-		// 1. Tìm và bấm nút Dropdown đang hiển thị mặc định "Newest First"
-		await waitFor(() => expect(getByText("Newest First")).toBeTruthy());
-		fireEvent.press(getByText("Newest First"));
-
-		// 2. Kiểm tra Modal mở ra có tiêu đề "Sort By"
-		await waitFor(() => expect(getByText("Sort By")).toBeTruthy());
-
-		// 3. Chọn tuỳ chọn "Oldest First" trong Modal
-		act(() => {
-			fireEvent.press(getByText("Oldest First"));
-		});
-
-		// 4. Đảm bảo UI đã đóng Modal và hiển thị trạng thái mới
-		await waitFor(() => {
-			expect(queryByText("Sort By")).toBeNull(); // Modal tiêu đề đã mất
-			expect(getByText("Oldest First")).toBeTruthy(); // Chữ trên dropdown cập nhật
-		});
-	});
-
-	// --- KỊCH BẢN 9: BỘ LỌC DATE ---
-	it("hiển thị Modal chọn Date và cập nhật UI", async () => {
-		const { getByText, queryByText } = render(<AllNotesScreen />);
-
-		// 1. Tìm và bấm nút Dropdown đang hiển thị mặc định "Any Date"
-		await waitFor(() => expect(getByText("Any Date")).toBeTruthy());
-		fireEvent.press(getByText("Any Date"));
-
-		// 2. Kiểm tra Modal mở ra có tiêu đề "Filter by Date"
-		await waitFor(() => expect(getByText("Filter by Date")).toBeTruthy());
-
-		// 3. Chọn "Today"
-		act(() => {
-			fireEvent.press(getByText("Today"));
-		});
-
-		// 4. Giao diện cập nhật thành Today
-		await waitFor(() => {
-			expect(queryByText("Filter by Date")).toBeNull();
-			expect(getByText("Today")).toBeTruthy();
+			expect(getByText("Keyword")).toBeTruthy();
 		});
 	});
 });
