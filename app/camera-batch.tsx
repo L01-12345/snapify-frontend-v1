@@ -8,7 +8,10 @@ import {
 	Animated,
 	Alert,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+	SafeAreaView,
+	useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImageManipulator from "expo-image-manipulator";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -36,6 +39,8 @@ export default function CameraBatchScreen() {
 	const scanAnim = useRef(new Animated.Value(0)).current;
 
 	const { updatedImages } = useLocalSearchParams();
+
+	const insets = useSafeAreaInsets();
 
 	useEffect(() => {
 		if (updatedImages) {
@@ -186,7 +191,13 @@ export default function CameraBatchScreen() {
 				</View>
 
 				{/* Bottom Bar */}
-				<View style={styles.bottomBar}>
+				<View
+					style={[
+						styles.bottomBar,
+						// Ghi đè padding đáy: Bằng độ cao thanh điều hướng + padding gốc (khoảng 16px)
+						{ paddingBottom: insets.bottom + ResponsiveSpacing.m },
+					]}
+				>
 					{/* Thumbnail / Counter */}
 					<TouchableOpacity style={styles.galleryBtn}>
 						<Icon name="document" size={24} color="rgba(255,255,255,0.8)" />
