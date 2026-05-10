@@ -308,9 +308,11 @@ const styles = StyleSheet.create({
 	},
 	textContainer: { alignItems: "center" },
 	processingText: {
-		fontSize: ResponsiveFontSize["5xl"],
+		fontSize: ResponsiveFontSize["3xl"],
 		fontWeight: "800",
 		color: COLORS.slate900,
+		textAlign: "center",
+		width: "100%",
 	},
 	subText: {
 		fontSize: ResponsiveFontSize.base,

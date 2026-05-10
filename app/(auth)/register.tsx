@@ -130,15 +130,19 @@ const styles = StyleSheet.create({
 		paddingBottom: 24,
 	},
 	header: { marginBottom: 32 },
-	title: { fontSize: 32, fontWeight: "800", color: COLORS.slate900 },
+	title: {
+		fontSize: ResponsiveFontSize["5xl"],
+		fontWeight: "800",
+		color: COLORS.slate900,
+	},
 	subtitle: {
-		fontSize: 14,
+		fontSize: ResponsiveFontSize["base"],
 		color: COLORS.slate500,
 		marginTop: 8,
 		fontWeight: "500",
 	},
 	termsText: {
-		fontSize: 12,
+		fontSize: ResponsiveFontSize["sm"],
 		textAlign: "center",
 		color: COLORS.slate400,
 		marginTop: 16,
@@ -156,6 +160,14 @@ const styles = StyleSheet.create({
 		marginTop: "auto",
 		paddingTop: 32,
 	},
-	footerText: { fontSize: 14, color: COLORS.slate500, fontWeight: "500" },
-	footerLink: { fontSize: 14, color: COLORS.primary, fontWeight: "700" },
+	footerText: {
+		fontSize: ResponsiveFontSize["base"],
+		color: COLORS.slate500,
+		fontWeight: "500",
+	},
+	footerLink: {
+		fontSize: ResponsiveFontSize["base"],
+		color: COLORS.primary,
+		fontWeight: "700",
+	},
 });

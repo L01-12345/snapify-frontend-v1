@@ -34,6 +34,7 @@ import { setCredentials } from "../../src/store/slices/authSlice";
 import { Logo } from "../../src/components/common/Logo";
 
 import * as Sentry from "@sentry/react-native";
+import { AntDesign } from "@expo/vector-icons";
 
 export default function LoginScreen() {
 	const router = useRouter();
@@ -144,11 +145,11 @@ export default function LoginScreen() {
 						{/* Social Buttons (Làm đơn giản dạng View) */}
 						<View style={styles.socialContainer}>
 							<TouchableOpacity style={styles.socialBtn}>
-								<Text style={styles.socialIcon}>G</Text>
+								<AntDesign style={styles.socialIcon} name="google" />
 								<Text style={styles.socialText}>Google</Text>
 							</TouchableOpacity>
 							<TouchableOpacity style={styles.socialBtn}>
-								<Text style={styles.socialIcon}></Text>
+								<AntDesign style={styles.socialIcon} name="apple" />
 								<Text style={styles.socialText}>Apple</Text>
 							</TouchableOpacity>
 						</View>

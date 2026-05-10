@@ -8,6 +8,7 @@ import {
 	ScrollView,
 	ActivityIndicator,
 	Alert,
+	Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
@@ -46,6 +47,9 @@ export default function AllNotesScreen() {
 		"all" | "today" | "week" | "month"
 	>("all");
 	const [rawItems, setRawItems] = useState<any[]>([]);
+	const [activeFilterModal, setActiveFilterModal] = useState<
+		"sort" | "date" | null
+	>(null);
 
 	// Lấy dữ liệu mỗi khi màn hình này được focus
 	useEffect(() => {
@@ -129,7 +133,6 @@ export default function AllNotesScreen() {
 				noteApi.getNotes({ status: statusParam }),
 				batchApi.getBatches(),
 			]);
-
 			const notes = notesRes.data?.notes || [];
 			let combined = [
 				...notes.map((n: any) => ({
@@ -204,21 +207,24 @@ export default function AllNotesScreen() {
 	};
 	// Các hàm mở Dropdown filter
 	const handleSortPress = () => {
-		Alert.alert("Sort By", "Choose how documents are ordered", [
-			{ text: "Newest First", onPress: () => setSortBy("newest") },
-			{ text: "Oldest First", onPress: () => setSortBy("oldest") },
-			{ text: "Cancel", style: "cancel" },
-		]);
+		setActiveFilterModal("sort");
 	};
 
 	const handleDatePress = () => {
-		Alert.alert("Filter by Date", "Show documents created within:", [
-			{ text: "Any Date", onPress: () => setDateRange("all") },
-			{ text: "Today", onPress: () => setDateRange("today") },
-			{ text: "Past 7 Days", onPress: () => setDateRange("week") },
-			{ text: "Past 30 Days", onPress: () => setDateRange("month") },
-			{ text: "Cancel", style: "cancel" },
-		]);
+		setActiveFilterModal("date");
+	};
+
+	const closeFilterModal = () => {
+		setActiveFilterModal(null);
+	};
+
+	const selectFilterOption = (option: string) => {
+		if (activeFilterModal === "sort") {
+			setSortBy(option as "newest" | "oldest");
+		} else if (activeFilterModal === "date") {
+			setDateRange(option as "all" | "today" | "week" | "month");
+		}
+		closeFilterModal();
 	};
 
 	// const mockNotes = [
@@ -368,7 +374,12 @@ export default function AllNotesScreen() {
 				{/* Status Filters */}
 				<View style={styles.statusRow}>
 					<Text style={styles.statusLabel}>STATUS:</Text>
-					<ScrollView horizontal showsHorizontalScrollIndicator={false}>
+					<ScrollView
+						horizontal
+						showsHorizontalScrollIndicator={false}
+						style={styles.statusScroll}
+						contentContainerStyle={styles.statusScrollContent}
+					>
 						{["All", "Processed", "Pending"].map((status) => (
 							<TouchableOpacity
 								key={status}
@@ -466,6 +477,70 @@ export default function AllNotesScreen() {
 				</View>
 			</ScrollView>
 
+			<Modal
+				visible={!!activeFilterModal}
+				transparent
+				animationType="fade"
+				onRequestClose={closeFilterModal}
+			>
+				<View style={styles.modalOverlay}>
+					<View style={styles.modalContent}>
+						<Text style={styles.modalTitle}>
+							{activeFilterModal === "sort" ? "Sort By" : "Filter by Date"}
+						</Text>
+						{activeFilterModal === "sort" ? (
+							<>
+								<TouchableOpacity
+									style={styles.modalOption}
+									onPress={() => selectFilterOption("newest")}
+								>
+									<Text style={styles.modalOptionText}>Newest First</Text>
+								</TouchableOpacity>
+								<TouchableOpacity
+									style={styles.modalOption}
+									onPress={() => selectFilterOption("oldest")}
+								>
+									<Text style={styles.modalOptionText}>Oldest First</Text>
+								</TouchableOpacity>
+							</>
+						) : (
+							<>
+								<TouchableOpacity
+									style={styles.modalOption}
+									onPress={() => selectFilterOption("all")}
+								>
+									<Text style={styles.modalOptionText}>Any Date</Text>
+								</TouchableOpacity>
+								<TouchableOpacity
+									style={styles.modalOption}
+									onPress={() => selectFilterOption("today")}
+								>
+									<Text style={styles.modalOptionText}>Today</Text>
+								</TouchableOpacity>
+								<TouchableOpacity
+									style={styles.modalOption}
+									onPress={() => selectFilterOption("week")}
+								>
+									<Text style={styles.modalOptionText}>Past 7 Days</Text>
+								</TouchableOpacity>
+								<TouchableOpacity
+									style={styles.modalOption}
+									onPress={() => selectFilterOption("month")}
+								>
+									<Text style={styles.modalOptionText}>Past 30 Days</Text>
+								</TouchableOpacity>
+							</>
+						)}
+						<TouchableOpacity
+							style={[styles.modalOption, styles.modalCancelButton]}
+							onPress={closeFilterModal}
+						>
+							<Text style={styles.modalOptionText}>Cancel</Text>
+						</TouchableOpacity>
+					</View>
+				</View>
+			</Modal>
+
 			{/* Floating Action Button (+) */}
 			<TouchableOpacity
 				style={styles.fab}
@@ -561,6 +636,12 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		marginBottom: ResponsiveSpacing.l,
 	},
+	statusScroll: {
+		flex: 1,
+	},
+	statusScrollContent: {
+		alignItems: "center",
+	},
 	statusLabel: {
 		fontSize: ResponsiveFontSize["sm"],
 		fontWeight: "800",
@@ -631,6 +712,41 @@ const styles = StyleSheet.create({
 		lineHeight: 22,
 		marginBottom: ResponsiveSpacing.l,
 	},
+	modalOverlay: {
+		flex: 1,
+		backgroundColor: "rgba(15, 23, 42, 0.5)",
+		justifyContent: "center",
+		alignItems: "center",
+		padding: ResponsiveSpacing.l,
+	},
+	modalContent: {
+		width: "100%",
+		backgroundColor: COLORS.white,
+		borderRadius: ResponsiveBorderRadius.xl,
+		padding: ResponsiveSpacing.l,
+	},
+	modalTitle: {
+		fontSize: ResponsiveFontSize.lg,
+		fontWeight: "800",
+		color: COLORS.slate900,
+		marginBottom: ResponsiveSpacing.m,
+	},
+	modalOption: {
+		paddingVertical: ResponsiveSpacing.s,
+		paddingHorizontal: ResponsiveSpacing.m,
+		borderRadius: ResponsiveBorderRadius.base,
+		backgroundColor: COLORS.slate50,
+		marginBottom: ResponsiveSpacing.s,
+	},
+	modalOptionText: {
+		fontSize: ResponsiveFontSize["base"],
+		fontWeight: "700",
+		color: COLORS.slate700,
+	},
+	modalCancelButton: {
+		backgroundColor: COLORS.white,
+	},
+
 	noteFooter: {
 		flexDirection: "row",
 		justifyContent: "space-between",
