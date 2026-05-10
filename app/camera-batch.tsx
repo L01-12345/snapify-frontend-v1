@@ -20,6 +20,7 @@ import {
 	ResponsiveDimensions,
 	ResponsiveBorderRadius,
 	scale,
+	getResponsiveHeight,
 	getResponsiveShadow,
 } from "../src/utils/responsive";
 
@@ -121,9 +122,14 @@ export default function CameraBatchScreen() {
 		});
 	};
 
+	const scannerHeight = getResponsiveHeight(50);
+
 	const scanTranslateY = scanAnim.interpolate({
 		inputRange: [0, 1],
-		outputRange: [-240, 240], // Giới hạn di chuyển trong vùng khung 480px
+		outputRange: [
+			-scannerHeight / 2 + scale(20),
+			scannerHeight / 2 - scale(20),
+		],
 	});
 
 	return (
@@ -131,9 +137,14 @@ export default function CameraBatchScreen() {
 			<CameraView style={StyleSheet.absoluteFillObject} ref={cameraRef} />
 
 			{/* Nền tối phủ mờ xung quanh vùng quét */}
-			<View style={StyleSheet.absoluteFillObject}>
+			<View
+				style={[
+					StyleSheet.absoluteFillObject,
+					{ flex: 1, flexDirection: "column" },
+				]}
+			>
 				{/* Top Bar */}
-				<SafeAreaView>
+				<SafeAreaView style={{ flexShrink: 0 }}>
 					<View style={styles.topBar}>
 						<TouchableOpacity
 							style={styles.iconBtn}
@@ -155,7 +166,7 @@ export default function CameraBatchScreen() {
 
 				{/* Vùng Scanner Center */}
 				<View style={styles.scannerWrapper}>
-					<View style={styles.scannerFrame}>
+					<View style={[styles.scannerFrame, { height: scannerHeight }]}>
 						{/* 4 Góc nhọn */}
 						<View style={[styles.corner, styles.topLeft]} />
 						<View style={[styles.corner, styles.topRight]} />
@@ -217,34 +228,39 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		backgroundColor: "#020617",
 	},
-	permissionText: { color: "white", marginBottom: 20 },
-	permissionBtn: { backgroundColor: "#4f46e5", padding: 12, borderRadius: 8 },
+	permissionText: { color: "white", marginBottom: ResponsiveSpacing.l },
+	permissionBtn: {
+		backgroundColor: "#4f46e5",
+		padding: ResponsiveSpacing.s,
+		borderRadius: ResponsiveBorderRadius.base,
+	},
 	permissionBtnText: { color: "white", fontWeight: "bold" },
 
 	topBar: {
-		height: 64,
+		height: scale(64),
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "space-between",
-		paddingHorizontal: 24,
+		paddingHorizontal: ResponsiveSpacing.l,
 		zIndex: 10,
+		flexShrink: 0,
 	},
 	iconBtn: {
-		width: 40,
-		height: 40,
+		width: scale(44),
+		height: scale(44),
 		backgroundColor: "rgba(255,255,255,0.1)",
-		borderRadius: 20,
+		borderRadius: scale(22),
 		alignItems: "center",
 		justifyContent: "center",
 	},
 	iconText: { color: "white", fontSize: ResponsiveFontSize["xl"] },
 	flashBtn: {
-		width: 40,
-		height: 40,
+		width: scale(44),
+		height: scale(44),
 		backgroundColor: "rgba(251, 191, 36, 0.1)",
 		borderColor: "#fbbf24",
-		borderWidth: 1,
-		borderRadius: 20,
+		borderWidth: scale(1),
+		borderRadius: scale(22),
 		alignItems: "center",
 		justifyContent: "center",
 	},
@@ -254,14 +270,16 @@ const styles = StyleSheet.create({
 		flex: 1,
 		alignItems: "center",
 		justifyContent: "center",
-		paddingHorizontal: 24,
+		paddingHorizontal: ResponsiveSpacing.l,
+		paddingVertical: ResponsiveSpacing.m,
 	},
 	scannerFrame: {
 		width: "100%",
-		height: 480,
-		borderWidth: 2,
-		borderColor: "rgba(99, 102, 241, 0.5)", // indigo-500/50
-		borderRadius: 24,
+		flex: 1,
+		maxHeight: getResponsiveHeight(55),
+		borderWidth: scale(2),
+		borderColor: "rgba(99, 102, 241, 0.5)",
+		borderRadius: ResponsiveBorderRadius.xl,
 		backgroundColor: "rgba(255,255,255,0.05)",
 		alignItems: "center",
 		justifyContent: "center",
@@ -269,37 +287,37 @@ const styles = StyleSheet.create({
 	},
 	corner: {
 		position: "absolute",
-		width: 32,
-		height: 32,
+		width: scale(32),
+		height: scale(32),
 		borderColor: "#818cf8", // indigo-400
 	},
 	topLeft: {
 		top: 0,
 		left: 0,
-		borderTopWidth: 4,
-		borderLeftWidth: 4,
-		borderTopLeftRadius: 20,
+		borderTopWidth: scale(4),
+		borderLeftWidth: scale(4),
+		borderTopLeftRadius: ResponsiveBorderRadius.lg,
 	},
 	topRight: {
 		top: 0,
 		right: 0,
-		borderTopWidth: 4,
-		borderRightWidth: 4,
-		borderTopRightRadius: 20,
+		borderTopWidth: scale(4),
+		borderRightWidth: scale(4),
+		borderTopRightRadius: ResponsiveBorderRadius.lg,
 	},
 	bottomLeft: {
 		bottom: 0,
 		left: 0,
-		borderBottomWidth: 4,
-		borderLeftWidth: 4,
-		borderBottomLeftRadius: 20,
+		borderBottomWidth: scale(4),
+		borderLeftWidth: scale(4),
+		borderBottomLeftRadius: ResponsiveBorderRadius.lg,
 	},
 	bottomRight: {
 		bottom: 0,
 		right: 0,
-		borderBottomWidth: 4,
-		borderRightWidth: 4,
-		borderBottomRightRadius: 20,
+		borderBottomWidth: scale(4),
+		borderRightWidth: scale(4),
+		borderBottomRightRadius: ResponsiveBorderRadius.lg,
 	},
 	mathText: {
 		color: "rgba(255,255,255,0.4)",
@@ -310,47 +328,47 @@ const styles = StyleSheet.create({
 	scanLine: {
 		position: "absolute",
 		width: "100%",
-		height: 2,
+		height: scale(2),
 		backgroundColor: "#818cf8",
 		shadowColor: "#818cf8",
 		shadowOffset: { width: 0, height: 0 },
 		shadowOpacity: 1,
-		shadowRadius: 15,
+		shadowRadius: scale(15),
 		elevation: 10,
 	},
 
 	bottomBar: {
-		height: 160,
-		backgroundColor: "rgba(15, 23, 42, 0.9)", // slate-900
+		backgroundColor: "rgba(15, 23, 42, 0.9)",
 		flexDirection: "row",
 		justifyContent: "space-between",
 		alignItems: "center",
-		paddingHorizontal: 32,
-		borderTopWidth: 1,
+		paddingHorizontal: ResponsiveSpacing.xl,
+		borderTopWidth: scale(1),
 		borderTopColor: "rgba(255,255,255,0.1)",
-		paddingBottom: 20,
+		paddingVertical: ResponsiveSpacing.m,
+		flexShrink: 0,
 	},
 	galleryBtn: {
-		width: 56,
-		height: 56,
+		width: scale(56),
+		height: scale(56),
 		backgroundColor: "#1e293b",
 		borderColor: "#475569",
-		borderWidth: 1,
-		borderRadius: 12,
+		borderWidth: scale(1),
+		borderRadius: ResponsiveBorderRadius.base,
 		alignItems: "center",
 		justifyContent: "center",
 	},
 	badge: {
 		position: "absolute",
-		top: -12,
-		right: -12,
-		width: 28,
-		height: 28,
+		top: scale(-12),
+		right: scale(-12),
+		width: scale(28),
+		height: scale(28),
 		backgroundColor: "#4f46e5", // indigo-600
-		borderRadius: 14,
+		borderRadius: scale(14),
 		alignItems: "center",
 		justifyContent: "center",
-		borderWidth: 3,
+		borderWidth: scale(3),
 		borderColor: "#0f172a",
 	},
 	badgeText: {
@@ -359,32 +377,32 @@ const styles = StyleSheet.create({
 		fontWeight: "bold",
 	},
 	captureOuter: {
-		width: 80,
-		height: 80,
-		borderRadius: 40,
-		borderWidth: 6,
+		width: ResponsiveDimensions.shutterButtonSize,
+		height: ResponsiveDimensions.shutterButtonSize,
+		borderRadius: ResponsiveDimensions.shutterButtonSize / 2,
+		borderWidth: scale(6),
 		borderColor: "white",
 		alignItems: "center",
 		justifyContent: "center",
-		padding: 4,
+		padding: ResponsiveSpacing.xs,
 	},
 	captureInner: {
 		width: "100%",
 		height: "100%",
 		backgroundColor: "white",
-		borderRadius: 40,
+		borderRadius: ResponsiveDimensions.shutterButtonSize / 2,
 	},
 	doneBtn: {
-		width: 56,
-		height: 56,
+		width: scale(56),
+		height: scale(56),
 		backgroundColor: "#4f46e5",
-		borderRadius: 28,
+		borderRadius: scale(28),
 		alignItems: "center",
 		justifyContent: "center",
 		shadowColor: "#4f46e5",
-		shadowOffset: { width: 0, height: 4 },
+		shadowOffset: { width: 0, height: scale(4) },
 		shadowOpacity: 0.4,
-		shadowRadius: 10,
+		shadowRadius: scale(10),
 	},
 	doneBtnText: {
 		color: "white",
