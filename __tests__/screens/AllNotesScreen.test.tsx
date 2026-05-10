@@ -241,58 +241,48 @@ describe("AllNotesScreen - Màn hình tất cả ghi chú", () => {
 		});
 	});
 	// --- KỊCH BẢN 8: BỘ LỌC SORT ---
-	it("hiển thị Alert chọn Sort và thay đổi thứ tự sắp xếp", async () => {
-		const { getByText } = render(<AllNotesScreen />);
+	it("hiển thị Modal chọn Sort và thay đổi thứ tự sắp xếp", async () => {
+		const { getByText, queryByText } = render(<AllNotesScreen />);
 
-		// Tìm và bấm nút Dropdown đang hiển thị mặc định "Newest First"
+		// 1. Tìm và bấm nút Dropdown đang hiển thị mặc định "Newest First"
 		await waitFor(() => expect(getByText("Newest First")).toBeTruthy());
 		fireEvent.press(getByText("Newest First"));
 
-		expect(Alert.alert).toHaveBeenCalledWith(
-			"Sort By",
-			"Choose how documents are ordered",
-			expect.any(Array),
-		);
+		// 2. Kiểm tra Modal mở ra có tiêu đề "Sort By"
+		await waitFor(() => expect(getByText("Sort By")).toBeTruthy());
 
-		// Trích xuất danh sách các nút bấm trong Alert và gọi sự kiện onPress của nút "Oldest First"
-		const alertButtons = (Alert.alert as jest.Mock).mock.calls[0][2];
-		const oldestBtn = alertButtons.find(
-			(btn: any) => btn.text === "Oldest First",
-		);
-
+		// 3. Chọn tuỳ chọn "Oldest First" trong Modal
 		act(() => {
-			oldestBtn.onPress();
+			fireEvent.press(getByText("Oldest First"));
 		});
 
-		// UI phải cập nhật text thành Oldest First
-		await waitFor(() => expect(getByText("Oldest First")).toBeTruthy());
+		// 4. Đảm bảo UI đã đóng Modal và hiển thị trạng thái mới
+		await waitFor(() => {
+			expect(queryByText("Sort By")).toBeNull(); // Modal tiêu đề đã mất
+			expect(getByText("Oldest First")).toBeTruthy(); // Chữ trên dropdown cập nhật
+		});
 	});
 
 	// --- KỊCH BẢN 9: BỘ LỌC DATE ---
-	it("hiển thị Alert chọn Date và cập nhật UI", async () => {
-		// Mock hàm Alert để reset gọi trước đó
-		(Alert.alert as jest.Mock).mockClear();
+	it("hiển thị Modal chọn Date và cập nhật UI", async () => {
+		const { getByText, queryByText } = render(<AllNotesScreen />);
 
-		const { getByText } = render(<AllNotesScreen />);
-
+		// 1. Tìm và bấm nút Dropdown đang hiển thị mặc định "Any Date"
 		await waitFor(() => expect(getByText("Any Date")).toBeTruthy());
 		fireEvent.press(getByText("Any Date"));
 
-		expect(Alert.alert).toHaveBeenCalledWith(
-			"Filter by Date",
-			"Show documents created within:",
-			expect.any(Array),
-		);
+		// 2. Kiểm tra Modal mở ra có tiêu đề "Filter by Date"
+		await waitFor(() => expect(getByText("Filter by Date")).toBeTruthy());
 
-		// Lấy nút "Today" và bấm
-		const alertButtons = (Alert.alert as jest.Mock).mock.calls[0][2];
-		const todayBtn = alertButtons.find((btn: any) => btn.text === "Today");
-
+		// 3. Chọn "Today"
 		act(() => {
-			todayBtn.onPress();
+			fireEvent.press(getByText("Today"));
 		});
 
-		// UI phải cập nhật thành Today
-		await waitFor(() => expect(getByText("Today")).toBeTruthy());
+		// 4. Giao diện cập nhật thành Today
+		await waitFor(() => {
+			expect(queryByText("Filter by Date")).toBeNull();
+			expect(getByText("Today")).toBeTruthy();
+		});
 	});
 });

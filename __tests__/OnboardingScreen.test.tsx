@@ -42,6 +42,21 @@ jest.mock("expo-router", () => ({
 	useRouter: jest.fn(() => ({ replace: mockReplace })),
 }));
 
+// --- 4. MOCK SAFE AREA CONTEXT ---
+jest.mock("react-native-safe-area-context", () => {
+	const inset = { top: 0, right: 0, bottom: 0, left: 0 };
+	const React = require("react");
+	const { View } = require("react-native");
+	return {
+		SafeAreaProvider: ({ children }: any) => <View>{children}</View>,
+		SafeAreaConsumer: ({ children }: any) => children(inset),
+		useSafeAreaInsets: () => inset,
+		SafeAreaView: ({ children, style }: any) => (
+			<View style={style}>{children}</View>
+		),
+	};
+});
+
 describe("OnboardingScreen - Deep Tests", () => {
 	beforeEach(() => {
 		jest.clearAllMocks();

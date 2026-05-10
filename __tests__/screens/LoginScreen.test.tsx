@@ -9,11 +9,11 @@ import LoginScreen from "../../app/(auth)/login";
 import { authApi } from "../../src/api/authApi";
 import { setCredentials } from "../../src/store/slices/authSlice";
 
-// --- MOCK MODULES ---
+// --- MOCK MODULES CƠ BẢN ---
 jest.mock("expo-router", () => ({ useRouter: jest.fn() }));
 jest.mock("react-redux", () => ({ useDispatch: jest.fn() }));
+jest.spyOn(Alert, "alert");
 
-// Đảm bảo mock trả về Promise vì setItemAsync là hàm bất đồng bộ
 jest.mock("expo-secure-store", () => ({
 	setItemAsync: jest.fn().mockResolvedValue(undefined),
 }));
@@ -21,10 +21,34 @@ jest.mock("expo-secure-store", () => ({
 jest.mock("../../src/api/authApi", () => ({
 	authApi: { login: jest.fn() },
 }));
-jest.spyOn(Alert, "alert");
+
 jest.mock("../../src/store/slices/authSlice", () => ({
 	setCredentials: jest.fn(),
 }));
+
+// --- MOCK CÁC THƯ VIỆN & COMPONENT UI GÂY LỖI (Sentry, Icons, Logo) ---
+jest.mock("@sentry/react-native", () => ({
+	setUser: jest.fn(),
+}));
+
+jest.mock("@expo/vector-icons", () => {
+	const { View } = require("react-native");
+	return { AntDesign: (props: any) => <View testID="mock-icon" {...props} /> };
+});
+
+jest.mock("react-native-safe-area-context", () => {
+	const { View } = require("react-native");
+	return {
+		SafeAreaView: ({ children, style }: any) => (
+			<View style={style}>{children}</View>
+		),
+	};
+});
+
+jest.mock("../../src/components/common/Logo", () => {
+	const { View } = require("react-native");
+	return { Logo: () => <View testID="mock-logo" /> };
+});
 
 describe("LoginScreen - Đăng nhập", () => {
 	const mockReplace = jest.fn();
@@ -43,7 +67,6 @@ describe("LoginScreen - Đăng nhập", () => {
 	it("báo lỗi nếu để trống thông tin", () => {
 		const { getByTestId } = render(<LoginScreen />);
 
-		// Bấm login ngay mà không nhập gì
 		fireEvent.press(getByTestId("login-btn"));
 
 		expect(Alert.alert).toHaveBeenCalledWith(
@@ -58,7 +81,6 @@ describe("LoginScreen - Đăng nhập", () => {
 			data: { token: "mock-jwt-token", user: { id: 1, name: "John" } },
 		};
 
-		// Dùng Once để tránh rò rỉ dữ liệu sang bài test khác
 		(authApi.login as jest.Mock).mockResolvedValueOnce(mockResponse);
 
 		const { getByTestId } = render(<LoginScreen />);
@@ -66,30 +88,25 @@ describe("LoginScreen - Đăng nhập", () => {
 		fireEvent.changeText(getByTestId("login-email"), "test@abc.com");
 		fireEvent.changeText(getByTestId("login-password"), "123456");
 
-		// QUAN TRỌNG: Bọc sự kiện bấm nút gọi API trong act() để triệt tiêu cảnh báo console.error trên CI/CD
 		await act(async () => {
 			fireEvent.press(getByTestId("login-btn"));
 		});
 
 		await waitFor(() => {
-			// 1. Gọi API đúng params
 			expect(authApi.login).toHaveBeenCalledWith({
 				email: "test@abc.com",
 				password: "123456",
 			});
-			// 2. Lưu token vào SecureStore
 			expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
 				"access_token",
 				"mock-jwt-token",
 			);
-			// 3. Dispatch Redux
 			expect(mockDispatch).toHaveBeenCalledWith(
 				setCredentials({
 					user: mockResponse.data.user,
 					token: mockResponse.data.token,
 				}),
 			);
-			// 4. Chuyển hướng vào app
 			expect(mockReplace).toHaveBeenCalledWith("/(tabs)/dashboard");
 		});
 	});
@@ -104,7 +121,6 @@ describe("LoginScreen - Đăng nhập", () => {
 		fireEvent.changeText(getByTestId("login-email"), "test@abc.com");
 		fireEvent.changeText(getByTestId("login-password"), "wrong-pass");
 
-		// Bọc trong act() tương tự
 		await act(async () => {
 			fireEvent.press(getByTestId("login-btn"));
 		});
