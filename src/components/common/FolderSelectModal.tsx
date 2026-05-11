@@ -16,6 +16,17 @@ import { COLORS } from "../../constants/theme";
 
 import { folderApi } from "../../api/folderApi";
 
+import {
+	ResponsiveFontSize,
+	ResponsiveSpacing,
+	ResponsiveDimensions,
+	ResponsiveBorderRadius,
+	scale,
+	getResponsiveShadow,
+} from "../../utils/responsive";
+
+import { SafeAreaView } from "react-native-safe-area-context";
+
 interface Folder {
 	id: string;
 	name: string;
@@ -63,104 +74,112 @@ export const FolderSelectModal = ({
 	};
 
 	return (
-		<Modal
-			visible={visible}
-			transparent={true}
-			animationType="slide"
-			onRequestClose={onClose}
-		>
-			<View style={styles.overlay}>
-				<TouchableWithoutFeedback
-					onPress={onClose}
-					testID="folder-modal-backdrop"
-				>
-					<View style={styles.backdrop} />
-				</TouchableWithoutFeedback>
+		<SafeAreaView>
+			<Modal
+				visible={visible}
+				transparent={true}
+				animationType="slide"
+				onRequestClose={onClose}
+			>
+				<View style={styles.overlay}>
+					<TouchableWithoutFeedback
+						onPress={onClose}
+						testID="folder-modal-backdrop"
+					>
+						<View style={styles.backdrop} />
+					</TouchableWithoutFeedback>
 
-				<View style={styles.modalContent}>
-					<View style={styles.dragHandle} />
+					<View style={styles.modalContent}>
+						<View style={styles.dragHandle} />
 
-					<View style={styles.header}>
-						<Text style={styles.title}>Select Folder</Text>
-						<TouchableOpacity style={styles.addBtn}>
-							<Feather name="plus" size={20} color={COLORS.slate500} />
-						</TouchableOpacity>
-					</View>
+						<View style={styles.header}>
+							<Text style={styles.title}>Select Folder</Text>
+							<TouchableOpacity style={styles.addBtn}>
+								<Feather name="plus" size={20} color={COLORS.slate500} />
+							</TouchableOpacity>
+						</View>
 
-					<View style={styles.listContainer}>
-						{isLoading ? (
-							<ActivityIndicator
-								size="large"
-								color={COLORS.primary}
-								style={{ marginVertical: 20 }}
-							/>
-						) : folders.length === 0 ? (
-							<Text style={styles.emptyText}>
-								You don't have any folders yet.
-							</Text>
-						) : (
-							folders.map((folder) => {
-								const isSelected = folder.id === selectedId;
+						<View style={styles.listContainer}>
+							{isLoading ? (
+								<ActivityIndicator
+									size="large"
+									color={COLORS.primary}
+									style={{ marginVertical: 20 }}
+								/>
+							) : folders.length === 0 ? (
+								<Text style={styles.emptyText}>
+									You don't have any folders yet.
+								</Text>
+							) : (
+								folders.map((folder) => {
+									const isSelected = folder.id === selectedId;
 
-								return (
-									<TouchableOpacity
-										key={folder.id}
-										style={[
-											styles.itemCard,
-											isSelected && styles.itemCardSelected,
-										]}
-										onPress={() => onSelect(folder)}
-										activeOpacity={0.7}
-										testID={`folder-item-${folder.id}`}
-									>
-										<View style={styles.itemLeft}>
-											<View style={styles.iconBox}>
-												{/* Nếu API trả về icon thì dùng, không thì dùng mặc định 📂 */}
-												<Text style={styles.iconText}>
-													{folder.icon || "📂"}
-												</Text>
-											</View>
-											<View style={{ flex: 1 }}>
-												<Text
-													style={[
-														styles.folderName,
-														isSelected && { color: COLORS.slate900 },
-													]}
-													numberOfLines={1}
-													ellipsizeMode="tail"
-												>
-													{folder.name}
-												</Text>
-												{isSelected ? (
-													<Text style={styles.selectedLabel}>SELECTED</Text>
-												) : folder.isAiSuggested ? (
-													<View style={styles.aiTagRow}>
-														<Text style={{ fontSize: 10 }}>✨</Text>
-														<Text style={styles.aiTagText}>AI SUGGESTED</Text>
-													</View>
-												) : null}
-											</View>
-										</View>
-
-										{/* Checkbox / Radio Circle */}
-										<View
+									return (
+										<TouchableOpacity
+											key={folder.id}
 											style={[
-												styles.radioCircle,
-												isSelected && styles.radioCircleSelected,
+												styles.itemCard,
+												isSelected && styles.itemCardSelected,
 											]}
+											onPress={() => onSelect(folder)}
+											activeOpacity={0.7}
+											testID={`folder-item-${folder.id}`}
 										>
-											{isSelected && (
-												<Feather name="check" size={14} color={COLORS.white} />
-											)}
-										</View>
-									</TouchableOpacity>
-								);
-							})
-						)}
+											<View style={styles.itemLeft}>
+												<View style={styles.iconBox}>
+													{/* Nếu API trả về icon thì dùng, không thì dùng mặc định 📂 */}
+													<Text style={styles.iconText}>
+														{folder.icon || "📂"}
+													</Text>
+												</View>
+												<View style={{ flex: 1 }}>
+													<Text
+														style={[
+															styles.folderName,
+															isSelected && { color: COLORS.slate900 },
+														]}
+														numberOfLines={1}
+														ellipsizeMode="tail"
+													>
+														{folder.name}
+													</Text>
+													{isSelected ? (
+														<Text style={styles.selectedLabel}>SELECTED</Text>
+													) : folder.isAiSuggested ? (
+														<View style={styles.aiTagRow}>
+															<Text style={{ fontSize: ResponsiveFontSize.xs }}>
+																✨
+															</Text>
+															<Text style={styles.aiTagText}>AI SUGGESTED</Text>
+														</View>
+													) : null}
+												</View>
+											</View>
+
+											{/* Checkbox / Radio Circle */}
+											<View
+												style={[
+													styles.radioCircle,
+													isSelected && styles.radioCircleSelected,
+												]}
+											>
+												{isSelected && (
+													<Feather
+														name="check"
+														size={14}
+														color={COLORS.white}
+													/>
+												)}
+											</View>
+										</TouchableOpacity>
+									);
+								})
+							)}
+						</View>
 					</View>
 				</View>
-			</View>
-		</Modal>
+			</Modal>
+		</SafeAreaView>
 	);
 };
 
@@ -196,7 +215,11 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		marginBottom: 24,
 	},
-	title: { fontSize: 20, fontWeight: "800", color: COLORS.slate900 },
+	title: {
+		fontSize: ResponsiveFontSize["2xl"],
+		fontWeight: "800",
+		color: COLORS.slate900,
+	},
 	addBtn: {
 		width: 36,
 		height: 36,
@@ -209,7 +232,7 @@ const styles = StyleSheet.create({
 	emptyText: {
 		textAlign: "center",
 		color: COLORS.slate500,
-		fontSize: 14,
+		fontSize: ResponsiveFontSize["base"],
 		fontStyle: "italic",
 	},
 	itemCard: {
@@ -232,14 +255,14 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	iconText: { fontSize: 20 },
+	iconText: { fontSize: ResponsiveFontSize["2xl"] },
 	folderName: {
-		fontSize: 16,
+		fontSize: ResponsiveFontSize["xs"],
 		fontWeight: "700",
 		color: COLORS.slate700,
 	},
 	selectedLabel: {
-		fontSize: 10,
+		fontSize: ResponsiveFontSize["xs"],
 		fontWeight: "800",
 		color: COLORS.primary,
 		marginTop: 4,
@@ -252,7 +275,7 @@ const styles = StyleSheet.create({
 		marginTop: 4,
 	},
 	aiTagText: {
-		fontSize: 10,
+		fontSize: ResponsiveFontSize["xs"],
 		fontWeight: "800",
 		color: COLORS.primaryEnd,
 		letterSpacing: 0.5,

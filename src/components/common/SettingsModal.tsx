@@ -13,7 +13,17 @@ import { useRouter } from "expo-router";
 import { COLORS } from "../../constants/theme";
 import { logout } from "../../store/slices/authSlice";
 import * as SecureStore from "expo-secure-store";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../../../src/store";
+
+import {
+	ResponsiveFontSize,
+	ResponsiveSpacing,
+	ResponsiveDimensions,
+	ResponsiveBorderRadius,
+	scale,
+	getResponsiveShadow,
+} from "../../utils/responsive";
 
 interface SettingsModalProps {
 	visible: boolean;
@@ -23,6 +33,7 @@ interface SettingsModalProps {
 export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
 	const router = useRouter();
 	const dispatch = useDispatch();
+	const { user } = useSelector((state: RootState) => state.auth);
 
 	const handleLogout = async () => {
 		try {
@@ -92,7 +103,9 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
 								</View>
 								<View>
 									<Text style={styles.menuTitle}>Account Profile</Text>
-									<Text style={styles.menuSubtitle}>john.doe@example.com</Text>
+									<Text style={styles.menuSubtitle}>
+										{user?.displayName || "john Doe"}
+									</Text>
 								</View>
 							</View>
 							<Text style={styles.arrow}>❯</Text>
@@ -146,7 +159,7 @@ const styles = StyleSheet.create({
 		marginBottom: 24,
 	},
 	sectionTitle: {
-		fontSize: 12,
+		fontSize: ResponsiveFontSize["sm"],
 		fontWeight: "800",
 		color: COLORS.slate400,
 		letterSpacing: 1,
@@ -171,15 +184,23 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	icon: { fontSize: 18 },
-	menuTitle: { fontSize: 15, fontWeight: "700", color: COLORS.slate900 },
+	icon: { fontSize: ResponsiveFontSize["xl"] },
+	menuTitle: {
+		fontSize: ResponsiveFontSize["base"],
+		fontWeight: "700",
+		color: COLORS.slate900,
+	},
 	menuSubtitle: {
-		fontSize: 12,
+		fontSize: ResponsiveFontSize["sm"],
 		fontWeight: "500",
 		color: COLORS.slate500,
 		marginTop: 2,
 	},
-	arrow: { color: COLORS.slate400, fontSize: 14, fontWeight: "bold" },
+	arrow: {
+		color: COLORS.slate400,
+		fontSize: ResponsiveFontSize["base"],
+		fontWeight: "bold",
+	},
 	divider: { height: 1, backgroundColor: COLORS.slate100, marginVertical: 12 },
 	logoutBtn: {
 		flexDirection: "row",
@@ -196,5 +217,9 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	logoutText: { fontSize: 15, fontWeight: "700", color: "#DC2626" },
+	logoutText: {
+		fontSize: ResponsiveFontSize["base"],
+		fontWeight: "700",
+		color: "#DC2626",
+	},
 });

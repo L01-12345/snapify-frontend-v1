@@ -39,6 +39,21 @@ jest.mock("@expo/vector-icons", () => ({
 	Ionicons: "Ionicons",
 }));
 
+// --- MOCK SAFE AREA CONTEXT (Cần thiết cho việc hiển thị linh động bottom Toast) ---
+jest.mock("react-native-safe-area-context", () => {
+	const inset = { top: 0, right: 0, bottom: 20, left: 0 }; // Giả lập bottom insets = 20
+	const React = require("react");
+	const { View } = require("react-native");
+	return {
+		SafeAreaProvider: ({ children }: any) => <View>{children}</View>,
+		SafeAreaConsumer: ({ children }: any) => children(inset),
+		useSafeAreaInsets: () => inset,
+		SafeAreaView: ({ children, style }: any) => (
+			<View style={style}>{children}</View>
+		),
+	};
+});
+
 // Mock FolderSelectModal
 jest.mock("../src/components/common/FolderSelectModal", () => {
 	const { View, TouchableOpacity, Text } = require("react-native");
@@ -149,7 +164,7 @@ describe("DashboardScreen - Màn hình chính", () => {
 
 		render(<DashboardScreen />);
 
-		// Không gọi spring do bị return sớm (Cover line 133-134)
+		// Không gọi spring do bị return sớm
 		expect(Animated.spring).not.toHaveBeenCalled();
 
 		// Trả lại hàm gốc cho các test khác

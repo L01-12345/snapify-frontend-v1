@@ -23,7 +23,10 @@ import {
 	scale,
 	getResponsiveShadow,
 } from "../../src/utils/responsive";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+	SafeAreaView,
+	useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 import { noteApi } from "../../src/api/noteApi";
 import { batchApi } from "../../src/api/batchApi";
@@ -38,7 +41,8 @@ import { stripMarkdown } from "../../src/utils/strip-markdown";
 export default function DashboardScreen() {
 	const router = useRouter();
 	const { showToast, batchId, batchTitle } = useLocalSearchParams();
-	const slideAnim = useRef(new Animated.Value(150)).current;
+	const slideAnim = useRef(new Animated.Value(200)).current;
+	const insets = useSafeAreaInsets();
 
 	// const [notes, setNotes] = useState<Note[]>([]);
 	const [recentItems, setRecentItems] = useState<any[]>([]);
@@ -118,7 +122,7 @@ export default function DashboardScreen() {
 
 		const timer = setTimeout(() => {
 			Animated.timing(slideAnim, {
-				toValue: 150,
+				toValue: 200,
 				duration: 300,
 				useNativeDriver: true,
 			}).start();
@@ -147,7 +151,7 @@ export default function DashboardScreen() {
 
 			// Ẩn Toast luôn
 			Animated.timing(slideAnim, {
-				toValue: 150,
+				toValue: 200,
 				duration: 300,
 				useNativeDriver: true,
 			}).start();
@@ -395,7 +399,10 @@ export default function DashboardScreen() {
 			<Animated.View
 				style={[
 					styles.toastContainer,
-					{ transform: [{ translateY: slideAnim }] },
+					{
+						bottom: insets.bottom + scale(100),
+						transform: [{ translateY: slideAnim }],
+					},
 				]}
 			>
 				<View style={styles.toastLeft}>
@@ -618,7 +625,6 @@ const styles = StyleSheet.create({
 
 	toastContainer: {
 		position: "absolute",
-		bottom: scale(100),
 		left: ResponsiveSpacing.l,
 		right: ResponsiveSpacing.l,
 		backgroundColor: COLORS.slate900,
@@ -627,7 +633,13 @@ const styles = StyleSheet.create({
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "space-between",
-		zIndex: 50,
+		zIndex: 999,
+		elevation: 20,
+		// Thêm shadow
+		shadowColor: "#000",
+		shadowOffset: { width: 0, height: scale(4) },
+		shadowOpacity: 0.3,
+		shadowRadius: scale(10),
 	},
 	toastLeft: {
 		flexDirection: "row",

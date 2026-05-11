@@ -1,3 +1,4 @@
+// __tests__/components/SettingsModal.test.tsx
 import React from "react";
 import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import { useRouter } from "expo-router";
@@ -8,12 +9,19 @@ const mockReplace = jest.fn();
 jest.mock("expo-router", () => ({
 	useRouter: jest.fn(() => ({ replace: mockReplace })),
 }));
+
+// ĐÃ SỬA: Bổ sung useSelector trả về mock state của auth
 jest.mock("react-redux", () => ({
 	useDispatch: () => jest.fn(),
+	useSelector: jest.fn().mockReturnValue({
+		user: { displayName: "Mock User" },
+	}),
 }));
+
 jest.mock("expo-secure-store", () => ({
 	deleteItemAsync: jest.fn(),
 }));
+
 jest.mock("../../src/store/slices/authSlice", () => ({
 	logout: jest.fn(),
 }));
@@ -34,6 +42,9 @@ describe("Component: SettingsModal", () => {
 		expect(getByText("Appearance")).toBeTruthy();
 		expect(getByText("Language")).toBeTruthy();
 		expect(getByText("Log Out")).toBeTruthy();
+
+		// Kiểm tra xem useSelector đã lấy đúng tên user giả lập chưa
+		expect(getByText("Mock User")).toBeTruthy();
 	});
 
 	it("gọi onClose và điều hướng về trang đăng nhập khi bấm Đăng xuất", async () => {
@@ -43,12 +54,13 @@ describe("Component: SettingsModal", () => {
 
 		fireEvent.press(getByTestId("logout-btn"));
 
-		// 2. Bọc expect trong waitFor để chờ hàm async xử lý xong
+		// Bọc expect trong waitFor để chờ hàm async xử lý xong
 		await waitFor(() => {
 			expect(mockOnClose).toHaveBeenCalledTimes(1);
 			expect(mockReplace).toHaveBeenCalledWith("/(auth)/login");
 		});
 	});
+
 	it("xử lý lỗi (catch) khi đăng xuất thất bại nhưng vẫn đóng modal và về trang login", async () => {
 		const consoleSpy = jest.spyOn(console, "error").mockImplementation(); // Chặn log đỏ ra màn hình console
 		const SecureStore = require("expo-secure-store");
